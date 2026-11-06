@@ -4,6 +4,7 @@
 **Date:** 2026-11-07
 **Supersedes:** the *sequencing* of `docs/design/ui-redesign-roadmap.md` for the next four weeks. That document remains the full-scope plan (19–26 days); this one is the slice that ships a defensible UI MVP in 20 working days.
 **Depends on:** `typography.md` (type contract), `interaction-contract.md` (behaviour), `motion-guidelines.md` (timing), `visual-audit.md` (what is broken), `branding-desk.md` (identity).
+**Execution:** decomposed into twelve sub-plans in [`../../plan/`](../../plan/README.md), one per unit of work, each with its own done-when list and verification block.
 
 ---
 

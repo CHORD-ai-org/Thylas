@@ -13,6 +13,7 @@ Thylas (τ) is the application layer of CHORD. WAM owns intent, planning, and ex
 | [`docs/design/`](docs/design/visual-system.md) | Visual system, spatial language, component guidelines, interaction model — as built | Implemented |
 | [`design/`](design/README.md) | Visual system (`tokens.css`), nine-screen clickable prototype, UI design plan | Complete draft |
 | [`src/`](src/main.tsx) | The application: shell, Overview, Files, Whiteboard, Processes, Notes, Recently, Account | Implemented, sample data |
+| [`plan/`](plan/README.md) | The UI MVP decomposed into 12 sub-plans with gates and a status board | Ready to execute |
 | [`AGENT.md`](AGENT.md) | Reasoning protocol for product boundary questions | — |
 
 ## Run it

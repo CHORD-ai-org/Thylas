@@ -24,6 +24,7 @@
 | 12 | [`design/motion-guidelines.md`](design/motion-guidelines.md) | 6 min | The four allowed motions and the banned ones |
 | 13 | [`design/ui-redesign-roadmap.md`](design/ui-redesign-roadmap.md) | 12 min | Six phases, exact files, acceptance, 19–26 days |
 | 13.5 | [`planning/ui-mvp-plan.md`](planning/ui-mvp-plan.md) | 10 min | **The plan in force for the next four weeks**: four sprints, task IDs, gates, stop rules |
+| 13.6 | [`../plan/`](../plan/README.md) | as needed | The same plan decomposed into 12 executable sub-plans with status board |
 | 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
