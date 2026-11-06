@@ -1,7 +1,7 @@
 # docs/ — product and technical definition for Thylas
 
 **Date:** 2026-11-07
-**State:** proposed. Nothing in `docs/` describes code that exists.
+**State:** proposed, except `docs/design/` — those four documents describe the UI that now exists in `src/`. The product, architecture, file-plan and roadmap documents remain proposals; the implementation is smaller than the file plan and says where.
 **What this directory is:** the layer above the design work. `design/` specifies what the product looks like; `docs/` specifies what it is, where its responsibilities end, how it is built, and in what order.
 
 ---
@@ -15,6 +15,9 @@
 | 3 | [`architecture/application.md`](architecture/application.md) | 20 min | Stack, layering, where each piece of state lives, the WAM boundary |
 | 4 | [`planning/file-plan.md`](planning/file-plan.md) | 20 min | Every file, its job, what it must not do, and what is deliberately absent |
 | 5 | [`planning/roadmap.md`](planning/roadmap.md) | 10 min | Milestones, gates, the two blocking unknowns |
+| 6 | [`design/visual-system.md`](design/visual-system.md) | 10 min | Colour, type, geometry, density — as implemented |
+| 7 | [`design/spatial-language.md`](design/spatial-language.md) | 8 min | Zones, nesting, scrolling, responsive rules |
+| 8 | [`design/interaction-model.md`](design/interaction-model.md) | 8 min | Routes, tabs, keyboard, what is real vs sample |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
 
@@ -28,6 +31,7 @@ If you read only one: `product/definition.md` §8 (responsibility matrix). If yo
 | `architecture/application.md` | Stack and its costs, layering rules, state ownership, routes, WAM interface, failure handling, test strategy, technical unknowns | Visual design, milestone timing |
 | `planning/file-plan.md` | Repository tree, per-file responsibilities, dependency graph, build order, files not to create | What each screen looks like |
 | `planning/roadmap.md` | Milestones, scope in and out, acceptance tests, risks, what invalidates the plan | File-level detail |
+| `design/*.md` (new) | The visual system, spatial rules, component inventory and interaction contract **as built** | Product boundaries, milestones, anything about WAM |
 | `design/` (existing) | Visual system, IA, tabs, rooms, canvas, notes, settings, journeys, wireframes, prototype | Why the product exists; anything technical |
 | `AGENT.md` (existing) | The reasoning protocol and the classification framework used above | Any conclusion; it deliberately refuses to decide |
 

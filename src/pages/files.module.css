@@ -1,0 +1,439 @@
+.page {
+  height: 100%;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--h-toolbar);
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--line);
+  font: var(--t-caption);
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+
+.crumbRoot {
+  color: var(--ink);
+  font: var(--t-ui-strong);
+}
+
+.crumbLink {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.crumbLink:hover {
+  color: var(--accent);
+}
+
+.crumbTail {
+  margin-left: 6px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.crumbsActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 7px var(--s4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-surface);
+  font: var(--t-caption);
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+
+.noticeClose {
+  color: var(--ink-3);
+  line-height: 1;
+}
+
+/* ---- body: tree + table ---- */
+
+.body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.tree {
+  width: 208px;
+  flex: 0 0 auto;
+  padding: var(--s3) 8px;
+  border-right: 1px solid var(--line);
+  overflow: auto;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: var(--r-chip);
+  color: var(--ink-2);
+  font: var(--t-ui);
+  white-space: nowrap;
+}
+
+.treeRow:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.treeActive {
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: var(--t-ui-strong);
+}
+
+.treeChevron {
+  display: inline-flex;
+  color: var(--ink-3);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.treeChevron[data-open] {
+  transform: rotate(90deg);
+}
+
+.treeName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treeCount {
+  margin-left: auto;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.treeChildren {
+  display: flex;
+  flex-direction: column;
+  padding: 1px 0 4px 26px;
+}
+
+.treeChild {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--r-chip);
+  color: var(--ink-2);
+  font: var(--t-caption);
+  white-space: nowrap;
+}
+
+.treeChild:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.treeChildActive {
+  background: var(--accent-weak);
+  color: var(--ink);
+}
+
+.treeChildDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+.treeChildName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treeFoot {
+  margin-top: var(--s4);
+  padding: 0 6px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.tableWrap {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  container-type: inline-size;
+}
+
+
+.thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 58px 74px 100px 56px;
+  align-items: center;
+  height: var(--h-toolbar);
+  padding: 0 var(--s4);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--line);
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.tbody {
+  display: flex;
+  flex-direction: column;
+}
+
+.trow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 58px 74px 100px 56px;
+  align-items: center;
+  width: 100%;
+  height: var(--h-row);
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font: var(--t-ui);
+  text-align: left;
+}
+
+.trow:hover {
+  background: var(--tint-hover);
+}
+
+.trowActive {
+  background: var(--accent-weak);
+  color: var(--ink);
+}
+
+.colName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.colSize,
+.colUsed {
+  text-align: right;
+  padding-right: var(--s3);
+}
+
+.colUsed {
+  padding-right: 0;
+}
+
+.colUpdated,
+.colSource {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mono {
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.monoDim {
+  font: var(--t-mono);
+  color: var(--ink-3);
+}
+
+/* ---- panel ---- */
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.panelName {
+  font: var(--t-section);
+  font-size: 15px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.panelFields {
+  display: flex;
+  flex-direction: column;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.panelActions {
+  display: flex;
+  gap: 6px;
+}
+
+.panelSection {
+  margin-top: var(--s4);
+}
+
+.panelSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.panelCount {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.refList {
+  display: flex;
+  flex-direction: column;
+}
+
+.refRow {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-ui);
+}
+
+.refKind {
+  width: 12px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+.refLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.refMeta {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.panelQuiet {
+  margin-top: 8px;
+  font: var(--t-caption);
+  line-height: 16px;
+  color: var(--ink-3);
+}
+
+/* ---- preview ---- */
+
+.previewHead {
+  padding: var(--s4) var(--s8) var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+
+.previewHead .crumbs {
+  padding: 0;
+  height: auto;
+  margin-bottom: var(--s4);
+  border: 0;
+}
+
+.previewTitle {
+  font: var(--t-display);
+  font-size: 24px;
+  line-height: 30px;
+  overflow-wrap: anywhere;
+}
+
+.previewMeta {
+  margin-top: 6px;
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.sheetWrap {
+  padding: var(--s8);
+  display: flex;
+  justify-content: center;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  padding: var(--s8);
+  border: 1px solid var(--line);
+  border-radius: var(--r-surface);
+  background: var(--bg-surface);
+}
+
+.sheetLine {
+  font: var(--t-section);
+  font-size: 16px;
+}
+
+.sheetHint {
+  margin-top: 8px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+.sheetRule {
+  height: 1px;
+  margin: var(--s6) 0 var(--s3);
+  background: var(--line);
+}
+
+.sheetFields {
+  display: flex;
+  flex-direction: column;
+}
+
+/* When the panel is open at 1280 the table has ~512px. Source is the first
+   column to go: it is derivable from the row's badge, the name is not. */
+@container (max-width: 640px) {
+  .thead,
+  .trow {
+    grid-template-columns: minmax(140px, 1fr) 58px 74px 56px;
+  }
+
+  .colSource {
+    display: none;
+  }
+}

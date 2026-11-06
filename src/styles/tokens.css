@@ -1,0 +1,27 @@
+/* App tokens. The palette, type ramps, spacing, rows and panel widths live in
+   design/tokens.css and are NOT redefined here — this file only adds what the
+   running application needs beyond the prototype. */
+
+@import '../../design/tokens.css';
+
+:root {
+  /* tints derived from the palette; no new hues */
+  --tint-sel: rgba(181, 111, 80, 0.09);
+  --tint-hover: rgba(73, 54, 38, 0.035);
+  --tint-live: rgba(181, 111, 80, 0.055);
+  --scrim: rgba(73, 54, 38, 0.16);
+
+  /* grid */
+  --h-strip-rail: 40px;
+  --w-panel-min: 280px;
+  --w-panel-max: 480px;
+
+  /* motion not covered by the design tokens */
+  --dur-fast: 90ms;
+  --dur-strip: 140ms;
+
+  /* layering: only three heights exist */
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-palette: 50;
+}

@@ -1,0 +1,30 @@
+.wrap {
+  max-width: 520px;
+}
+
+.code {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.title {
+  margin-top: 10px;
+  font: var(--t-display);
+  font-size: 26px;
+  line-height: 34px;
+}
+
+.hint {
+  margin-top: var(--s3);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  max-width: 54ch;
+}
+
+.actions {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s6);
+}

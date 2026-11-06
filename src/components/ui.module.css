@@ -1,0 +1,236 @@
+/* Primitives. Every value comes from tokens; nothing here decides layout. */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  background: var(--bg-surface);
+  color: var(--ink);
+  font: var(--t-ui);
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.button:hover {
+  background: var(--bg-paper);
+  border-color: var(--ink-3);
+}
+
+.button:active {
+  background: var(--accent-weak);
+}
+
+.sm {
+  height: 24px;
+  padding: 0 8px;
+  font: var(--t-caption);
+  letter-spacing: var(--track-caption);
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fdf8f1;
+}
+
+.primary:hover {
+  background: #a9613f;
+  border-color: #a9613f;
+}
+
+.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.ghost:hover {
+  background: var(--tint-hover);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.btnIcon {
+  display: inline-flex;
+  color: currentColor;
+  opacity: 0.85;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-chip);
+  color: var(--ink-2);
+}
+
+.iconButton:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.iconActive {
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  font: var(--t-caption);
+  letter-spacing: var(--track-caption);
+  color: var(--ink-2);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.chip .dot {
+  width: 5px;
+  height: 5px;
+}
+
+.tone_plain { color: var(--ink-2); }
+.tone_live { color: var(--live,#b56f50); border-color: rgba(181,111,80,.35); background: var(--tint-live); }
+.tone_warn { color: var(--warn); border-color: rgba(168,121,44,.32); }
+.tone_ok { color: var(--ok); border-color: rgba(94,107,80,.3); }
+.tone_error { color: var(--error); border-color: rgba(140,58,43,.3); }
+.tone_idle { color: var(--ink-2); }
+
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.pulse {
+  animation: pulse 600ms var(--ease) 2;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.labelAside {
+  font: var(--t-mono-s);
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 46ch;
+  padding: var(--s6) 0;
+}
+
+.emptyTitle {
+  font: var(--t-section);
+  color: var(--ink);
+}
+
+.emptyHint {
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+.emptyAction {
+  padding-top: var(--s2);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: var(--s3);
+  padding: 5px 0;
+  font: var(--t-ui);
+}
+
+.fieldLabel {
+  color: var(--ink-3);
+}
+
+.fieldValue {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  background: var(--bg-surface);
+  font: var(--t-mono-s);
+  font-size: 8px;
+  letter-spacing: 0;
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+
+.glyphNote {
+  font-family: var(--serif);
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.glyphProcess {
+  font-size: 8px;
+  color: var(--ink);
+  padding-left: 1px;
+}
