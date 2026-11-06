@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theoretical Foundations of the Lemma Voice System — A Literature Review</title>
+<meta name="description" content="A literature review on how an AI should participate in a learner's ongoing cognitive activity, and how voice can support continuous, context-aware human-AI learning collaboration.">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#fcfcfa;
+  --panel:#ffffff;
+  --ink:#141414;
+  --ink-2:#3c3c3c;
+  --ink-3:#6b6b6b;
+  --ink-4:#8f8f8f;
+  --rule:#e3e3de;
+  --rule-strong:#c9c9c2;
+  --soft:#f4f4f1;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Songti SC",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--serif);font-size:17px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+::selection{background:#e6e6df}
+a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule-strong)}
+a:hover{border-bottom-color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+.layout{display:grid;grid-template-columns:200px minmax(0,760px);gap:72px;align-items:start}
+
+/* ---------- masthead ---------- */
+header.masthead{border-bottom:1px solid var(--rule);padding:72px 0 44px;margin-bottom:64px}
+.kicker{font-family:var(--sans);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0 0 22px}
+h1{font-size:42px;line-height:1.16;font-weight:600;letter-spacing:-.015em;margin:0 0 20px;max-width:27ch}
+.sub{font-size:19px;line-height:1.55;color:var(--ink-2);margin:0 0 30px;max-width:56ch;font-style:italic}
+.meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-3);display:flex;gap:26px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:16px}
+.meta b{font-weight:600;color:var(--ink-2)}
+
+/* ---------- toc ---------- */
+nav.toc{position:sticky;top:36px;min-width:0;font-family:var(--sans);font-size:12.5px;line-height:1.45;padding-bottom:40px}
+nav.toc .toc-h{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-4);margin:0 0 14px}
+nav.toc ol{list-style:none;margin:0;padding:0}
+nav.toc li{margin:0 0 1px}
+nav.toc a{display:block;padding:4px 0 4px 12px;border-bottom:none;border-left:1px solid var(--rule);color:var(--ink-3);transition:color .12s,border-color .12s}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--rule-strong)}
+nav.toc a.on{color:var(--ink);border-left-color:var(--ink);font-weight:600}
+nav.toc .sub2{padding-left:24px;font-size:12px;color:var(--ink-4)}
+
+/* ---------- typography ---------- */
+main{padding-bottom:120px;min-width:0}
+section{margin:0 0 84px;scroll-margin-top:28px}
+h2{font-size:27px;line-height:1.25;font-weight:600;letter-spacing:-.01em;margin:0 0 8px;padding-top:10px}
+h2 .num{font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--ink-4);display:block;margin-bottom:10px}
+h3{font-size:19px;font-weight:600;letter-spacing:-.005em;margin:40px 0 10px}
+h4{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 10px}
+p{margin:0 0 18px}
+.dek{font-size:18px;line-height:1.62;color:var(--ink-2);margin:0 0 30px;max-width:64ch}
+hr{border:0;border-top:1px solid var(--rule);margin:44px 0}
+ul,ol{margin:0 0 20px;padding-left:22px}
+li{margin:0 0 9px}
+strong{font-weight:600}
+em{font-style:italic}
+.small{font-size:14px;line-height:1.62;color:var(--ink-3)}
+.mono{font-family:var(--mono);font-size:.86em}
+
+/* ---------- citations ---------- */
+span.cites{font-family:var(--sans);font-size:11.5px;vertical-align:.35em;line-height:0;letter-spacing:.02em}
+a.cite{color:var(--ink-3);border-bottom:none;padding:0 .5px}
+a.cite:hover{color:var(--ink);text-decoration:underline}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;margin:26px 0 30px;max-width:100%}
+table{width:100%;border-collapse:collapse;font-family:var(--sans);font-size:13.5px;line-height:1.55}
+caption{caption-side:top;text-align:left;font-family:var(--sans);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);padding-bottom:10px}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--ink);padding:8px 12px 8px 0;vertical-align:bottom}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink-2)}
+td:first-child{color:var(--ink)}
+tr:last-child td{border-bottom:1px solid var(--rule-strong)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---------- tags ---------- */
+.tag{font-family:var(--sans);font-size:10px;letter-spacing:.09em;text-transform:uppercase;border:1px solid var(--rule-strong);color:var(--ink-3);padding:1.5px 5px;border-radius:2px;white-space:nowrap;display:inline-block}
+.tag.d{border-color:#9a9a9a;color:#2b2b2b}
+.tag.i{border-color:#bdbdbd}
+.tag.t{border-color:#d4d4d4;color:#5f5f5f}
+.tag.s{border-color:#d4d4d4;color:#8a8a8a;border-style:dashed}
+.v{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.v-strong{color:#111}
+.v-partial{color:#3f3f3f}
+.v-conflict{color:#5a4a2a}
+.v-insuff{color:#6f6f6f}
+
+/* ---------- key paper blocks ---------- */
+.paper{border-left:2px solid var(--ink);padding:2px 0 0 22px;margin:0 0 44px;scroll-margin-top:28px}
+.paper .ph{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px}
+.paper h3{margin:0 0 4px;font-size:18.5px;line-height:1.35}
+.paper .src{font-size:14px;color:var(--ink-3);margin:0 0 16px}
+dl.fields{display:grid;grid-template-columns:118px minmax(0,1fr);gap:6px 20px;margin:0}
+dl.fields dt{font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);padding-top:4px}
+dl.fields dd{margin:0;font-size:15.5px;line-height:1.65;color:var(--ink-2)}
+dl.fields dd strong{color:var(--ink)}
+
+/* ---------- callouts ---------- */
+.note{border-left:2px solid var(--rule-strong);padding:2px 0 2px 18px;margin:26px 0;font-size:15px;line-height:1.66;color:var(--ink-3)}
+.note b{color:var(--ink-2);font-weight:600}
+.finding{border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);padding:22px 0;margin:32px 0}
+.finding p{margin:0;font-size:19px;line-height:1.58;max-width:58ch}
+
+/* ---------- figures ---------- */
+figure{margin:36px 0 40px}
+figure svg{display:block;width:100%;max-width:100%;height:auto;background:var(--panel);border:1px solid var(--rule)}
+figcaption{font-family:var(--sans);font-size:12px;line-height:1.55;color:var(--ink-3);margin-top:10px;max-width:66ch}
+figcaption b{color:var(--ink-2);font-weight:600}
+
+/* ---------- bibliography ---------- */
+ol.bib{list-style:none;padding:0;margin:0;font-size:14.5px;line-height:1.62;counter-reset:b}
+ol.bib li{position:relative;padding:13px 0 13px 42px;border-bottom:1px solid var(--rule);margin:0;color:var(--ink-2);scroll-margin-top:30px}
+ol.bib li::before{counter-increment:b;content:counter(b);position:absolute;left:0;top:13px;font-family:var(--sans);font-size:11px;color:var(--ink-4);font-variant-numeric:tabular-nums}
+ol.bib li:target{background:#f2f2ec}
+ol.bib li:target::before{color:var(--ink);font-weight:700}
+.bib-au{color:var(--ink)}
+a.doi{display:block;margin-top:3px;font-family:var(--mono);font-size:11px;color:var(--ink-3);border-bottom:1px dotted var(--rule-strong);word-break:break-all}
+a.doi:hover{color:var(--ink)}
+.bib-note{font-size:12px;color:var(--ink-4);font-family:var(--sans)}
+
+/* ---------- misc ---------- */
+.top{position:fixed;right:28px;bottom:28px;font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--bg);border:1px solid var(--rule-strong);padding:8px 11px;border-radius:2px;opacity:0;pointer-events:none;transition:opacity .2s}
+.top.show{opacity:1;pointer-events:auto}
+.top:hover{color:var(--ink);border-color:var(--ink)}
+footer{border-top:1px solid var(--rule);padding:34px 0 70px;font-family:var(--sans);font-size:12px;color:var(--ink-4);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+@media (max-width:1040px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;border-bottom:1px solid var(--rule);padding-bottom:26px;margin-bottom:52px;columns:2;column-gap:32px}
+  nav.toc ol{break-inside:avoid}
+  .wrap{padding:0 26px}
+  h1{font-size:33px}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  nav.toc{columns:1}
+  dl.fields{grid-template-columns:1fr;gap:2px}
+  dl.fields dt{padding-top:12px}
+  h1{font-size:28px}
+  .wrap{padding:0 18px}
+}
+@media print{
+  nav.toc,.top{display:none}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block}
+  .wrap{max-width:none;padding:0}
+  section{margin-bottom:26pt}
+  .paper{break-inside:avoid}
+  a{border-bottom:none;color:#000}
+  a.doi{color:#444}
+  figure{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">Research Report &nbsp;·&nbsp; Lemma AI &nbsp;·&nbsp; Voice System</p>
+    <h1>Theoretical Foundations of the Lemma Voice System</h1>
+    <p class="sub">How should an AI participate in a learner's ongoing cognitive activity — and what can voice actually contribute to that participation?</p>
+    <div class="meta">
+      <span><b>Scope</b> Learning sciences · cognitive science · HCI · CSCW · human–AI interaction</span>
+      <span><b>Sources</b> 63 works, metadata verified</span>
+      <span><b>Date</b> 6 November 2026</span>
+      <span><b>Status</b> Literature review, not a validation study</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+<nav class="toc" id="toc" aria-label="Table of contents">
+  <p class="toc-h">Contents</p>
+  <ol>
+    <li><a href="#s1">1 &nbsp;Executive summary</a></li>
+    <li><a href="#s2">2 &nbsp;Scope and method</a></li>
+    <li><a href="#s3">3 &nbsp;Theoretical foundations</a></li>
+    <li><a href="#s4">4 &nbsp;Literature by research area</a></li>
+    <li><a href="#s4-1" class="sub2">4.1 &nbsp;Scaffolding and agency</a></li>
+    <li><a href="#s4-2" class="sub2">4.2 &nbsp;Co-regulation</a></li>
+    <li><a href="#s4-3" class="sub2">4.3 &nbsp;Mixed initiative</a></li>
+    <li><a href="#s4-4" class="sub2">4.4 &nbsp;Attention and interruption</a></li>
+    <li><a href="#s4-5" class="sub2">4.5 &nbsp;Voice as modality</a></li>
+    <li><a href="#s4-6" class="sub2">4.6 &nbsp;Workspace grounding</a></li>
+    <li><a href="#s4-7" class="sub2">4.7 &nbsp;Long-term continuity</a></li>
+    <li><a href="#s5">5 &nbsp;Key paper analysis</a></li>
+    <li><a href="#s6">6 &nbsp;Integrated framework</a></li>
+    <li><a href="#s7">7 &nbsp;Evaluation of product hypotheses</a></li>
+    <li><a href="#s8">8 &nbsp;Unresolved questions</a></li>
+    <li><a href="#s9">9 &nbsp;Research gaps</a></li>
+    <li><a href="#s10">10 &nbsp;Implications for Lemma AI</a></li>
+    <li><a href="#s11">11 &nbsp;Bibliography</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============================ 1 ============================ -->
+<section id="s1">
+  <h2><span class="num">Section 1</span>Executive summary</h2>
+
+  <p class="dek">The literature gives a strong rationale for treating AI participation as a decision, a reasonably clear account of what the decision has to trade off, and almost no direct evidence about voice in a shared learning workspace. Those three facts have different implications, and the report keeps them apart.</p>
+
+  <p><b>1. The design stance is well supported; the specific claim is not.</b> Learning science has documented for five decades that assistance is not a monotonic good. Scaffolding works when it is contingent, graded and withdrawn <span class="cites">[<a class="cite" href="#ref-21">21</a>, <a class="cite" href="#ref-43">43</a>, <a class="cite" href="#ref-62">62</a>]</span>, and the same help that raises performance during a task can lower retention and transfer afterwards <span class="cites">[<a class="cite" href="#ref-27">27</a>, <a class="cite" href="#ref-54">54</a>]</span>. That is enough to justify Lemma's principle that participation should be a decision rather than a default. It is <em>not</em> evidence that an AI which deliberately withholds help learns better than one that responds whenever asked: no study in this literature compares those two policies directly. The closest evidence is indirect — AI tutors that were pedagogically constrained outperformed both unconstrained chatbots and, in one randomised trial, a well-taught active-learning class <span class="cites">[<a class="cite" href="#ref-23">23</a>]</span>, while unconstrained access to the same model left students worse off than students who never had it <span class="cites">[<a class="cite" href="#ref-7">7</a>]</span>.</p>
+
+  <p><b>2. The interesting decision is not three-way.</b> The ASK / OFFER / STAY QUIET triad conflates at least five separable decisions: whether to act <em>now</em>; what epistemic function the act should serve; how <em>intense</em> it should be; which <em>channel</em> carries it; and how the act changes the next act. The literature on mixed initiative models the first as an expected-value calculation over value, probability of being right, and cost of being wrong <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>; the automation literature models the third as a ladder of levels rather than a switch <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span>; the interruption literature shows the second-order cost is a function of <em>when</em> within the task the act lands, not only of what it says <span class="cites">[<a class="cite" href="#ref-1">1</a>, <a class="cite" href="#ref-35">35</a>]</span>. Collapsing these into one label makes the design untestable, because any outcome can be attributed to "wrong mode" after the fact.</p>
+
+  <p><b>3. Silence is also an act, and an illegible one.</b> Grounding theory says communication succeeds only when participants reach mutual belief that they have understood <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span>. A system whose non-participation is invisible gives the learner no way to distinguish "the AI decided not to interrupt" from "the AI did not understand" — and those two states call for opposite learner responses. This is the least discussed and, we think, the most immediately actionable finding in the review: deliberate silence has to be <em>observable</em> to function as a collaboration signal.</p>
+
+  <p><b>4. Voice's defensible advantage is concurrency, not naturalness.</b> The modality effect is real but conditional: spoken text paired with diagrams beats written text when the spoken segment is short and the learner can control pacing, and the advantage reverses when the audio is long and transient <span class="cites">[<a class="cite" href="#ref-15">15</a>, <a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-53">53</a>]</span>. Multiple-resource theory predicts that speech is cheap precisely when the eyes and hands are busy elsewhere <span class="cites">[<a class="cite" href="#ref-61">61</a>]</span> — which is the situation in a shared workspace, and not the situation in a chat window. So the most plausible role for voice is short coordination acts layered over an object the learner is already manipulating, and the least plausible role is long spoken explanation. That is a testable prediction, and current evidence does not test it.</p>
+
+  <p><b>5. The strongest counterargument is internal to the product.</b> H4 assumes learners can exercise control well. The help-seeking literature shows they cannot: learners under-request help when they need it, over-request when they do not, and avoid help that threatens self-esteem <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>. "Participation is a decision" is therefore not automatically learner-friendly — a system that defers entirely to learner-initiated requests inherits a known bias toward <em>under</em>-assistance in exactly the population Lemma targets. The design has to separate "the learner can veto" from "the learner must initiate".</p>
+
+  <div class="finding">
+    <p>A defensible reading of the evidence: the AI's contribution is valuable when it preserves the learner's generative work and reduces coordination cost. It becomes harmful when it substitutes for that work, or when its timing forces the learner to rebuild a task representation that was intact a moment earlier.</p>
+  </div>
+
+  <h3>Verdicts at a glance</h3>
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 1. Evidence classification for Lemma's six hypotheses</caption>
+    <thead><tr><th style="width:30%">Hypothesis</th><th style="width:18%">Verdict</th><th>One-line basis</th></tr></thead>
+    <tbody>
+      <tr><td>H1 Selective participation</td><td><span class="v v-partial">Partial support</span></td><td>Mechanisms (contingency, fading, desirable difficulty) are well evidenced; the composite policy has never been tested against its alternative.</td></tr>
+      <tr><td>H2 Workspace grounding</td><td><span class="v v-partial">Partial support</span></td><td>Strong theory and human–human evidence that shared visual context lowers grounding cost; no human–AI learning study.</td></tr>
+      <tr><td>H3 Mixed initiative</td><td><span class="v v-partial">Partial support</span></td><td>Formal models and non-educational systems support it; learning-specific trials are absent and interruption costs are real.</td></tr>
+      <tr><td>H4 Learner agency</td><td><span class="v v-conflict">Conflicting evidence</span></td><td>Control reduces reactance and supports self-regulation; but learners regulate help-seeking poorly, so full control can entrench under-helping.</td></tr>
+      <tr><td>H5 Long-term continuity</td><td><span class="v v-insuff">Insufficient evidence</span></td><td>Transactive and collaborative memory are robust in human teams; longitudinal human–AI evidence is thin and mostly about attitude, not learning.</td></tr>
+      <tr><td>H6 Voice as coordination</td><td><span class="v v-insuff">Insufficient evidence</span></td><td>No study tests voice as a coordination layer over a shared learning workspace. Component evidence points in both directions.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============================ 2 ============================ -->
+<section id="s2">
+  <h2><span class="num">Section 2</span>Scope and method</h2>
+
+  <p class="dek">This is a targeted theoretical review, not a systematic review. The selection rule was relevance to a design decision, not keyword coverage.</p>
+
+  <h3>2.1 What was searched</h3>
+  <p>The review covers seven areas defined by the assignment: scaffolding and learner agency; co-regulation and collaboration; mixed-initiative interaction; attention and interruption; voice as an interaction modality; workspace grounding; and long-term continuity. Sources were peer-reviewed journals and conference proceedings in learning sciences, cognitive science, HCI, CSCW and human factors, plus a small number of book chapters that carry foundational theory.</p>
+
+  <p>Search proceeded in two directions. Forward from a set of anchor works whose framing is unavoidable in this space — Wood, Bruner and Ross on tutoring <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span>, Horvitz on mixed initiative <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>, Clark and Brennan on grounding <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span>, Sweller and colleagues on cognitive load <span class="cites">[<a class="cite" href="#ref-24">24</a>]</span>, Chi on activity types <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span> — and backward from recent empirical work on generative AI in learning <span class="cites">[<a class="cite" href="#ref-7">7</a>, <a class="cite" href="#ref-23">23</a>, <a class="cite" href="#ref-29">29</a>]</span> to the theories those papers invoke. Every bibliographic record was resolved against Crossref; DOIs, volumes and page ranges in the bibliography are the registered values, not reconstructed ones. Where a work has no DOI (a 1987 monograph), the entry says so rather than supplying a guessed identifier.</p>
+
+  <h3>2.2 Inclusion and exclusion</h3>
+  <p>Included: work that makes a claim about <em>when</em> assistance helps, <em>how</em> collaborators coordinate, <em>what</em> interruption costs, or <em>which</em> modality carries which content. Excluded by design: speech recognition and synthesis engineering; generic chatbot usability; vendor claims about conversational interfaces; and the large literature on AI-generated content quality, which is about output, not participation.</p>
+
+  <p>Papers were not admitted for containing a keyword. Each had to bear on one of three questions: what the learner is doing cognitively; what a second participant can legitimately add; or what it costs to add it at a given moment. Roughly a third of the works screened were dropped for failing this test, most of them studies of "AI in education" that measured satisfaction or adoption rather than learning.</p>
+
+  <h3>2.3 Evidence classification</h3>
+  <p>Every claim in this report carries one of four labels, used consistently in the tables and in the analysis blocks of Section 5.</p>
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 2. Evidence labels used throughout</caption>
+    <thead><tr><th style="width:22%">Label</th><th>Meaning</th><th style="width:26%">Typical example here</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag d">Direct</span></td><td>Tested in a setting comparable to human–AI learning collaboration.</td><td>RCT of an AI tutor against an active-learning class <span class="cites">[<a class="cite" href="#ref-23">23</a>]</span>.</td></tr>
+      <tr><td><span class="tag i">Indirect</span></td><td>Tested in a related but different setting; transfer requires argument.</td><td>Interruption experiments on discrete computer tasks <span class="cites">[<a class="cite" href="#ref-35">35</a>]</span>.</td></tr>
+      <tr><td><span class="tag t">Theoretical</span></td><td>Conceptual framework with no direct empirical test of the specific claim.</td><td>Mixed-initiative expected-utility principles <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>.</td></tr>
+      <tr><td><span class="tag s">Speculative</span></td><td>A design implication inferred here; not yet tested anywhere.</td><td>Voice as a coordination channel over a workspace.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>2.4 Limits of this review</h3>
+  <div class="note">
+    <p><b>Reading depth.</b> Bibliographic data were verified programmatically; the substantive content of each work was taken from its abstract and from how it is characterised in the reviews cited here. Full texts were not re-read for this report, and no entry claims otherwise. Where a paper's abstract does not report a statistic, this report does not supply one.</p>
+    <p><b>Coverage.</b> English-language sources only. No meta-analysis was performed; where a meta-analysis exists it is cited as such rather than re-computed.</p>
+    <p><b>Transfer.</b> Almost all empirical work cited was conducted with human collaborators, or with automation that is far simpler than a language model. Treating those findings as constraints on Lemma is an argument, and the report marks where that argument is weakest.</p>
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 3. Composition of the reviewed corpus</caption>
+    <thead><tr><th>Research area</th><th class="num">Works</th><th>Dominant evidence type</th><th>Strength for Lemma's questions</th></tr></thead>
+    <tbody>
+      <tr><td>I. Learning, scaffolding, agency</td><td class="num">15</td><td>Experiments, meta-analyses, one recent RCT</td><td>Strong on mechanism; weak on AI-initiated assistance</td></tr>
+      <tr><td>II. Co-regulation and collaboration</td><td class="num">8</td><td>Process studies, theory</td><td>Strong on coordination; analogy to AI untested</td></tr>
+      <tr><td>III. Mixed initiative and control</td><td class="num">10</td><td>Formal models, system evaluations</td><td>Strong on decision structure; no learning outcomes</td></tr>
+      <tr><td>IV. Attention, load, interruption</td><td class="num">12</td><td>Controlled experiments, field studies</td><td>Strong on cost; tasks unlike open-ended learning</td></tr>
+      <tr><td>V. Voice and multimodality</td><td class="num">7</td><td>Meta-analysis, interaction studies</td><td>Mixed; nothing on voice-in-workspace for learning</td></tr>
+      <tr><td>VI. Workspace grounding</td><td class="num">7</td><td>Laboratory experiments, theory</td><td>Strong theory; mediation by AI untested</td></tr>
+      <tr><td>VII. Long-term continuity</td><td class="num">4</td><td>Field studies, psychometrics</td><td>Weakest area; mostly human teams</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============================ 3 ============================ -->
+<section id="s3">
+  <h2><span class="num">Section 3</span>Theoretical foundations</h2>
+
+  <p class="dek">Five explanatory clusters carry almost all of the argument. They answer different questions and should not be merged: one explains the learner, one explains what assistance can add, one explains coordination, one explains control, and one explains time.</p>
+
+  <h3>3.1 The learner's cognitive economy</h3>
+  <p>Cognitive load theory holds that instruction is constrained by a working memory that is narrow and volatile, and that learning consists in building and automating schemas in long-term memory <span class="cites">[<a class="cite" href="#ref-24">24</a>]</span>. The theory's practical corollary is uncomfortable for conversational design: anything the learner must hold in mind while solving — including the content of an utterance that has already ended — competes with the schema construction it is meant to support <span class="cites">[<a class="cite" href="#ref-24">24</a>, <a class="cite" href="#ref-28">28</a>]</span> — which is why the <em>form</em> of a contribution matters as much as its content.</p>
+
+  <p>Two further concepts sharpen this. Chi's framework distinguishes <em>active</em> (doing), <em>constructive</em> (generating something not present in the material) and <em>interactive</em> (co-constructing with a partner) activity, and predicts that interactive > constructive > active for learning <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span>. Interaction is therefore not decoration: a partner who makes the learner produce and defend inferences adds something a well-designed worksheet cannot. But Kirsh and Maglio's distinction between pragmatic and epistemic action shows that much of what looks like inefficient behaviour in a workspace — moving a tile, redrawing a diagram, rewriting an expression — is cognitive work offloaded into the world, not noise around it <span class="cites">[<a class="cite" href="#ref-25">25</a>]</span>. Zhang and Norman make the complementary point that external representations change what the task <em>is</em>, not merely how it is displayed <span class="cites">[<a class="cite" href="#ref-63">63</a>]</span>.</p>
+
+  <p>The consequence for an AI is specific: interventions that tidy the learner's workspace can destroy epistemic action, and interventions that describe what the learner can already see can be pure redundancy. Both failure modes look like helpfulness from the system's side.</p>
+
+  <h3>3.2 What assistance can add, and what it can subtract</h3>
+  <p>Scaffolding began as a description of tutorial interaction, not of tools. Wood, Bruner and Ross identified what a tutor actually does: recruiting interest, reducing degrees of freedom, keeping the goal in view, marking critical features, controlling frustration, and demonstrating <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span>. Every one of those is a <em>contingent</em> act — it presupposes a judgement about the learner's current state. Pea's later analysis warns that the metaphor has been stretched to cover any support, and that technological scaffolding differs from human scaffolding precisely in its inability to make that judgement <span class="cites">[<a class="cite" href="#ref-43">43</a>]</span>.</p>
+
+  <p>The assistance dilemma names the resulting trade-off: help that is available and used improves performance, but the cognitive work that help replaces is often the work that produces learning <span class="cites">[<a class="cite" href="#ref-27">27</a>]</span>. Kalyuga's expertise reversal effect gives the dilemma its sharpest form — techniques that are highly effective for novices lose effectiveness and can reverse for learners with more prior knowledge, because the support becomes redundant load <span class="cites">[<a class="cite" href="#ref-21">21</a>]</span>. This is why "adaptive" cannot mean "matched to difficulty"; it has to mean "matched to what the learner has not yet automated".</p>
+
+  <p>Productive failure supplies the counterweight. Kapur had eleventh-grade science students attempt ill-structured problems before instruction; they failed, produced poor solutions, and then outperformed a well-structured-first comparison group on subsequent problem solving <span class="cites">[<a class="cite" href="#ref-22">22</a>]</span>. The lesson is not that failure is good, but that the <em>generation</em> attempt is the productive part — which means an AI that prevents failure also prevents the preparation that makes later instruction stick.</p>
+
+  <p>Finally, Soderstrom and Bjork's distinction between learning and performance is the methodological key to this entire area. Performance during instruction is an unreliable index of durable learning; conditions that depress performance can enhance retention, and conditions that inflate it can produce no learning at all <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span>. Any evaluation of Lemma's participation policy that measures only in-session success will therefore systematically favour the more intrusive design.</p>
+
+  <h3>3.3 Coordination: what a second participant actually does</h3>
+  <p>Grounding theory treats communication as a joint project of establishing mutual belief that understanding has occurred, at a cost paid jointly <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span>. Clark and Wilkes-Gibbs showed that reference is not a one-shot act but an iterative repair process governed by <em>least collaborative effort</em>: speakers and addressees converge on the cheapest mutually acceptable description rather than the most precise one <span class="cites">[<a class="cite" href="#ref-10">10</a>]</span>. Two implications follow for a workspace AI. First, "this assumption" is not an underspecified reference; it is a normal, efficient one, provided both parties can see the same object. Second, when the AI is unsure which object is meant, the cheapest repair is usually a brief check, not a silent guess.</p>
+
+  <p>Roschelle and Teasley's joint problem space adds the temporal dimension: collaborators build a shared representation of the problem — goals, current state, proposed moves — and that representation, not the individual mental models, is what the collaboration operates on <span class="cites">[<a class="cite" href="#ref-48">48</a>]</span>. Distributed cognition extends the unit of analysis to the whole system of person, artefacts and representations <span class="cites">[<a class="cite" href="#ref-17">17</a>]</span>. Under that lens, a shared workspace is not a display for a conversation; it is part of the cognitive system that is doing the learning.</p>
+
+  <p>Regulation theory supplies the vocabulary for who steers. Järvelä and Hadwin distinguish self-regulated, co-regulated and socially shared regulation: in co-regulation one participant temporarily scaffolds another's regulatory activity, while in shared regulation the group's regulation becomes joint property <span class="cites">[<a class="cite" href="#ref-20">20</a>]</span>. Volet's process analyses showed that high-level co-regulation — where a partner addresses the other's planning, monitoring or evaluation rather than the content alone — does emerge in some groups and not others, and is fragile once established <span class="cites">[<a class="cite" href="#ref-59">59</a>]</span>. Molenaar's hybrid human-AI regulation is the most direct attempt to apply this to AI: the system detects, diagnoses and then acts on the learner's regulation, on the argument that support should target the regulatory process rather than the task content <span class="cites">[<a class="cite" href="#ref-34">34</a>]</span>.</p>
+
+  <h3>3.4 Control: who decides, and at what level</h3>
+  <p>Mixed-initiative interaction is the canonical framework for the participation problem. Horvitz's principles treat the decision to act as an expected-value calculation: the value of a contribution, multiplied by the probability that the system has correctly inferred what is needed, minus the cost of being wrong, including the cost of the learner's effort to repair it <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>. The framework also prescribes what to do under uncertainty — use cheap dialogue to resolve it, minimise the cost of wrong guesses, make correction easy, and infer timing rather than asking about it.</p>
+
+  <p>The automation literature generalises this from a binary to a ladder. Parasuraman, Sheridan and Wickens separate the <em>type</em> of automation (information acquisition, analysis, decision, action) from its <em>level</em>, running from manual through suggestion, veto and full automation <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span>. The distinction matters because Lemma's ASK and OFFER are both "decision support at a low level", while an AI that edits the workspace is at a much higher level — and the failure modes differ accordingly. Parasuraman and Riley's taxonomy of use, misuse, disuse and abuse names the social failure modes: automation bias, complacency, and abandonment after a salient error <span class="cites">[<a class="cite" href="#ref-41">41</a>]</span>. Endsley and Kiris showed the structural cost of high automation levels: operators taken out of the loop lose situation awareness and are slower and worse when they must take over <span class="cites">[<a class="cite" href="#ref-14">14</a>]</span>.</p>
+
+  <p>Klein and colleagues reframe the goal from "well-behaved automation" to "team player", with requirements that are directly translatable to a learning agent: a basic compact to participate, sufficient <em>directability</em> (the human can redirect it), <em>observability</em> (its state and intent are visible), and predictability <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span>. Amershi's eighteen guidelines operationalise the same commitments for AI products, including the obligations to make clear what the system can do, to make clear why it did something, to support efficient invocation and dismissal, and to adapt over time <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span>.</p>
+
+  <h3>3.5 Time: interruption, resumption, and the shape of a session</h3>
+  <p>Interruption research supplies the cost side of the ledger with unusual precision. Adamczyk and Bailey interrupted users at different moments inside a task and found that timing alone changed performance, annoyance and even the perceived competence of the interrupter; boundaries between subtasks were markedly safer than moments inside one <span class="cites">[<a class="cite" href="#ref-1">1</a>]</span>. Monk, Trafton and Boehm-Davis showed that resumption cost grows with both the duration and the cognitive demand of the interruption, consistent with a memory-for-goals account in which the suspended goal decays and must be re-established <span class="cites">[<a class="cite" href="#ref-4">4</a>, <a class="cite" href="#ref-35">35</a>]</span>. Leroy's attention-residue findings add that even after returning, part of attention remains on the interrupting task — the cost is not fully paid at the moment of resumption <span class="cites">[<a class="cite" href="#ref-30">30</a>]</span>.</p>
+
+  <p>Two constraints bound the transfer of these findings to learning. First, most interruption studies use tasks with legible boundaries and short horizons; open-ended mathematical or research work has fewer natural breakpoints, so the practical question becomes how to <em>infer</em> a boundary rather than how to detect a known one. Second, the costs measured are task-level, whereas Lemma cares about learning-level effects that may run in the opposite direction: an interruption that harms the current solution may still improve retention if it forces retrieval.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 560" role="img" aria-labelledby="fig1t fig1d" xmlns="http://www.w3.org/2000/svg">
+      <title id="fig1t">Conceptual map of the five theoretical clusters and their relations</title>
+      <desc id="fig1d">A layered diagram: context at the top, three explanatory clusters beneath it, two control boxes below those, the participation act, and two outcomes with a feedback loop.</desc>
+      <defs>
+        <marker id="ar" markerWidth="7" markerHeight="6" refX="6.5" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#141414"/>
+        </marker>
+      </defs>
+      <style>
+        .bx{fill:#fff;stroke:#141414;stroke-width:1}
+        .bx2{fill:#f6f6f2;stroke:#8f8f8f;stroke-width:1}
+        .t{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:11px;fill:#141414}
+        .ts{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10px;fill:#6b6b6b}
+        .th{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:9.5px;letter-spacing:.12em;fill:#8f8f8f}
+        .ln{stroke:#141414;stroke-width:1;fill:none}
+        .lnd{stroke:#a8a8a8;stroke-width:1;fill:none;stroke-dasharray:3 4}
+      </style>
+
+      <text class="th" x="24" y="20">CONTEXT LAYER</text>
+      <rect class="bx" x="24" y="30" width="712" height="46"/>
+      <text class="t" x="40" y="49">Workspace state</text>
+      <text class="ts" x="40" y="64">objects · current move · history</text>
+      <text class="t" x="212" y="49">Interaction history</text>
+      <text class="ts" x="212" y="64">tried · rejected · agreed</text>
+      <text class="t" x="404" y="49">Learner state</text>
+      <text class="ts" x="404" y="64">prior knowledge · load · regulation</text>
+      <text class="t" x="646" y="49">Time</text>
+      <text class="ts" x="646" y="64">session · span</text>
+
+      <text class="th" x="24" y="106">EXPLANATORY CLUSTERS</text>
+      <rect class="bx" x="24" y="116" width="210" height="150"/>
+      <text class="t" x="38" y="137" style="font-weight:600">Learner cognition</text>
+      <text class="ts" x="38" y="159">Working-memory limits</text>
+      <text class="ts" x="38" y="176">Schema construction</text>
+      <text class="ts" x="38" y="193">Active / constructive / interactive</text>
+      <text class="ts" x="38" y="210">Epistemic action &amp; offloading</text>
+      <text class="ts" x="38" y="227">Retention vs. performance</text>
+
+      <rect class="bx" x="275" y="116" width="210" height="150"/>
+      <text class="t" x="289" y="137" style="font-weight:600">Assistance</text>
+      <text class="ts" x="289" y="159">Contingency &amp; fading</text>
+      <text class="ts" x="289" y="176">Assistance dilemma</text>
+      <text class="ts" x="289" y="193">Expertise reversal</text>
+      <text class="ts" x="289" y="210">Productive failure</text>
+      <text class="ts" x="289" y="227">Help-seeking behaviour</text>
+
+      <rect class="bx" x="526" y="116" width="210" height="150"/>
+      <text class="t" x="540" y="137" style="font-weight:600">Coordination</text>
+      <text class="ts" x="540" y="159">Grounding &amp; least effort</text>
+      <text class="ts" x="540" y="176">Joint problem space</text>
+      <text class="ts" x="540" y="193">Co- and shared regulation</text>
+      <text class="ts" x="540" y="210">Repair preference</text>
+      <text class="ts" x="540" y="227">Articulation work</text>
+
+      <path class="ln" d="M129 266 V288"/>
+      <path class="ln" d="M380 266 V288"/>
+      <path class="ln" d="M631 266 V288"/>
+      <path class="ln" d="M129 288 H631"/>
+
+      <rect class="bx2" x="150" y="302" width="210" height="84"/>
+      <text class="t" x="164" y="323" style="font-weight:600">Initiative &amp; control</text>
+      <text class="ts" x="164" y="343">Expected value of acting</text>
+      <text class="ts" x="164" y="359">Levels of automation</text>
+      <text class="ts" x="164" y="375">Directability · observability</text>
+
+      <rect class="bx2" x="400" y="302" width="210" height="84"/>
+      <text class="t" x="414" y="323" style="font-weight:600">Interruption cost</text>
+      <text class="ts" x="414" y="343">Moment within task</text>
+      <text class="ts" x="414" y="359">Resumption lag · residue</text>
+      <text class="ts" x="414" y="375">Transience of speech</text>
+
+      <path class="ln" d="M255 288 V302" marker-end="url(#ar)"/>
+      <path class="ln" d="M505 288 V302" marker-end="url(#ar)"/>
+
+      <path class="ln" d="M255 386 V406"/>
+      <path class="ln" d="M505 386 V406"/>
+      <path class="ln" d="M255 406 H505"/>
+      <path class="ln" d="M380 406 V428" marker-end="url(#ar)"/>
+
+      <text class="th" x="24" y="424">PARTICIPATION ACT</text>
+      <rect class="bx" x="24" y="432" width="712" height="44"/>
+      <text class="t" x="40" y="452">Ask · Offer · Stay silent — each with an epistemic function, an intensity, a channel, and a persistence</text>
+      <text class="ts" x="40" y="467">any of these can be right; the question is which, when, and at what cost</text>
+
+      <path class="ln" d="M380 476 V496" marker-end="url(#ar)"/>
+      <text class="ts" x="188" y="512" style="fill:#141414">immediate performance</text>
+      <text class="ts" x="442" y="512" style="fill:#141414">durable learning: retention, transfer, independence</text>
+      <text class="ts" x="188" y="526" style="fill:#9a9a9a">measurable now</text>
+      <text class="ts" x="442" y="526" style="fill:#9a9a9a">what the product exists for</text>
+
+      <path class="lnd" d="M700 512 H748 V53 H740" marker-end="url(#ar)"/>
+      <text class="ts" x="736" y="540" text-anchor="end" style="fill:#8f8f8f">these two can diverge; the dashed path is the continuity claim</text>
+    </svg>
+    <figcaption><b>Figure 1.</b> The five clusters are not interchangeable explanations. The left column constrains what assistance is worth; the right column constrains what coordination is possible; the two lower boxes are the costs and the controls that decide whether an act happens at all. The dashed loop marks the point Lemma's continuity claim depends on: outcomes feed back into context, and that feedback is itself a design decision, not a storage feature.</figcaption>
+  </figure>
+
+  <div class="note">
+    <p><b>What the theory does not settle.</b> None of these frameworks was built for a participant that has no goals of its own, no persistent social standing, and no ability to be embarrassed by being wrong. Co-regulation theory in particular assumes two agents who each regulate themselves and negotiate goals; an AI regulates nothing of its own. Section 7 treats this asymmetry as the main threat to H3 and H4.</p>
+  </div>
+</section>
+
+<!-- ============================ 4 ============================ -->
+<section id="s4">
+  <h2><span class="num">Section 4</span>Literature review by research area</h2>
+  <p class="dek">Each subsection states what the area establishes, what it does not, and what it implies for a participation policy. Detailed paper-level extraction is in Section 5; the tables here cover the supporting corpus.</p>
+
+  <!-- ---------- 4.1 ---------- -->
+  <h3 id="s4-1">4.1 Learning, scaffolding and learner agency</h3>
+
+  <p>The starting point is that assistance is a <em>relation</em>, not a quantity. Wood, Bruner and Ross described tutoring as a set of six contingent functions — recruitment, reduction of degrees of freedom, direction maintenance, marking critical features, frustration control, demonstration — and stressed that the tutor's task is to keep the learner in the region where success is possible with help and impossible without it <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span>. Contingency is doing the theoretical work: the same act is scaffolding or interference depending on the learner's state at that moment.</p>
+
+  <p>Van de Pol, Volman and Beishuizen's decade review confirms the contingency claim empirically and adds the diagnostic problem: effective scaffolding depends on the teacher's continuous diagnosis of understanding, and this diagnosis is the least reliable part of practice <span class="cites">[<a class="cite" href="#ref-57">57</a>]</span>. That is a warning about the difficulty of the judgement, not about its value.</p>
+
+  <p>The assistance dilemma gives the trade-off a measurable form. Koedinger and Aleven's experiments with cognitive tutors varied how much help was given, when, and in what form; the consistent result is that assistance choices shift the balance between performance during practice and learning that survives it, so "more help" is not a coherent design goal <span class="cites">[<a class="cite" href="#ref-27">27</a>]</span>. The sharpest version of this is expertise reversal: support that compensates for missing schemas becomes redundant load once the schemas exist, and redundancy costs learning <span class="cites">[<a class="cite" href="#ref-21">21</a>]</span>. Soderstrom and Bjork's review explains why this is easy to miss in product metrics: performance during training is a biased index of learning, and conditions that slow the learner down often produce more durable outcomes <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span>.</p>
+
+  <p>Two lines of work push against the assumption that the AI should resolve difficulty. Kapur's productive failure studies show that attempting ill-structured problems before instruction, and failing, can prepare students to learn more from subsequent instruction than being taught the well-structured procedure first <span class="cites">[<a class="cite" href="#ref-22">22</a>]</span>. Aleven and colleagues' review of help-seeking shows the complementary behavioural fact: learners in interactive environments do not use help well — they avoid it when it would threaten self-esteem, request it when the answer is within reach, and rarely use it strategically <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>. Roll and colleagues showed that this is trainable: metacognitive feedback aimed at help-seeking behaviour improved both the behaviour and subsequent learning <span class="cites">[<a class="cite" href="#ref-47">47</a>]</span>.</p>
+
+  <p>Where does that leave "the learner retains control"? It leaves it as a value, not a mechanism. Learner control is well motivated — autonomy support, avoidance of dependency, respect for the learner's own goals — but it is not self-executing, because the population least likely to request help appropriately is precisely the population that most needs it <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>. Any design in which the learner must initiate inherits that bias.</p>
+
+  <h4>What this area establishes</h4>
+  <ul>
+    <li>Assistance effects are contingent on the learner's current knowledge and on the moment of intervention, and can reverse sign <span class="cites">[<a class="cite" href="#ref-21">21</a>, <a class="cite" href="#ref-27">27</a>]</span>.</li>
+    <li>Performance and learning must be measured separately, and they frequently diverge <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span>.</li>
+    <li>Learners' spontaneous help-seeking is systematically suboptimal, and trainable <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>.</li>
+  </ul>
+  <h4>What it does not establish</h4>
+  <ul>
+    <li>That an AI should decide when to help. Almost all of this work studies human tutors or tutors with hand-authored, narrow-domain models; the judgement of "current understanding" was made by a person or by a domain model, not by a general-purpose language model.</li>
+    <li>That withholding help is better than offering it. The productive-failure results concern the <em>sequence</em> of generation and instruction, not the behaviour of a partner who could intervene at any moment.</li>
+  </ul>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 4. Studies supporting the scaffolding-and-agency argument</caption>
+    <thead><tr><th style="width:34%">Study</th><th>Relevant contribution</th><th style="width:12%">Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Wood, Bruner &amp; Ross (1976) <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span></td><td>Six contingent tutorial functions; scaffolding as interactional achievement.</td><td><span class="tag t">Theory</span></td></tr>
+      <tr><td>Pea (2004) <span class="cites">[<a class="cite" href="#ref-43">43</a>]</span></td><td>Scaffolding has been over-extended; technological and human scaffolding differ in diagnosis.</td><td><span class="tag t">Theory</span></td></tr>
+      <tr><td>Van de Pol et al. (2010) <span class="cites">[<a class="cite" href="#ref-57">57</a>]</span></td><td>Contingency is the active ingredient; diagnosis is the weak link.</td><td><span class="tag i">Review</span></td></tr>
+      <tr><td>Koedinger &amp; Aleven (2007) <span class="cites">[<a class="cite" href="#ref-27">27</a>]</span></td><td>Assistance choices trade performance against learning; no monotonic optimum.</td><td><span class="tag i">Indirect</span></td></tr>
+      <tr><td>Kalyuga et al. (2003) <span class="cites">[<a class="cite" href="#ref-21">21</a>]</span></td><td>Expertise reversal: effective support for novices can harm experts.</td><td><span class="tag i">Indirect</span></td></tr>
+      <tr><td>Soderstrom &amp; Bjork (2015) <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span></td><td>Performance ≠ learning; measurement implication for any evaluation.</td><td><span class="tag i">Review</span></td></tr>
+      <tr><td>Kapur (2008) <span class="cites">[<a class="cite" href="#ref-22">22</a>]</span></td><td>Generation attempts before instruction improve later learning despite failure.</td><td><span class="tag i">Indirect</span></td></tr>
+      <tr><td>Aleven et al. (2003) <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span></td><td>Help-seeking is suboptimal and interacts with metacognitive skill.</td><td><span class="tag i">Review</span></td></tr>
+      <tr><td>Roll et al. (2011) <span class="cites">[<a class="cite" href="#ref-47">47</a>]</span></td><td>Metacognitive feedback improves help-seeking and learning.</td><td><span class="tag i">Indirect</span></td></tr>
+      <tr><td>Chi (2009) <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span></td><td>Interactive &gt; constructive &gt; active as a hypothesis about learning activity.</td><td><span class="tag t">Theory</span></td></tr>
+      <tr><td>VanLehn (2011) <span class="cites">[<a class="cite" href="#ref-58">58</a>]</span></td><td>Tutoring gains plateau at step-level granularity; human tutoring is not dramatically superior.</td><td><span class="tag i">Review</span></td></tr>
+      <tr><td>Hattie &amp; Timperley (2007) <span class="cites">[<a class="cite" href="#ref-16">16</a>]</span></td><td>Feedback effects range from strong positive to negative depending on type and target.</td><td><span class="tag i">Review</span></td></tr>
+      <tr><td>Kestin et al. (2025) <span class="cites">[<a class="cite" href="#ref-23">23</a>]</span></td><td>Pedagogically constrained AI tutor outperformed an active-learning class.</td><td><span class="tag d">Direct</span></td></tr>
+      <tr><td>Bastani et al. (2025) <span class="cites">[<a class="cite" href="#ref-7">7</a>]</span></td><td>Unconstrained model access raised practice scores and lowered later unaided scores.</td><td><span class="tag d">Direct</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ---------- 4.2 ---------- -->
+  <h3 id="s4-2">4.2 Co-regulation and human–AI collaboration</h3>
+
+  <p>The regulatory framing is the most useful available vocabulary for what Lemma wants, because it locates the unit of analysis between two parties rather than inside either. Järvelä and Hadwin's tripartite distinction — self-, co-, and socially shared regulation — separates three things that product language tends to blur: a learner regulating their own work; a partner temporarily supporting that regulation; and a group whose regulation is jointly owned <span class="cites">[<a class="cite" href="#ref-20">20</a>]</span>. Lemma's AI is designed for the middle category, but its workspace ambitions pull it toward the third, and the third requires capacities (shared goal commitment, socio-emotional regulation, negotiated task ownership) that an AI does not have.</p>
+
+  <p>Co-regulation has an identifiable microstructure. Volet's analyses of collaborative learning found that high-level co-regulation involves one partner addressing the other's planning, monitoring or evaluation — not merely answering the content question — and that it emerged in some groups and then decayed <span class="cites">[<a class="cite" href="#ref-59">59</a>]</span>. Roschelle and Teasley's joint problem space explains why decay is the default: the shared representation has to be continuously maintained, and it degrades when participants stop checking it <span class="cites">[<a class="cite" href="#ref-48">48</a>]</span>.</p>
+
+  <p>Grounding theory supplies the cost model for that maintenance. Clark and Brennan's formulation — that grounding requires the participants to reach mutual belief at a cost paid jointly, and that the medium determines which costs dominate <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span> — is arguably the single most useful framework for the workspace claim, because it predicts exactly which costs a shared visual context removes. When both parties can see the object, reference can be short and deixis replaces description; when they cannot, the same reference requires a description, a check, and often a repair <span class="cites">[<a class="cite" href="#ref-10">10</a>]</span>.</p>
+
+  <p>Molenaar's hybrid human-AI regulation is the clearest existing attempt to move this into AI design, using a detect–diagnose–act structure in which the target of support is the learner's regulatory process rather than the task content <span class="cites">[<a class="cite" href="#ref-34">34</a>]</span>. Its importance for Lemma is that it reframes the participation question: the AI is not choosing whether to help with the mathematics, it is choosing whether to support planning, monitoring or evaluation, and those have different interruption costs.</p>
+
+  <p>Sebanz, Bekkering and Knoblich's work on joint action adds a constraint from motor cognition: co-representation of a partner's task is automatic and can interfere with one's own performance <span class="cites">[<a class="cite" href="#ref-51">51</a>]</span>. In a learning setting this predicts a cost that is usually invisible — knowing that a partner is watching and may act changes how the learner represents the task, even when the partner does nothing. This is the theoretical basis for treating "AI stays quiet but present" as a distinct condition from "no AI", not as a control condition.</p>
+
+  <h4>Where the human–human analogy holds, and where it breaks</h4>
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 5. Transfer of collaboration theory to human–AI collaboration</caption>
+    <thead><tr><th style="width:26%">Theory</th><th style="width:37%">Transfers</th><th>Breaks</th></tr></thead>
+    <tbody>
+      <tr><td>Grounding <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span></td><td>Cost structure of reference and repair maps almost directly; workspace grounding is a cost-reduction claim.</td><td>Mutual belief is asymmetric: the AI's "understanding" cannot be verified by the AI, only inferred by the learner from behaviour.</td></tr>
+      <tr><td>Least collaborative effort <span class="cites">[<a class="cite" href="#ref-10">10</a>]</span></td><td>Predicts that learners will use underspecified references and expect the system to resolve them.</td><td>Human partners can also adjust their own description; a system that mis-resolves cannot negotiate beyond the options it generates.</td></tr>
+      <tr><td>Joint problem space <span class="cites">[<a class="cite" href="#ref-48">48</a>]</span></td><td>Gives a concrete account of what must be shared: goals, current state, proposed moves.</td><td>The AI has no independent stake in the goal, so "shared" commitment is simulated rather than reciprocal.</td></tr>
+      <tr><td>Co-regulation <span class="cites">[<a class="cite" href="#ref-20">20</a>, <a class="cite" href="#ref-59">59</a>]</span></td><td>Identifies regulatory targets (planning, monitoring, evaluation) that are better intervention points than content.</td><td>Requires the partner to regulate itself; the AI has no regulation to contribute, only pattern-matched support.</td></tr>
+      <tr><td>Joint action <span class="cites">[<a class="cite" href="#ref-51">51</a>]</span></td><td>Predicts that mere presence alters the learner's task representation.</td><td>Co-representation findings assume a human partner with observable intentions; an AI's intentions must be displayed to exist.</td></tr>
+      <tr><td>Distributed cognition <span class="cites">[<a class="cite" href="#ref-17">17</a>]</span></td><td>Justifies treating workspace + AI + learner as one cognitive system.</td><td>The system's components are not equally accountable; only the learner can be wrong in a way that matters to them.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ---------- 4.3 ---------- -->
+  <h3 id="s4-3">4.3 Mixed-initiative interaction and selective participation</h3>
+
+  <p>Mixed initiative is the area with the most directly usable structure, and also the one with the largest gap between theory and learning evidence. Horvitz's 1999 paper remains the canonical statement: the system should act when the expected value of acting exceeds the expected cost, where value is discounted by the probability that the system's inference about the user's needs is correct, and cost includes the user's effort to notice, interpret and correct the action <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>. Three of his principles are effectively design requirements for Lemma: consider uncertainty about the user's goals explicitly; use cheap interaction to reduce that uncertainty rather than guessing; and make correction cheap because some guesses will be wrong.</p>
+
+  <p>The lineage matters. Carbonell's SCHOLAR system already embedded the idea that a tutoring program should take initiative when the student's state warranted it and yield when it did not <span class="cites">[<a class="cite" href="#ref-8">8</a>]</span>; Allen, Guinn and Horvitz generalised the concept across dialogue systems <span class="cites">[<a class="cite" href="#ref-3">3</a>]</span>; Terveen framed human–computer collaboration as a matter of shared goals and adjustable initiative rather than command <span class="cites">[<a class="cite" href="#ref-56">56</a>]</span>. The idea is therefore not new to AI, and its repeated re-discovery in conversational products has not been matched by evidence about learning.</p>
+
+  <p>Automation research supplies the control vocabulary that mixed initiative lacks. Parasuraman, Sheridan and Wickens separate <em>what</em> is automated from <em>how much</em>, and make the crucial point that automation does not replace human activity so much as restructure it, creating new coordination demands <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span>. Parasuraman and Riley's taxonomy of use, misuse, disuse and abuse names the ways operators adapt badly: over-trust, complacency, abandonment <span class="cites">[<a class="cite" href="#ref-41">41</a>]</span>. Endsley and Kiris show the structural consequence of high automation: with the operator out of the loop, situation awareness degrades and takeover is slow and error-prone <span class="cites">[<a class="cite" href="#ref-14">14</a>]</span>.</p>
+
+  <p>For a learning agent, the "out-of-the-loop" finding has an exact analogue that the literature has not tested: a learner who has ceded the monitoring function to the AI may be unable to resume it when the AI is unavailable, wrong, or simply silent. This is not the same claim as "dependency"; it is a claim about situation awareness of one's own problem state, and it is testable with existing instruments.</p>
+
+  <p>Klein and colleagues' "team player" framing is the best available corrective to purely probabilistic accounts. Their ten challenges include a basic compact to participate in joint activity, <em>directability</em> (the human can redirect the agent), <em>observability</em> (the agent's state and intent are visible), and predictability <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span>. The lesson for Lemma is that a well-calibrated intervenor that cannot be redirected is not a team player. Amershi's guidelines translate these into product-level obligations, notably: make clear what the system can do; make clear why it did what it did; support efficient invocation and dismissal; and adapt cautiously over time <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span>.</p>
+
+  <p>Shneiderman and Maes' debate is worth keeping in view because it anticipates the current argument. Maes argued for agents that act on the user's behalf; Shneiderman argued that direct manipulation preserves control and predictability and that autonomous agents shift the burden of monitoring onto the user <span class="cites">[<a class="cite" href="#ref-52">52</a>]</span>. Lemma's workspace is the direct-manipulation side of that debate and its voice layer is the agent side; the paper's value is that it predicts the specific friction at the seam.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 6. Initiative, control and interruption: what each framework contributes</caption>
+    <thead><tr><th style="width:26%">Framework</th><th>Contribution to the participation decision</th><th style="width:22%">Missing for learning</th></tr></thead>
+    <tbody>
+      <tr><td>Mixed initiative <span class="cites">[<a class="cite" href="#ref-3">3</a>, <a class="cite" href="#ref-18">18</a>]</span></td><td>Formalises act/don't-act as expected value with uncertainty and correction cost.</td><td>Value function is task utility, not learning; no developmental account.</td></tr>
+      <tr><td>Human–computer collaboration <span class="cites">[<a class="cite" href="#ref-8">8</a>, <a class="cite" href="#ref-56">56</a>]</span></td><td>Initiative as adjustable, goal-dependent, and historically antecedent to chat.</td><td>Pre-LLM; assumes a structured domain model.</td></tr>
+      <tr><td>Levels of automation <span class="cites">[<a class="cite" href="#ref-41">41</a>, <a class="cite" href="#ref-42">42</a>]</span></td><td>Separates type from level; names misuse, disuse and complacency.</td><td>Developed for operators under time pressure, not learners over months.</td></tr>
+      <tr><td>Team player <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span></td><td>Directability, observability, predictability as requirements on a partner.</td><td>No guidance on pedagogy; assumes a shared operational goal.</td></tr>
+      <tr><td>Human–AI guidelines <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span></td><td>Checklist-level obligations, including dismissal and explanation.</td><td>Validated for perceived quality, not for learning outcomes.</td></tr>
+      <tr><td>Direct manipulation vs. agents <span class="cites">[<a class="cite" href="#ref-52">52</a>]</span></td><td>Names the control/predictability cost of delegation.</td><td>Binary framing; Lemma needs both at once.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note"><b>The gap that matters most.</b> Mixed-initiative theory tells you how to decide, but the value term it assumes is the user's task utility. Learning value is not task utility: the contribution that maximises the quality of the current solution may minimise the learning. Every application of Horvitz's framework to education therefore requires replacing the value term, and no paper in this corpus does so empirically.</div>
+
+  <!-- ---------- 4.4 ---------- -->
+  <h3 id="s4-4">4.4 Attention, cognitive load and interruption</h3>
+
+  <p>Interruption research is where the cost side of Lemma's ledger is quantified. Its central finding is that the cost of an interruption is not a property of its content but of its <em>relation to the task's structure</em>. Adamczyk and Bailey varied only the moment of interruption within an identical task and found differences in performance, annoyance, and the social attribution the user made about the interrupter; boundaries between subtasks were consistently safer than moments inside one <span class="cites">[<a class="cite" href="#ref-1">1</a>]</span>. Monk, Trafton and Boehm-Davis showed that resumption time rises with both the duration and the cognitive demand of the interruption, and that this profile is consistent with a memory-for-goals account in which the suspended goal decays and must be reinstated <span class="cites">[<a class="cite" href="#ref-4">4</a>, <a class="cite" href="#ref-35">35</a>]</span>. Iqbal and Horvitz's field data show the same structure outside the laboratory: interruptions in real work produce measurable resumption lags and frequently derail the suspended task altogether <span class="cites">[<a class="cite" href="#ref-19">19</a>]</span>.</p>
+
+  <p>Two additional findings make the accounting worse than a simple delay. Leroy's attention-residue experiments show that switching costs persist after the person has returned, because part of attention remains with the interrupting task <span class="cites">[<a class="cite" href="#ref-30">30</a>]</span>. And Bailey and Konstan's measurements show that even brief interruptions raise error rates and negative affect, not just completion time <span class="cites">[<a class="cite" href="#ref-6">6</a>]</span>. A conversational intervention, which requires the learner to parse a sentence, decide whether it is relevant, and formulate a response, is not brief in this sense.</p>
+
+  <p>The countervailing evidence is that interruption cost is not uniform across channels. Multiple-resource theory holds that tasks drawing on different perceptual and cognitive resources interfere less than tasks drawing on the same ones <span class="cites">[<a class="cite" href="#ref-61">61</a>]</span>. Speech input and output occupy auditory and verbal resources; visual workspace manipulation occupies visual and spatial resources. On this account, a short spoken intervention during visual manipulation should cost less than a text panel that must be read in the same visual field. This is the strongest theoretical argument for voice in Lemma — and it is a theory about <em>resource competition</em>, not about naturalness.</p>
+
+  <p>The same theory predicts where voice fails. If the learner is reading prose, the verbal channel is already occupied, and spoken assistance competes directly with the material. The modality effect — better learning from spoken rather than written text accompanying diagrams <span class="cites">[<a class="cite" href="#ref-15">15</a>]</span> — holds for short, self-paced segments and reverses when the audio is long and transient, because the learner cannot re-inspect what has already been said <span class="cites">[<a class="cite" href="#ref-28">28</a>]</span>. Singh, Marcus and Ayres showed that segmenting transient audio mitigates but does not eliminate the disadvantage <span class="cites">[<a class="cite" href="#ref-53">53</a>]</span>. The practical implication is unusually clear: <em>speech is a bad container for content the learner may need to revisit</em>.</p>
+
+  <p>Two further lines bear on the "continuous help" worry. Risko and Gilbert's review of cognitive offloading shows that people offload strategically to reduce effort, and that offloading is often beneficial for the immediate task while reducing the internal representations needed later <span class="cites">[<a class="cite" href="#ref-46">46</a>]</span>. Lee and colleagues' survey of 319 knowledge workers found that higher confidence in generative AI was associated with less critical thinking and a shift from producing to verifying, with participants describing the effort as moving rather than disappearing <span class="cites">[<a class="cite" href="#ref-29">29</a>]</span>. Neither study is about learning, and neither measures retention; both are consistent with the concern that continuous availability changes what the user does with their own mind.</p>
+
+  <h4>The trade-off, stated precisely</h4>
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 7. Where voice reduces cost and where it adds load</caption>
+    <thead><tr><th style="width:24%">Condition</th><th>Effect</th><th style="width:30%">Mechanism</th></tr></thead>
+    <tbody>
+      <tr><td>Eyes and hands engaged with workspace objects</td><td>Voice lowers cost of expressing intent</td><td>Different resource pools; no visual search or mode switch <span class="cites">[<a class="cite" href="#ref-61">61</a>]</span></td></tr>
+      <tr><td>Learner reading prose</td><td>Voice raises cost</td><td>Verbal channel already occupied; articulatory and phonological interference <span class="cites">[<a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-61">61</a>]</span></td></tr>
+      <tr><td>Short, coordination-level content</td><td>Voice acceptable</td><td>Low transience penalty; no need to re-inspect <span class="cites">[<a class="cite" href="#ref-53">53</a>]</span></td></tr>
+      <tr><td>Long explanatory content</td><td>Voice harmful</td><td>Transience; no self-pacing; re-reading impossible <span class="cites">[<a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-53">53</a>]</span></td></tr>
+      <tr><td>Precise reference to an object</td><td>Voice insufficient alone</td><td>Deixis requires shared visual access; speech alone needs description <span class="cites">[<a class="cite" href="#ref-10">10</a>, <a class="cite" href="#ref-60">60</a>]</span></td></tr>
+      <tr><td>Public or shared physical space</td><td>Voice adds social cost</td><td>Overhearers; accountability for utterances <span class="cites">[<a class="cite" href="#ref-44">44</a>]</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ---------- 4.5 ---------- -->
+  <h3 id="s4-5">4.5 Voice as an interaction modality</h3>
+
+  <p>The literature on voice is less about speech than about <em>modality assignment</em>: which content belongs in which channel. Oviatt's work is the most useful corrective to assumptions that speech is natural and therefore preferable. Her "ten myths" paper argues, among other things, that users do not uniformly prefer speech, that multimodal integration is technically and cognitively complex, and that the modality that looks easiest for the designer is often the one that imposes most work on the user <span class="cites">[<a class="cite" href="#ref-40">40</a>]</span>.</p>
+
+  <p>The empirical basis for assignment comes from studies of spontaneous multimodal interaction. Users given both speech and pen do not use them interchangeably: they reserve speech for descriptive and semantic content and pen for spatial and directly manipulable content, and they switch when the content type changes <span class="cites">[<a class="cite" href="#ref-13">13</a>, <a class="cite" href="#ref-39">39</a>]</span>. This is a finding about <em>fit</em>, and it maps unusually well onto Lemma's architecture. Naming an assumption, stating an intention, accepting or rejecting a suggestion: descriptive, speech-suited. Selecting a term, adjusting a parameter, pointing at a step: spatial, manipulation-suited.</p>
+
+  <p>The counter-evidence is about expectation. Luger and Sellen's interviews with conversational-agent users documented a persistent gap between the promise of conversation and the experience of command-and-control: participants described the agents as brittle, limited, and socially awkward — "like having a really bad PA" <span class="cites">[<a class="cite" href="#ref-32">32</a>]</span>. Porcheron and colleagues' month-long in-home study showed that voice use is embedded in social accountability: people design their utterances for overhearers, repair the device's understanding in front of others, and treat speech as a public act rather than a private command <span class="cites">[<a class="cite" href="#ref-44">44</a>]</span>. Clark and colleagues' analysis of conversational quality reaches a related conclusion: conversational interaction is not a universal ideal, and users often prefer efficient, non-conversational interaction for instrumental tasks <span class="cites">[<a class="cite" href="#ref-12">12</a>]</span>.</p>
+
+  <p>Nass and Moon's finding that people apply social rules to computers — politeness, reciprocity, gender stereotyping — matters here in a way that is easy to overlook <span class="cites">[<a class="cite" href="#ref-37">37</a>]</span>. If a spoken agent is treated as a social actor, then rejecting its suggestion is not a neutral interface action; it is a mildly social one. That cuts both ways for Lemma: social presence may increase engagement, and it may also raise the cost of saying "no", which is precisely the control action H4 depends on.</p>
+
+  <div class="note"><b>What does not exist.</b> No study in this corpus examines voice as a coordination channel over a shared visual learning workspace. The nearest analogues are multimodal desktop systems from the 1990s and medical or field settings; the nearest learning evidence is about spoken versus written <em>instructional text</em>, which is output, not coordination. H6 is therefore a design hypothesis with plausible mechanisms and no direct test — and the report classifies it that way.</div>
+
+  <!-- ---------- 4.6 ---------- -->
+  <h3 id="s4-6">4.6 Workspace grounding and shared context</h3>
+
+  <p>Referring is a collaborative process, not a labelling act. Clark and Wilkes-Gibbs showed that speakers and addressees iterate on a description until they reach a version both accept, and that they do so under a principle of <em>least collaborative effort</em>: the pair minimises total effort, not the speaker's effort <span class="cites">[<a class="cite" href="#ref-10">10</a>]</span>. In their tangram task, references became shorter and more conventional across trials as the pair accumulated shared history. Two consequences follow for Lemma. First, a learner saying "this assumption" is behaving optimally, not vaguely. Second, the system's ability to resolve such references is not a convenience feature; it is the precondition for the interaction being cheap enough to be worth having.</p>
+
+  <p>Schegloff, Jefferson and Sacks' analysis of repair adds a normative constraint that design tends to violate. In conversation there is a strong preference for <em>self</em>-repair: participants give the speaker of a trouble-source the first opportunity to fix it, and other-repair is dispreferred <span class="cites">[<a class="cite" href="#ref-49">49</a>]</span>. Translated to a learning workspace, an AI that immediately corrects a learner's misstatement is doing other-repair at the earliest possible point — the interactional equivalent of interrupting. The preference structure suggests a cheaper and less face-threatening move: mark the trouble and let the learner repair it.</p>
+
+  <p>The workspace itself is not passive. Zhang and Norman showed that external representations change the difficulty and even the form of a cognitive task, so that what a person can do depends on how the problem is laid out <span class="cites">[<a class="cite" href="#ref-63">63</a>]</span>. Kirsh and Maglio showed that some actions in a workspace are performed to change the cognitive situation rather than the physical one — epistemic rather than pragmatic action <span class="cites">[<a class="cite" href="#ref-25">25</a>]</span>. Together these imply that a shared workspace is a <em>cognitive resource jointly operated</em>, not a display surface for a dialogue. An AI that treats the workspace as context for its utterances misses the point; the workspace is where a large part of the thinking happens.</p>
+
+  <p>Whittaker's review of "talking about things" in mediated communication provides the most directly relevant empirical summary: speech alone is often sufficient for effective conversation; visual information about the objects of work is generally more valuable than visual information about the participants; and disjoint visual perspectives undermine communication <span class="cites">[<a class="cite" href="#ref-60">60</a>]</span>. For a system that has both speech and a shared view of the objects, this is close to a design brief.</p>
+
+  <p>Suchman's critique of plan-based models of action is the theoretical reason not to over-intellectualise the learner's intent <span class="cites">[<a class="cite" href="#ref-55">55</a>]</span>. Plans are resources for situated action, not determinants of it; what a person is doing is observable in the specifics of the situation rather than derivable from a plan the system has inferred. An AI that grounds its interpretation in workspace state and recent action is following Suchman's advice; one that grounds it in a model of the learner's "learning objective" is not.</p>
+
+  <!-- ---------- 4.7 ---------- -->
+  <h3 id="s4-7">4.7 Long-term collaboration and continuity</h3>
+
+  <p>This is the thinnest area for direct evidence and the one where Lemma's ambitions most exceed the literature. Olson and Olson's decade of field and laboratory work concluded that the decisive variable in geographically distributed collaboration is not bandwidth but <em>common ground</em> — and that distance matters because it raises the cost of maintaining it <span class="cites">[<a class="cite" href="#ref-38">38</a>]</span>. Their framework lists the factors that make collaboration "ready": common ground, coupling of work, collaboration technology readiness, and culture. Applied to a long-horizon AI partner, the framework predicts that continuity is valuable exactly to the extent that it reduces the cost of re-establishing common ground — and that accumulated, unverified context can be worse than none, because it produces false confidence in shared understanding.</p>
+
+  <p>Transactive memory supplies the mechanism. Lewis's validated scale decomposes a transactive memory system into specialisation (who knows what), credibility (how much to trust each member's expertise) and coordination (how well access is orchestrated) <span class="cites">[<a class="cite" href="#ref-31">31</a>]</span>. Human teams with well-developed transactive systems perform better. A learner working with an AI may develop a transactive relation in which the AI is assumed to hold certain knowledge — and the credibility component is the risk, because it must be calibrated by experience, and language models are confidently wrong at a rate that makes experience a noisy teacher.</p>
+
+  <p>Collaborative memory research adds a caution against assuming that shared records improve memory. Rajaram and Pereira-Pasarin's review documents both benefits (error correction, transactive gain) and costs (retrieval disruption, collaborative inhibition — groups recall less than the sum of their members' individual recall) <span class="cites">[<a class="cite" href="#ref-45">45</a>]</span>. The design implication is that a persistent record of prior reasoning is not automatically an aid: it can anchor the learner to a faulty earlier framing, and it can substitute for the reconstructive effort that produces durable memory.</p>
+
+  <p>Schmidt and Bannon's concept of <em>articulation work</em> names the invisible labour of coordinating a distributed activity — scheduling, aligning representations, repairing breakdowns <span class="cites">[<a class="cite" href="#ref-50">50</a>]</span>. A collaboration partner is valuable to the extent that it absorbs articulation work rather than generating it. This gives a clean test for any continuity feature: does it reduce the work the learner must do to re-enter their own prior thinking, or does it add a surface the learner must now maintain?</p>
+
+  <div class="note"><b>Honest gap.</b> Four of the five works in this area study human teams. The one AI-specific source <span class="cites">[<a class="cite" href="#ref-34">34</a>]</span> is conceptual. There is no longitudinal study in this corpus that measures learning outcomes of a persistent AI partner across sessions, and the product claim in H5 should be treated as unvalidated rather than as supported by analogy.</div>
+</section>
+
+<!-- ============================ 5 ============================ -->
+<section id="s5">
+  <h2><span class="num">Section 5</span>Key paper analysis</h2>
+
+  <p class="dek">Twenty-two works are analysed against a fixed schema. Evidence class follows Section 2.3; "basis" records what this review actually consulted, and no entry claims a full reading that did not occur.</p>
+
+  <!-- 1 -->
+  <article class="paper">
+    <p class="ph">Key paper 1 · Area I</p>
+    <h3>The role of tutoring in problem solving</h3>
+    <p class="src">Wood, Bruner &amp; Ross (1976). <i>Journal of Child Psychology and Psychiatry</i>, 17(2), 89–100. <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>What does a tutor actually do that a learner cannot do alone, and how is that support organised in interaction?</dd>
+      <dt>Theory</dt><dd>Scaffolding as a contingent, interactional achievement rather than a property of a task or a tool; the learner is treated as constructing competence inside a supported region.</dd>
+      <dt>Method</dt><dd>Observational analysis of tutorial interaction with young children on a construction task; qualitative identification of tutorial functions.</dd>
+      <dt>Findings</dt><dd>Six functions characterise effective tutoring: recruiting interest, reducing degrees of freedom, maintaining direction, marking critical features, controlling frustration, and demonstrating. Each is contingent — its value depends on the learner's state at that moment, and the same act can be helpful or intrusive.</dd>
+      <dt>Limits</dt><dd>Small-sample, single-task observation with a human tutor; no outcome measures, no comparison condition, no account of how the tutor's diagnosis is made.</dd>
+      <dt>Relevance</dt><dd>Supplies the functional vocabulary for what an AI's contributions should be <em>for</em> — not "answering" but recruiting, narrowing, marking, and demonstrating. Its central claim is also the strongest argument against fixed intervention policies: contingency cannot be pre-scheduled.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract; the six functions are the paper's canonical contribution.</dd>
+    </dl>
+  </article>
+
+  <!-- 2 -->
+  <article class="paper">
+    <p class="ph">Key paper 2 · Area I</p>
+    <h3>Exploring the assistance dilemma in experiments with cognitive tutors</h3>
+    <p class="src">Koedinger &amp; Aleven (2007). <i>Educational Psychology Review</i>, 19(3), 239–264. <span class="cites">[<a class="cite" href="#ref-27">27</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>When should an instructional system provide assistance, and how much, given that assistance can both enable and displace learning?</dd>
+      <dt>Theory</dt><dd>Cognitive load theory and the "assistance dilemma": help trades immediate success against the cognitive processing that produces learning.</dd>
+      <dt>Method</dt><dd>Programmatic review of experiments run within the Cognitive Tutor / Andes lineage, plus a methodological argument about how to design studies that separate performance from learning.</dd>
+      <dt>Findings</dt><dd>Assistance choices reliably change the performance–learning balance; there is no global optimum. The paper argues that the field's default justification — "help helps" — conflates what learners accomplish with what they learn, and proposes experimental designs that hold task success constant while varying the cognitive work required.</dd>
+      <dt>Limits</dt><dd>Confined to well-structured quantitative domains with step-level models; the "learning" measures are mostly near-transfer post-tests; no treatment of open-ended or creative work.</dd>
+      <dt>Relevance</dt><dd>This is the paper that makes Lemma's H1 coherent: the argument for selective participation is not that help is bad but that help has a hidden cost that only delayed measurement reveals. It also explains why a product optimising session success will drift toward over-assistance.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract and the framework's subsequent use in the tutoring literature.</dd>
+    </dl>
+  </article>
+
+  <!-- 3 -->
+  <article class="paper">
+    <p class="ph">Key paper 3 · Area I</p>
+    <h3>The expertise reversal effect</h3>
+    <p class="src">Kalyuga, Ayres, Chandler &amp; Sweller (2003). <i>Educational Psychologist</i>, 38(1), 23–31. <span class="cites">[<a class="cite" href="#ref-21">21</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Why do instructional techniques that work for novices fail, or reverse, for more knowledgeable learners?</dd>
+      <dt>Theory</dt><dd>Cognitive load theory: once schemas exist, instructional support that compensates for their absence becomes redundant and consumes working memory that could be used for learning.</dd>
+      <dt>Method</dt><dd>Review and synthesis of experiments across domains (including technical and physics instruction) comparing supported and unsupported formats at different levels of prior knowledge.</dd>
+      <dt>Findings</dt><dd>Support that is highly effective for low-knowledge learners loses effectiveness and can produce worse outcomes for high-knowledge learners. The reversal is not a small interaction; in several studies the sign of the effect changes.</dd>
+      <dt>Limits</dt><dd>Expertise is usually operationalised by a domain test administered at one point; the effect is documented mostly for structured instructional materials, not for dialogue or assistance in open tasks.</dd>
+      <dt>Relevance</dt><dd>Directly constrains any "adaptive" participation policy: adaptation must be to what the learner has automated, not to task difficulty or to error rate. It also predicts that a system tuned on novice behaviour will become intrusive as the same learner gains competence — the fading problem, in a sharper form.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 4 -->
+  <article class="paper">
+    <p class="ph">Key paper 4 · Area I</p>
+    <h3>Productive failure</h3>
+    <p class="src">Kapur (2008). <i>Cognition and Instruction</i>, 26(3), 379–424. <span class="cites">[<a class="cite" href="#ref-22">22</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Can attempting problems before receiving instruction — and failing — produce better learning than being taught the procedure first?</dd>
+      <dt>Theory</dt><dd>Generation and failure as preparation for learning: prior attempts build the representational resources that later instruction can organise.</dd>
+      <dt>Method</dt><dd>Randomised classroom study with eleventh-grade science students in a computer-supported collaborative setting; two sequences compared (ill-structured then well-structured vs. well-structured throughout), with individual post-tests.</dd>
+      <dt>Findings</dt><dd>The generation-first groups produced poor solutions and struggled to define and analyse the problems, yet outperformed the comparison group on subsequent well-structured problem solving. The failure was real and the benefit was delayed, appearing after instruction rather than during the generative phase.</dd>
+      <dt>Limits</dt><dd>One topic (Newtonian kinematics), one age group, group-based generation; the mechanism is inferred rather than measured, and later work has shown the effect is sensitive to design details.</dd>
+      <dt>Relevance</dt><dd>Gives the strongest theoretical case for STAY QUIET during the learner's generative attempts. It also reframes what an AI should do after failure: not rescue the attempt, but use the attempt as the material for instruction. A tutor that prevents the failure removes the preparation.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 5 -->
+  <article class="paper">
+    <p class="ph">Key paper 5 · Area I</p>
+    <h3>Learning versus performance: An integrative review</h3>
+    <p class="src">Soderstrom &amp; Bjork (2015). <i>Perspectives on Psychological Science</i>, 10(2), 176–199. <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Why is performance during instruction an unreliable index of whether learning has occurred?</dd>
+      <dt>Theory</dt><dd>The learning–performance distinction, grounded in desirable difficulties: conditions that slow acquisition often improve retention and transfer, and vice versa.</dd>
+      <dt>Method</dt><dd>Integrative review across experimental psychology, motor learning and education.</dd>
+      <dt>Findings</dt><dd>Numerous manipulations improve performance while impairing retention, and impair performance while improving retention. The review argues that instruction should be evaluated on durable changes in comprehension and skill, not on in-session success, and that learners' own judgements of learning are similarly biased.</dd>
+      <dt>Limits</dt><dd>Most primary evidence comes from laboratory tasks with short retention intervals; the translation to months-long learning in open domains is argued rather than demonstrated.</dd>
+      <dt>Relevance</dt><dd>This is the measurement rule for the whole Voice System. Any claim that a participation policy "works" must specify which of the four outcomes it improves — in-session performance, learning during the task, independent performance afterwards, or transfer — because these can move in opposite directions.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 6 -->
+  <article class="paper">
+    <p class="ph">Key paper 6 · Area I</p>
+    <h3>Help seeking and help design in interactive learning environments</h3>
+    <p class="src">Aleven, Stahl, Schworm, Fischer &amp; Wallace (2003). <i>Review of Educational Research</i>, 73(3), 277–320. <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Do learners use on-demand help effectively, and what determines whether they do?</dd>
+      <dt>Theory</dt><dd>Help-seeking as a metacognitive and motivational strategy, situated between self-regulated learning and the design of the help system.</dd>
+      <dt>Method</dt><dd>Selective review of studies in interactive learning environments, organised by system factors, learner factors, and their interaction.</dd>
+      <dt>Findings</dt><dd>Effective help-seeking is associated with better learning, but learners frequently do not seek help when they need it, and seek it in ways that do not support learning. The review identifies help avoidance (driven by self-esteem and social comparison), executive help-seeking (asking for the answer), and instrumental help-seeking (asking for the principle) as distinct patterns, and argues that design and metacognitive skill interact.</dd>
+      <dt>Limits</dt><dd>Review rather than meta-analysis; the primary studies largely concern structured domains and menu-based hint systems, not open dialogue.</dd>
+      <dt>Relevance</dt><dd>It is the empirical basis for Lemma's central tension. H4 assumes learners can steer participation; this paper shows the steering behaviour is systematically biased. A purely learner-initiated design will under-serve the learners who most need support, and a proactive design must avoid training executive help-seeking.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 7 -->
+  <article class="paper">
+    <p class="ph">Key paper 7 · Area I</p>
+    <h3>The relative effectiveness of human tutoring, intelligent tutoring systems, and other tutoring systems</h3>
+    <p class="src">VanLehn (2011). <i>Educational Psychologist</i>, 46(4), 197–221. <span class="cites">[<a class="cite" href="#ref-58">58</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>How much does tutoring help, and does finer-grained interaction produce larger gains?</dd>
+      <dt>Theory</dt><dd>The "interaction hypothesis" — that effectiveness depends on the granularity of the interaction loop — tested against the alternative that the tutor's knowledge or pedagogy is what matters.</dd>
+      <dt>Method</dt><dd>Review of controlled experiments comparing human tutoring, computer tutoring and no tutoring, with computer systems classified by interaction granularity (answer-based, step-based, substep-based).</dd>
+      <dt>Findings</dt><dd>Tutoring of any kind beats no tutoring, but the curve flattens: answer-based systems are the weakest, and step-based and substep-based systems are roughly comparable to each other and to human tutors. The strong version of the interaction hypothesis — that more granular dialogue yields proportionally more learning — is not supported.</dd>
+      <dt>Limits</dt><dd>Confined to well-structured domains with measurable steps; comparisons are across studies rather than within one design; "human tutoring" varies enormously in quality.</dd>
+      <dt>Relevance</dt><dd>Sets a realistic expectation for Lemma: the marginal value of a richer conversational layer is not guaranteed to exceed the value of a well-structured step-level interaction. It argues for measuring the <em>incremental</em> benefit of voice and initiative over a competent non-conversational baseline.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 8 -->
+  <article class="paper">
+    <p class="ph">Key paper 8 · Area I</p>
+    <h3>Active-constructive-interactive: A conceptual framework for differentiating learning activities</h3>
+    <p class="src">Chi (2009). <i>Topics in Cognitive Science</i>, 1(1), 73–105. <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Are "active", "constructive" and "interactive" distinct, and do they predict different learning outcomes?</dd>
+      <dt>Theory</dt><dd>A framework that defines the three in terms of observable overt activity and the underlying processes it licenses, generating a testable ordering hypothesis.</dd>
+      <dt>Method</dt><dd>Conceptual analysis with a review of existing evidence; the paper's contribution is definitional and predictive rather than a new experiment.</dd>
+      <dt>Findings</dt><dd>The three are distinguishable, and the framework predicts interactive &gt; constructive &gt; active for learning. Interaction is not merely more engaging; it requires the learner to produce inferences and have them taken up by a partner.</dd>
+      <dt>Limits</dt><dd>The ordering is a hypothesis, not an established law; "interactive" is defined in a way that requires a genuinely responsive partner, which is exactly what is uncertain about an AI.</dd>
+      <dt>Relevance</dt><dd>Gives Lemma a principled reason to want interaction rather than polished explanation: the value is in what the learner must generate. It also implies a design test for each AI turn — does it elicit a constructive or interactive response, or does it merely elicit acknowledgement?</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 9 -->
+  <article class="paper">
+    <p class="ph">Key paper 9 · Area I</p>
+    <h3>AI tutoring outperforms in-class active learning: An RCT in an authentic educational setting</h3>
+    <p class="src">Kestin, Miller, Klales, Milbourne &amp; Ponti (2025). <i>Scientific Reports</i>, 15, Article 17458. <span class="cites">[<a class="cite" href="#ref-23">23</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>How does a purpose-built generative AI tutor compare with a well-taught active-learning class on learning and on learner experience?</dd>
+      <dt>Theory</dt><dd>Pedagogical design, not model capability, determines tutoring quality; the AI tutor was built to implement the same research-based practices used in the comparison class.</dd>
+      <dt>Method</dt><dd>Randomised controlled trial with college students in an authentic course; comparison against in-class active learning with the same content and pedagogical approach; measures of learning and of engagement and motivation.</dd>
+      <dt>Findings</dt><dd>Students learned significantly more in significantly less time with the AI tutor than in the active-learning class, and reported higher engagement and motivation. Because the tutor was constrained to the same pedagogy as the class, the result is evidence about <em>delivery medium and individualisation</em>, not about unconstrained model access.</dd>
+      <dt>Limits</dt><dd>One course and institution; the tutor was custom-built with expert pedagogical design; outcomes are course-level assessments, and the abstract does not report delayed retention or transfer.</dd>
+      <dt>Relevance</dt><dd>The strongest pro-AI-tutoring evidence available, and simultaneously the strongest argument for H1's mechanism: what produced the gain was a tutor that refused to behave like a chatbot. It does not show that proactive intervention beats learner-initiated help — the tutor remained largely learner-driven — so it supports the "constrained assistance" half of Lemma's thesis, not the "AI decides when to speak" half.</dd>
+      <dt>Class</dt><dd><span class="tag d">Direct</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 10 -->
+  <article class="paper">
+    <p class="ph">Key paper 10 · Area I</p>
+    <h3>Generative AI without guardrails can harm learning: Evidence from high school mathematics</h3>
+    <p class="src">Bastani, Bastani, Sungu, Ge, Kabakcı &amp; Mariman (2025). <i>PNAS</i>, 122(26). <span class="cites">[<a class="cite" href="#ref-7">7</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Does access to a generative AI tutor improve learning, and does tutor design change the answer?</dd>
+      <dt>Theory</dt><dd>Tool design as the operative variable: an unconstrained assistant supports task completion, while a constrained one is intended to protect the learner's own processing.</dd>
+      <dt>Method</dt><dd>Field experiment with nearly a thousand high school mathematics students; two conditions differing in interface and prompting — a standard chat interface and a version with learning safeguards — with performance measured during access and after access was withdrawn.</dd>
+      <dt>Findings</dt><dd>Access improved practice performance substantially (+48% for the base condition, +127% with safeguards). Once access was removed, students who had used the base condition performed <em>worse</em> than students who had never had access (−17%), while the safeguarded condition largely avoided this. The authors interpret the pattern as use of the model as a crutch during practice.</dd>
+      <dt>Limits</dt><dd>Single domain and short horizon; the mechanism is inferred from performance patterns rather than observed; the "tutor" condition is a prompting configuration, not a validated pedagogy; a published correction accompanies the paper.</dd>
+      <dt>Relevance</dt><dd>The clearest empirical demonstration of the assistance dilemma in the LLM era, and the strongest single justification for Lemma's control over participation. It also shows the effect is design-dependent: the same model produced opposite learning outcomes depending on whether it was allowed to answer.</dd>
+      <dt>Class</dt><dd><span class="tag d">Direct</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 11 -->
+  <article class="paper">
+    <p class="ph">Key paper 11 · Area II</p>
+    <h3>New frontiers: Regulating learning in CSCL</h3>
+    <p class="src">Järvelä &amp; Hadwin (2013). <i>Educational Psychologist</i>, 48(1), 25–39. <span class="cites">[<a class="cite" href="#ref-20">20</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>How do individuals and groups regulate collaborative learning, and what should CSCL environments support?</dd>
+      <dt>Theory</dt><dd>The tripartite model: self-regulated, co-regulated and socially shared regulation, with regulation treated as distributed across participants and artefacts.</dd>
+      <dt>Method</dt><dd>Conceptual synthesis of regulation research and CSCL design, with illustrative process data.</dd>
+      <dt>Findings</dt><dd>The three forms are analytically distinct and require different support. Co-regulation is temporary and asymmetric — one participant scaffolds another's regulation — whereas shared regulation is jointly owned and requires negotiated goals. Most collaborative groups do not spontaneously achieve shared regulation.</dd>
+      <dt>Limits</dt><dd>Conceptual; the constructs are hard to operationalise in real time, and the paper does not specify how a non-human participant could occupy the co-regulating role.</dd>
+      <dt>Relevance</dt><dd>Gives Lemma the correct target for intervention: the learner's planning, monitoring and evaluation, not only the content. It also warns that "shared" regulation with an AI is a category error unless the AI has goals it can negotiate — a limit Lemma should design around rather than claim past.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 12 -->
+  <article class="paper">
+    <p class="ph">Key paper 12 · Area II</p>
+    <h3>High-level co-regulation in collaborative learning: How does it emerge and how is it sustained?</h3>
+    <p class="src">Volet, Summers &amp; Thurman (2009). <i>Learning and Instruction</i>, 19(2), 128–143. <span class="cites">[<a class="cite" href="#ref-59">59</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Under what conditions does co-regulation that addresses planning, monitoring and evaluation — rather than content — emerge and persist?</dd>
+      <dt>Theory</dt><dd>Co-regulation as a situated, interactional accomplishment, analysed at the level of conversational episodes.</dd>
+      <dt>Method</dt><dd>Process analysis of small-group collaborative learning, coding regulatory talk over time and relating it to group characteristics and task conditions.</dd>
+      <dt>Findings</dt><dd>High-level co-regulation appeared in some groups and not others, clustered in particular episodes rather than being continuously present, and its maintenance depended on the quality of the other-regulation available. Content-level help was far more common than regulation-level help.</dd>
+      <dt>Limits</dt><dd>Small number of groups in one educational setting; coding of regulatory talk is interpretive; no experimental manipulation.</dd>
+      <dt>Relevance</dt><dd>Two design consequences. First, regulation-level contributions are rare in human collaboration, which means an AI that supplies them is doing something humans mostly do not — neither obviously good nor bad, but untested. Second, co-regulation decays, so a single well-timed regulatory prompt is unlikely to persist; persistence is a design requirement, not a nicety.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 13 -->
+  <article class="paper">
+    <p class="ph">Key paper 13 · Area II</p>
+    <h3>The concept of hybrid human-AI regulation</h3>
+    <p class="src">Molenaar (2022). <i>Computers and Education: Artificial Intelligence</i>, 3, Article 100070. <span class="cites">[<a class="cite" href="#ref-34">34</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>How should an AI support a learner's self-regulated learning without taking the regulation away from the learner?</dd>
+      <dt>Theory</dt><dd>Hybrid human-AI regulation, built on a detect–diagnose–act architecture and on the SRL/co-regulation tradition.</dd>
+      <dt>Method</dt><dd>Conceptual framework with an illustrative design for young learners; no outcome data.</dd>
+      <dt>Findings</dt><dd>Argues that AI support should target the learner's regulatory processes (planning, monitoring, evaluation) rather than task content, and that the system's first task is detection and diagnosis of the learner's regulatory state. Frames the resulting arrangement as hybrid rather than delegated: the learner retains regulatory ownership while the system contributes detection and prompting.</dd>
+      <dt>Limits</dt><dd>Purely conceptual; the detect–diagnose–act chain assumes accurate inference of internal regulatory states from observable behaviour, which is the hardest part and is not validated here.</dd>
+      <dt>Relevance</dt><dd>The closest existing theoretical statement of what Lemma is attempting, and a useful corrective to content-centric tutoring. Its weak point is also Lemma's: the diagnosis step. If the system cannot tell planning from floundering, the participation decision has no reliable input.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 14 -->
+  <article class="paper">
+    <p class="ph">Key paper 14 · Area III</p>
+    <h3>Principles of mixed-initiative user interfaces</h3>
+    <p class="src">Horvitz (1999). <i>Proceedings of CHI '99</i>, 159–166. <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>When should an intelligent system act on its own, and when should it defer to the user?</dd>
+      <dt>Theory</dt><dd>Expected utility of initiative: value of the action, discounted by the probability that the system's inference about the user's goals is correct, minus the cost of the action including the user's cost of noticing, understanding and correcting it.</dd>
+      <dt>Method</dt><dd>Conceptual framework illustrated by the LookOut system for scheduling and meeting management; no controlled evaluation of the principles.</dd>
+      <dt>Findings</dt><dd>Twelve design principles, of which four carry most weight for Lemma: consider uncertainty about goals explicitly; weigh the costs and benefits of autonomous action; use cheap dialogue to reduce uncertainty rather than guessing; and make correction of wrong inferences inexpensive. Also argues that initiative should be continuous rather than alternating, coupling automation with direct manipulation.</dd>
+      <dt>Limits</dt><dd>Assumes a utility function the designer can write down; the illustrative domain has clear task success criteria and no learning objective; no empirical test of whether the calculus improves outcomes.</dd>
+      <dt>Relevance</dt><dd>The structural backbone of Section 6. Its limitation is Lemma's central research problem: the value term must be learning value, which is not observable in the session and is often negatively correlated with task utility.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 15 -->
+  <article class="paper">
+    <p class="ph">Key paper 15 · Area III</p>
+    <h3>Ten challenges for making automation a "team player" in joint human-agent activity</h3>
+    <p class="src">Klein, Woods, Bradshaw, Hoffman &amp; Feltovich (2004). <i>IEEE Intelligent Systems</i>, 19(6), 91–95. <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>What does it take for automation to participate in joint activity rather than merely execute functions?</dd>
+      <dt>Theory</dt><dd>Joint activity and common ground from cognitive systems engineering: participants must maintain a basic compact, coordinate through directives and alerts, and be able to direct and be directed.</dd>
+      <dt>Method</dt><dd>Conceptual analysis synthesising human-centred computing principles and the automation literature.</dd>
+      <dt>Findings</dt><dd>Ten requirements, including a basic compact to participate and to signal breakdowns, <em>directability</em>, <em>observability</em> of the agent's state and intent, predictability, and the ability to negotiate goals rather than only execute them. The paper's core claim is that these are properties of the <em>joint system</em>, not of the agent alone.</dd>
+      <dt>Limits</dt><dd>Written for safety-critical operational settings with trained operators and explicit shared goals; no empirical test of the challenges individually.</dd>
+      <dt>Relevance</dt><dd>Supplies the missing requirement in most mixed-initiative designs: a well-calibrated intervenor that cannot be redirected is not a partner. The observability requirement is the theoretical basis for making AI silence and AI uncertainty visible to the learner.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 16 -->
+  <article class="paper">
+    <p class="ph">Key paper 16 · Area IV</p>
+    <h3>If not now, when? The effects of interruption at different moments within task execution</h3>
+    <p class="src">Adamczyk &amp; Bailey (2004). <i>Proceedings of CHI '04</i>, 271–278. <span class="cites">[<a class="cite" href="#ref-1">1</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Does the moment of an interruption within a task change its cost, independently of the interruption's content?</dd>
+      <dt>Theory</dt><dd>Task models derived from event perception; interruption cost is predicted from the cognitive load at the moment of interruption, with boundaries between subtasks presumed cheaper than interior moments.</dd>
+      <dt>Method</dt><dd>Controlled experiment; participants performed a hierarchical task and were interrupted at moments chosen from task models; measures of task performance, emotional state, and social attribution toward the interrupter.</dd>
+      <dt>Findings</dt><dd>Identical interruptions produced different outcomes depending on timing. Interruptions at coarser boundaries were less disruptive and produced more positive social attribution than interruptions inside a subtask, which increased annoyance and reduced the perceived competence of the interrupting party.</dd>
+      <dt>Limits</dt><dd>Laboratory task with well-defined structure; short horizon; the "interrupter" was a system, so social attribution is a proxy; no learning measure.</dd>
+      <dt>Relevance</dt><dd>Establishes that Lemma's timing decision is separable from its content decision, and that timing has a social as well as a performance cost. A question asked at the wrong moment damages the learner's model of the AI, not just their solution.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 17 -->
+  <article class="paper">
+    <p class="ph">Key paper 17 · Area IV</p>
+    <h3>The effect of interruption duration and demand on resuming suspended goals</h3>
+    <p class="src">Monk, Trafton &amp; Boehm-Davis (2008). <i>Journal of Experimental Psychology: Applied</i>, 14(4), 299–313. <span class="cites">[<a class="cite" href="#ref-35">35</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>What determines how long it takes to resume a task after an interruption?</dd>
+      <dt>Theory</dt><dd>The memory-for-goals model: suspended goals decay and must be re-activated, so resumption cost should increase with interruption duration and with the demand of the interrupting task.</dd>
+      <dt>Method</dt><dd>Three experiments using an interleaved-tasks interruption paradigm in a hierarchical interactive task, varying interruption duration and cognitive demand.</dd>
+      <dt>Findings</dt><dd>Longer and more demanding interruptions produced longer resumption times, consistent with decay plus rehearsal. For durations up to about one minute the profile supported a decay account, and the interaction between duration and demand indicated that rehearsal mitigates the loss.</dd>
+      <dt>Limits</dt><dd>Short, well-structured laboratory tasks; resumption measured in seconds; no test of whether resumption cost translates into learning cost.</dd>
+      <dt>Relevance</dt><dd>Gives a concrete reason to keep AI contributions short: duration is itself a cost parameter. It also implies that an AI turn requiring a reply is more expensive than one that does not, because the reply extends the interruption.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 18 -->
+  <article class="paper">
+    <p class="ph">Key paper 18 · Area IV</p>
+    <h3>Meta-analysis of the modality effect</h3>
+    <p class="src">Ginns (2005). <i>Learning and Instruction</i>, 15(4), 313–331. <span class="cites">[<a class="cite" href="#ref-15">15</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Is the modality effect — spoken rather than written text accompanying visual material — reliable, and what moderates it?</dd>
+      <dt>Theory</dt><dd>Cognitive load theory's modality principle: distributing processing across visual and auditory channels reduces load when the material is otherwise visually saturated.</dd>
+      <dt>Method</dt><dd>Meta-analysis of controlled experiments comparing audio-plus-visual with visual-only presentations.</dd>
+      <dt>Findings</dt><dd>A reliable overall advantage for the modality format, with substantial heterogeneity. The advantage is conditional on pacing and on the length of the spoken segment: longer, system-paced audio erodes it.</dd>
+      <dt>Limits</dt><dd>Primary studies use short instructional segments in laboratory or classroom settings; outcomes are immediate comprehension and transfer tests, not long-term retention; little coverage of interactive or contingent speech.</dd>
+      <dt>Relevance</dt><dd>The strongest quantitative support for voice as an <em>output</em> channel in Lemma — but only under conditions Lemma must engineer: short segments, learner control of pacing, and visual material that is genuinely visual.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract and the meta-analytic literature citing it.</dd>
+    </dl>
+  </article>
+
+  <!-- 19 -->
+  <article class="paper">
+    <p class="ph">Key paper 19 · Area IV</p>
+    <h3>Cognitive load theory, modality of presentation and the transient information effect</h3>
+    <p class="src">Leahy &amp; Sweller (2011). <i>Applied Cognitive Psychology</i>, 25(6), 943–951. <span class="cites">[<a class="cite" href="#ref-28">28</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>When does the modality effect reverse, and why?</dd>
+      <dt>Theory</dt><dd>Transience: spoken information disappears and cannot be re-inspected, so long audio imposes working-memory costs that written text does not.</dd>
+      <dt>Method</dt><dd>Two experiments with primary-school students learning to read a temperature graph from either audio-plus-diagram or written-text-plus-diagram materials.</dd>
+      <dt>Findings</dt><dd>The visual-text condition outperformed the audio condition, reversing the usual modality effect. The authors attribute the reversal to the auditory text being too long and transient to be processed comfortably, so that its working-memory cost exceeded the benefit of freeing the visual channel.</dd>
+      <dt>Limits</dt><dd>Children, one task, short instructional materials; the manipulation confounds modality with transience, which is the point but also limits generalisation.</dd>
+      <dt>Relevance</dt><dd>The single most important constraint on Lemma's voice output: speech is a poor medium for content the learner may need to revisit, and the boundary is not "short vs long" in words but "can the learner re-inspect it". It predicts that spoken explanations of more than a sentence or two will underperform equivalent on-screen text.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 20 -->
+  <article class="paper">
+    <p class="ph">Key paper 20 · Area V</p>
+    <h3>"Like having a really bad PA": The gulf between user expectation and experience of conversational agents</h3>
+    <p class="src">Luger &amp; Sellen (2016). <i>Proceedings of CHI '16</i>, 5286–5297. <span class="cites">[<a class="cite" href="#ref-32">32</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>How do people actually use conversational agents, and how does that differ from what conversation promises?</dd>
+      <dt>Theory</dt><dd>Conversation as an interaction metaphor, examined against observed use.</dd>
+      <dt>Method</dt><dd>Interviews with fourteen users of commercial conversational agents, analysed qualitatively.</dd>
+      <dt>Findings</dt><dd>Expectations were shaped by science-fiction depictions of conversation and were systematically disappointed. Use was dominated by simple commands and information lookup rather than dialogue; users described the agents as brittle, limited in context, and socially inept. The paper argues the conversational metaphor sets expectations the technology cannot meet.</dd>
+      <dt>Limits</dt><dd>Fourteen participants, 2016 technology, self-report; no learning context and no task performance data.</dd>
+      <dt>Relevance</dt><dd>A direct warning against justifying voice by naturalness. It also predicts a specific failure for Lemma: if the voice layer promises conversation and delivers commands or monologues, the learner's trust drops faster than if the layer had promised less.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 21 -->
+  <article class="paper">
+    <p class="ph">Key paper 21 · Area VI</p>
+    <h3>Grounding in communication</h3>
+    <p class="src">Clark &amp; Brennan (1991). In <i>Perspectives on Socially Shared Cognition</i> (pp. 127–149). APA. <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>What does it take for two participants to establish that they have understood each other, and how do media change that work?</dd>
+      <dt>Theory</dt><dd>Grounding: communication succeeds when participants reach mutual belief that understanding has occurred, at a cost paid jointly; media differ in the costs they impose.</dd>
+      <dt>Method</dt><dd>Conceptual framework with analysis of media properties (copresence, visibility, audibility, cotemporality, simultaneity, sequentiality, reviewability, revisability).</dd>
+      <dt>Findings</dt><dd>Grounding is collaborative and cost-sensitive; the least collaborative effort principle selects the cheapest sufficient evidence of understanding. Media that permit review and revision lower grounding cost for complex content, while media with cotemporality and visibility lower it for reference. The framework predicts which costs dominate in which medium.</dd>
+      <dt>Limits</dt><dd>Analytic rather than experimental; assumes cooperative participants with aligned goals; says nothing about a participant whose understanding cannot be inspected.</dd>
+      <dt>Relevance</dt><dd>The core theoretical justification for H2. It converts "workspace grounding" from a metaphor into a cost claim: shared visual access removes the need to describe referents, and reviewability removes the cost of transient speech. It also predicts the exact failure of voice-only interaction in a workspace.</dd>
+      <dt>Class</dt><dd><span class="tag t">Theoretical</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+
+  <!-- 22 -->
+  <article class="paper">
+    <p class="ph">Key paper 22 · Area VII</p>
+    <h3>Distance matters</h3>
+    <p class="src">Olson &amp; Olson (2000). <i>Human-Computer Interaction</i>, 15(2–3), 139–178. <span class="cites">[<a class="cite" href="#ref-38">38</a>]</span></p>
+    <dl class="fields">
+      <dt>Problem</dt><dd>Why does geographically distributed collaboration remain difficult despite abundant bandwidth?</dd>
+      <dt>Theory</dt><dd>Common ground as the limiting resource; distance in space, time, scale and culture raises the cost of maintaining it.</dd>
+      <dt>Method</dt><dd>Synthesis of a decade of field and laboratory studies of collocated and remote collaboration.</dd>
+      <dt>Findings</dt><dd>Technology readiness is necessary but insufficient; the decisive factors are common ground, the coupling of the work, collaboration readiness, and culture. Remote work succeeds when tasks are loosely coupled and common ground can be maintained cheaply; tightly coupled work with high common-ground requirements remains difficult.</dd>
+      <dt>Limits</dt><dd>Written before persistent AI partners existed; the unit is teams of humans with shared organisational goals; no learning outcomes.</dd>
+      <dt>Relevance</dt><dd>Reframes continuity as a common-ground maintenance problem. A cross-session AI partner is not valuable because it remembers, but because it lowers the cost of re-establishing shared understanding — and unverified accumulated context can raise that cost by creating false confidence. It also suggests coupling as a design variable: the more tightly the AI's contributions are coupled to the learner's current move, the more common ground is required.</dd>
+      <dt>Class</dt><dd><span class="tag i">Indirect</span> &nbsp; Basis: abstract.</dd>
+    </dl>
+  </article>
+</section>
+
+<!-- ============================ 6 ============================ -->
+<section id="s6">
+  <h2><span class="num">Section 6</span>Integrated framework</h2>
+
+  <p class="dek">The framework below is not a model of the learner or an algorithm. It is a statement of which variables the participation decision depends on, which theory supplies each variable, and how confident we can be that the variable matters.</p>
+
+  <h3>6.1 Which theory answers which question</h3>
+  <p>The five clusters in Section 3 are often treated as competing accounts of the same thing. They are not. Each answers a different question, and the framework only works if they are kept in their lanes.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 8. Division of explanatory labour</caption>
+    <thead><tr><th style="width:19%">Question</th><th style="width:24%">Theory</th><th>What it supplies</th><th style="width:21%">What it cannot supply</th></tr></thead>
+    <tbody>
+      <tr><td>What is the learner doing cognitively?</td><td>Cognitive load; ICAP; epistemic action; offloading <span class="cites">[<a class="cite" href="#ref-9">9</a>, <a class="cite" href="#ref-24">24</a>, <a class="cite" href="#ref-25">25</a>, <a class="cite" href="#ref-46">46</a>]</span></td><td>A definition of generative work, of load, and of behaviour that looks inefficient but is doing cognitive work.</td><td>Any measurement of the individual learner's current state.</td></tr>
+      <tr><td>What can a second participant legitimately add?</td><td>Scaffolding; assistance dilemma; expertise reversal; productive failure <span class="cites">[<a class="cite" href="#ref-21">21</a>, <a class="cite" href="#ref-22">22</a>, <a class="cite" href="#ref-27">27</a>, <a class="cite" href="#ref-62">62</a>]</span></td><td>The functional forms of help and the conditions under which each one helps or harms.</td><td>A rule for <em>when</em>; the diagnosis on which contingency depends.</td></tr>
+      <tr><td>When and how should collaboration happen?</td><td>Mixed initiative; levels of automation; team player <span class="cites">[<a class="cite" href="#ref-18">18</a>, <a class="cite" href="#ref-26">26</a>, <a class="cite" href="#ref-42">42</a>]</span></td><td>The structure of the decision, the control ladder, and the requirements of directability and observability.</td><td>A value function for learning; any evidence that the calculus improves learning.</td></tr>
+      <tr><td>How do voice and workspace interact?</td><td>Grounding; multiple resources; modality and transience; modality fit <span class="cites">[<a class="cite" href="#ref-11">11</a>, <a class="cite" href="#ref-13">13</a>, <a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-61">61</a>]</span></td><td>Channel assignment rules and the cost of transience.</td><td>Any study of voice as coordination over a learning workspace.</td></tr>
+      <tr><td>How does collaboration persist?</td><td>Common ground maintenance; transactive memory; collaborative memory; articulation work <span class="cites">[<a class="cite" href="#ref-31">31</a>, <a class="cite" href="#ref-38">38</a>, <a class="cite" href="#ref-45">45</a>, <a class="cite" href="#ref-50">50</a>]</span></td><td>Continuity as cost reduction, plus the risks of anchoring and false confidence.</td><td>Longitudinal learning evidence for an AI partner.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Shared mental models research adds a precision that product language usually loses: what collaborating partners need is <em>compatible</em> models, not identical ones, and compatibility on the task model matters more than compatibility on the team model <span class="cites">[<a class="cite" href="#ref-33">33</a>]</span>. For Lemma this means the AI does not need to represent the problem the way the learner does; it needs a representation that supports the same inferences at the points where they must coordinate.</p>
+
+  <h3>6.2 The decision is five dimensions, not three states</h3>
+  <p>ASK, OFFER and STAY QUIET are projections of a higher-dimensional decision onto one axis. Treated as a three-way classifier, they force choices that the theory says should be independent: an <em>offer</em> can be delivered as a question, a <em>question</em> can be delivered silently as a workspace annotation, and <em>silence</em> can be either invisible or marked. The decomposition below separates what the literature actually treats separately.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 9. Five dimensions of a participation act</caption>
+    <thead><tr><th style="width:16%">Dimension</th><th style="width:32%">Range</th><th>Theoretical source</th><th style="width:22%">Why it cannot be collapsed</th></tr></thead>
+    <tbody>
+      <tr><td><b>D1 Timing</b></td><td>now · at an inferred boundary · defer to a natural pause</td><td>Interruption and resumption <span class="cites">[<a class="cite" href="#ref-1">1</a>, <a class="cite" href="#ref-4">4</a>, <a class="cite" href="#ref-35">35</a>]</span></td><td>Cost varies with moment independently of content.</td></tr>
+      <tr><td><b>D2 Function</b></td><td>clarify intent · mark a critical feature · challenge an assumption · supply a resource · demonstrate · regulate (plan/monitor/evaluate)</td><td>Scaffolding functions <span class="cites">[<a class="cite" href="#ref-62">62</a>]</span>; regulation targets <span class="cites">[<a class="cite" href="#ref-20">20</a>, <a class="cite" href="#ref-34">34</a>]</span></td><td>Different functions have different learning value and different interruption profiles.</td></tr>
+      <tr><td><b>D3 Intensity</b></td><td>observable silence · ambient mark · single-line offer · question requiring an answer · explanation · direct workspace action</td><td>Levels of automation <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span></td><td>The same function at a higher intensity costs more and removes more learner work.</td></tr>
+      <tr><td><b>D4 Channel</b></td><td>voice · inline text · workspace annotation · deixis plus voice</td><td>Multiple resources and transience <span class="cites">[<a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-61">61</a>]</span>; modality fit <span class="cites">[<a class="cite" href="#ref-13">13</a>, <a class="cite" href="#ref-39">39</a>]</span></td><td>Channel determines whether the content can be re-inspected and whether it competes with the task.</td></tr>
+      <tr><td><b>D5 Persistence</b></td><td>one-shot · until resolved · decaying across the session · carried across sessions</td><td>Fading <span class="cites">[<a class="cite" href="#ref-21">21</a>, <a class="cite" href="#ref-57">57</a>]</span>; continuity <span class="cites">[<a class="cite" href="#ref-38">38</a>]</span></td><td>An act's value depends on whether it is repeated, withdrawn, or remembered.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The three product modes survive as familiar labels for common combinations — ASK is typically D2 = challenge or clarify at D3 = question; OFFER is D2 = supply or mark at D3 = single line; QUIET is D3 = zero. The advantage of the decomposition is that it makes the design falsifiable: a failed interaction can be attributed to timing, function, intensity, channel or persistence, rather than to "the wrong mode".</p>
+
+  <figure>
+    <svg viewBox="0 0 760 388" role="img" aria-labelledby="fig2t fig2d" xmlns="http://www.w3.org/2000/svg">
+      <title id="fig2t">Intensity ladder and the two error types</title>
+      <desc id="fig2d">A six-rung ladder of intervention intensity, with interruption cost rising toward the top and preserved learner work falling, alongside the two error types of intervention and silence.</desc>
+      <defs>
+        <marker id="ar2" markerWidth="7" markerHeight="6" refX="6.5" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#141414"/>
+        </marker>
+        <marker id="ar3" markerWidth="7" markerHeight="6" refX="6.5" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#9a9a9a"/>
+        </marker>
+      </defs>
+      <style>
+        .t2{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:11px;fill:#141414}
+        .s2{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10px;fill:#6b6b6b}
+        .h2s{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:9.5px;letter-spacing:.12em;fill:#8f8f8f}
+        .rung{stroke:#141414;stroke-width:1}
+        .ax{stroke:#141414;stroke-width:1;fill:none}
+      </style>
+
+      <text class="h2s" x="24" y="22">INTERVENTION INTENSITY</text>
+
+      <rect class="rung" x="100" y="268" width="290" height="26" fill="#ffffff"/>
+      <rect class="rung" x="100" y="237" width="290" height="26" fill="#fafaf7"/>
+      <rect class="rung" x="100" y="206" width="290" height="26" fill="#f5f5f0"/>
+      <rect class="rung" x="100" y="175" width="290" height="26" fill="#efefe8"/>
+      <rect class="rung" x="100" y="144" width="290" height="26" fill="#e8e8df"/>
+      <rect class="rung" x="100" y="113" width="290" height="26" fill="#e0e0d6"/>
+
+      <text class="t2" x="112" y="285">observable silence</text>
+      <text class="t2" x="112" y="254">ambient mark in the workspace</text>
+      <text class="t2" x="112" y="223">one-line offer, no reply needed</text>
+      <text class="t2" x="112" y="192">question that requires an answer</text>
+      <text class="t2" x="112" y="161">explanation</text>
+      <text class="t2" x="112" y="130">direct action on the workspace</text>
+
+      <text class="s2" x="100" y="100">learner work preserved</text>
+      <text class="s2" x="100" y="308">learner work removed</text>
+
+      <path class="ax" d="M74 300 V105" marker-end="url(#ar2)"/>
+      <text class="h2s" x="34" y="258" transform="rotate(-90 34 203)">INTERRUPTION COST</text>
+
+      <path class="ax" d="M404 294 V105" marker-end="url(#ar3)" stroke="#9a9a9a"/>
+
+      <text class="h2s" x="424" y="140">DESIGN PRESSURE POINT</text>
+      <text class="s2" x="424" y="160">Products drift upward. A costly</text>
+      <text class="s2" x="424" y="174">intervention is visible and gets</text>
+      <text class="s2" x="424" y="188">reported; a missed one produces</text>
+      <text class="s2" x="424" y="202">no event at all, so no one counts it.</text>
+
+      <line x1="24" y1="320" x2="736" y2="320" stroke="#e3e3de"/>
+
+      <text class="h2s" x="24" y="338">TWO ERROR TYPES</text>
+      <text class="s2" x="24" y="356">false intervention — immediate, legible, attributed to the system</text>
+      <text class="s2" x="24" y="372">false silence — delayed, invisible, attributed to the learner</text>
+    </svg>
+    <figcaption><b>Figure 2.</b> Intensity is a ladder with two costs rising in opposite directions, not a switch. The asymmetry at the bottom of the figure is the reason products drift toward the top rungs: an unnecessary intervention produces a visible complaint, whereas a missed one produces nothing observable at all. Any serious participation policy has to charge itself for the second error, which means instrumenting for it deliberately.</figcaption>
+  </figure>
+
+  <h3>6.3 Variables a future decision procedure would need</h3>
+  <p>The table below is the answer to the assignment's request for "theoretical variables and relationships a future algorithm would need to consider". The confidence column is about the <em>evidence</em> for the variable's importance, not about whether it can be measured.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 10. Candidate variables, sources, and confidence</caption>
+    <thead><tr><th style="width:24%">Variable</th><th style="width:18%">Source</th><th>Direction of effect</th><th style="width:14%">Observable proxy</th><th style="width:11%">Confidence</th></tr></thead>
+    <tbody>
+      <tr><td>Automated repertoire (expertise)</td><td><span class="cites">[<a class="cite" href="#ref-21">21</a>]</span></td><td>As competence grows, the value of support falls and its cost rises; support can reverse sign.</td><td>Recent unaided success; latency to first move</td><td>High</td></tr>
+      <tr><td>Boundary proximity</td><td><span class="cites">[<a class="cite" href="#ref-1">1</a>, <a class="cite" href="#ref-35">35</a>]</span></td><td>Acts near a sub-task boundary cost less and are received better.</td><td>Edit pauses; completed step; cursor movement to a new region</td><td>Medium</td></tr>
+      <tr><td>Working-memory load</td><td><span class="cites">[<a class="cite" href="#ref-24">24</a>, <a class="cite" href="#ref-28">28</a>]</span></td><td>Load raises interruption cost <em>and</em> raises the value of load-reducing support — a two-sided effect usually modelled as one.</td><td>Error bursts; repeated backtracking</td><td>Medium</td></tr>
+      <tr><td>Referential ambiguity</td><td><span class="cites">[<a class="cite" href="#ref-10">10</a>, <a class="cite" href="#ref-49">49</a>]</span></td><td>High ambiguity favours a cheap check over an assertion; unresolved reference makes any act expensive.</td><td>Number of candidate referents for a deictic term</td><td>Medium</td></tr>
+      <tr><td>Learning value of the act</td><td><span class="cites">[<a class="cite" href="#ref-7">7</a>, <a class="cite" href="#ref-27">27</a>, <a class="cite" href="#ref-54">54</a>]</span></td><td>Acts that preserve generation outrank acts that replace it, even at equal task benefit.</td><td>Not directly observable; must be modelled per act type</td><td>Low</td></tr>
+      <tr><td>Interruption demand</td><td><span class="cites">[<a class="cite" href="#ref-6">6</a>, <a class="cite" href="#ref-35">35</a>]</span></td><td>Cost rises with duration and with the demand of the interrupting content; a required reply extends it.</td><td>Predicted turns; whether a response is solicited</td><td>Medium</td></tr>
+      <tr><td>Face threat</td><td><span class="cites">[<a class="cite" href="#ref-37">37</a>, <a class="cite" href="#ref-49">49</a>]</span></td><td>Correction of the learner's own formulation is socially costly; marking is cheaper than correcting.</td><td>None reliable</td><td>Speculative</td></tr>
+      <tr><td>Rejection history</td><td><span class="cites">[<a class="cite" href="#ref-5">5</a>, <a class="cite" href="#ref-41">41</a>]</span></td><td>A rejection should raise the threshold for the same function in the same episode, not be re-tested.</td><td>Explicit accept/reject events</td><td>High (design)</td></tr>
+      <tr><td>Inference confidence</td><td><span class="cites">[<a class="cite" href="#ref-18">18</a>]</span></td><td>Below threshold, the correct act is a cheap question rather than a confident assertion.</td><td>Model calibration on reference resolution</td><td>Medium</td></tr>
+      <tr><td>Reversibility</td><td><span class="cites">[<a class="cite" href="#ref-5">5</a>, <a class="cite" href="#ref-42">42</a>]</span></td><td>Reversible acts justify a lower threshold; irreversible workspace edits do not.</td><td>Whether undo exists</td><td>High (design)</td></tr>
+      <tr><td>Channel fit</td><td><span class="cites">[<a class="cite" href="#ref-13">13</a>, <a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-61">61</a>]</span></td><td>Verbal content spoken while the learner reads verbal material is the worst case; deixis requires shared view.</td><td>Content type; current material type</td><td>Medium</td></tr>
+      <tr><td>Continuity stake</td><td><span class="cites">[<a class="cite" href="#ref-31">31</a>, <a class="cite" href="#ref-38">38</a>]</span></td><td>Decisions that will matter later justify more grounding effort now.</td><td>Explicitly flagged decisions</td><td>Low</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>6.4 Two structural problems the framework exposes</h3>
+
+  <h4>The accounting asymmetry</h4>
+  <p>False interventions and false silences are not symmetric in a product. An unnecessary interruption is immediate, attributable and often complained about; a missed opportunity for support is invisible, because the learner simply continues with a worse plan and no one observes the counterfactual. The measurement literature makes this worse: in-session performance rises with assistance <span class="cites">[<a class="cite" href="#ref-7">7</a>, <a class="cite" href="#ref-27">27</a>]</span>, so the metric that teams watch moves in the direction of more intervention. Nothing in the literature corrects for this, and it is the single most likely reason a well-intentioned selective system drifts toward an always-on assistant.</p>
+
+  <h4>The legibility problem</h4>
+  <p>Grounding requires evidence of understanding, and in a human pair that evidence is produced continuously by both parties <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span>. An AI that stays quiet produces no evidence of anything. The learner therefore cannot distinguish three states that require different responses: the AI understood and chose not to intervene; the AI did not understand the reference; the AI is not attending. Klein's observability requirement is the general form of the fix <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span>, and Amershi's guidance on making system state clear is the product form <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span>. The specific implication for Lemma is stronger than either: <em>silence must be rendered as a state, not as an absence</em>.</p>
+
+  <p>Nardi's argument that mediated communication is about connection rather than bandwidth is relevant to how that state should be rendered <span class="cites">[<a class="cite" href="#ref-36">36</a>]</span>. Connection — the sense that a partner is present, attending, and committed — is not carried by information volume. A minimal, continuously visible indication of attention may do more for the learner's willingness to rely on the system than any amount of spoken explanation.</p>
+
+  <h3>6.5 What this framework is not</h3>
+  <p>It is not an algorithm, and the literature does not support building one yet. Four components would be required, and each is currently the weakest link in its own area: a calibrated estimate of the learner's automated repertoire (expertise reversal tells us this matters, not how to measure it); a detector of learning-relevant boundaries in open-ended work (interruption research assumes the boundaries exist); a model of learning value per act type (the assistance dilemma says this is the crux and supplies no function); and a policy that can be evaluated on delayed outcomes (almost no study in this corpus does this). Writing a decision rule now would encode guesses as if they were findings.</p>
+</section>
+
+<!-- ============================ 7 ============================ -->
+<section id="s7">
+  <h2><span class="num">Section 7</span>Critical evaluation of product hypotheses</h2>
+
+  <p class="dek">Each hypothesis is assessed on three questions: what supports it, what contradicts it, and what observation would change the verdict. The last question is the one that makes the assessment useful.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 11. Summary of verdicts</caption>
+    <thead><tr><th style="width:26%">Hypothesis</th><th style="width:15%">Verdict</th><th>Decisive consideration</th></tr></thead>
+    <tbody>
+      <tr><td>H1 Selective participation</td><td><span class="v v-partial">Partial</span></td><td>Mechanisms are well evidenced; the comparative policy claim is untested.</td></tr>
+      <tr><td>H2 Workspace grounding</td><td><span class="v v-partial">Partial</span></td><td>Cost model is strong; the AI side of grounding is unverified and can fail silently.</td></tr>
+      <tr><td>H3 Mixed initiative</td><td><span class="v v-partial">Partial</span></td><td>Structure is sound; learning-specific evidence and interruption costs pull against it.</td></tr>
+      <tr><td>H4 Learner agency</td><td><span class="v v-conflict">Conflicting</span></td><td>Control is valuable in principle; learners regulate help-seeking poorly in practice.</td></tr>
+      <tr><td>H5 Long-term continuity</td><td><span class="v v-insuff">Insufficient</span></td><td>No longitudinal learning evidence; the plausible mechanism differs from the claimed one.</td></tr>
+      <tr><td>H6 Voice as coordination</td><td><span class="v v-insuff">Insufficient</span></td><td>No direct test; component evidence points both ways.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>H1 — Selective participation</h3>
+  <p><b>Claim.</b> An AI that deliberately chooses when not to intervene may support learning better than an AI that responds to every opportunity.</p>
+  <p><b>Support.</b> The components are among the best-established findings in the corpus. Assistance that replaces generative work raises performance and lowers learning <span class="cites">[<a class="cite" href="#ref-27">27</a>, <a class="cite" href="#ref-54">54</a>]</span>; the same support reverses sign with expertise <span class="cites">[<a class="cite" href="#ref-21">21</a>]</span>; generation attempts before instruction improve later learning <span class="cites">[<a class="cite" href="#ref-22">22</a>]</span>; and in the LLM era, unconstrained access produced a 17% decline in unaided performance while a safeguarded tutor largely avoided it <span class="cites">[<a class="cite" href="#ref-7">7</a>]</span>. The contrast between the safeguarded and unconstrained conditions in that experiment is the closest thing in the literature to a test of "selection matters".</p>
+  <p><b>Against.</b> The hypothesis compares selective participation to "responding to every opportunity", but the realistic alternative is "responding when asked" — and that baseline fails for a different reason: learners do not ask well <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>. A system that withholds intervention inherits that failure. VanLehn's plateau finding also warns that richer, better-timed interaction does not reliably produce larger gains than competent step-level interaction <span class="cites">[<a class="cite" href="#ref-58">58</a>]</span>, so the burden of proof is on the added complexity.</p>
+  <p><b>Verdict: partial support.</b> The mechanisms are supported; the comparative claim is not. Nothing in the corpus shows that an AI's decision to stay silent improves learning relative to a well-designed learner-initiated system.</p>
+  <p><b>What would settle it.</b> A three-arm randomised trial — always-answer, selective, learner-initiated-only — with identical content and a delayed transfer test. The mediator to measure is the learner's own help-seeking behaviour, because the mechanism claim is that selection trains better regulation, not merely that it reduces interruption.</p>
+
+  <h3>H2 — Workspace grounding</h3>
+  <p><b>Claim.</b> Grounding spoken interaction in the learner's current workspace may reduce context reconstruction and improve collaboration quality.</p>
+  <p><b>Support.</b> Grounding is cost-sensitive, and shared visual access removes the largest cost — describing referents <span class="cites">[<a class="cite" href="#ref-11">11</a>]</span>. Reference converges through iterative repair under least collaborative effort, which is only cheap when both parties can see the object <span class="cites">[<a class="cite" href="#ref-10">10</a>]</span>. Visual information about the objects of work is more valuable than visual information about the participants, and disjoint perspectives undermine communication <span class="cites">[<a class="cite" href="#ref-60">60</a>]</span>. External representations change the task itself, so the workspace is not neutral context <span class="cites">[<a class="cite" href="#ref-63">63</a>]</span>.</p>
+  <p><b>Against.</b> All of this evidence is human–human, and it assumes symmetrical access to evidence of understanding. The AI's grounding is one-sided: it can ground its utterance in the workspace, but it cannot verify that the learner has understood, and a confidently wrong resolution is worse than an explicit question because it is invisible until it produces a bad contribution. Distributed cognition's unit of analysis also cuts the other way: if the workspace is part of the cognitive system, then an AI reading the workspace is reading the learner's thinking, which raises a consent question the literature does not address <span class="cites">[<a class="cite" href="#ref-17">17</a>]</span>.</p>
+  <p><b>Verdict: partial support.</b> The cost model transfers; the mechanism by which an AI achieves grounding does not, and its failure mode is silent.</p>
+  <p><b>What would settle it.</b> A within-subject comparison of the same AI policy with and without workspace access, measuring reference-resolution accuracy, the rate at which the learner must restate context, and the frequency of confidently wrong resolutions. "Context reconstruction" needs an operational definition — time-to-first-productive-move after a session break is a candidate.</p>
+
+  <h3>H3 — Mixed initiative</h3>
+  <p><b>Claim.</b> Allowing both learner and AI to initiate may support more adaptive collaboration than purely user-initiated chat.</p>
+  <p><b>Support.</b> Mixed initiative has a formal decision structure <span class="cites">[<a class="cite" href="#ref-18">18</a>]</span>, a lineage in tutoring systems that predates chat <span class="cites">[<a class="cite" href="#ref-8">8</a>]</span>, and a control vocabulary that separates type from level <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span>. Team-player requirements specify what an initiating agent owes its partner: directability, observability, predictability <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span>. Product guidelines converge on the same commitments <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span>.</p>
+  <p><b>Against.</b> Proactive behaviour is the most robustly costly thing an interface can do. Timing alone changes performance and social attribution <span class="cites">[<a class="cite" href="#ref-1">1</a>]</span>; resumption cost scales with the interruption's demand <span class="cites">[<a class="cite" href="#ref-35">35</a>]</span>; residue persists after return <span class="cites">[<a class="cite" href="#ref-30">30</a>]</span>. Automation research documents the downstream failures of initiative: complacency, over-trust, and loss of situation awareness when the human must take over <span class="cites">[<a class="cite" href="#ref-14">14</a>, <a class="cite" href="#ref-41">41</a>]</span>. Users of conversational agents report that unprompted agent behaviour is one of the main sources of disappointment <span class="cites">[<a class="cite" href="#ref-32">32</a>]</span>, and the direct-manipulation critique predicts exactly this — delegation moves monitoring cost onto the user <span class="cites">[<a class="cite" href="#ref-52">52</a>]</span>.</p>
+  <p><b>Verdict: partial support.</b> The architecture is well motivated and the risks are well documented; what is missing is any learning-outcome evidence. Every empirical study cited here measured task performance, affect, or attitudes — not retention or transfer.</p>
+  <p><b>What would settle it.</b> The same three-arm design as H1, with an added process measure: does AI-initiated interaction increase or decrease the learner's own initiation over time? A mixed-initiative system that progressively silences the learner has failed on its own terms.</p>
+
+  <h3>H4 — Learner agency</h3>
+  <p><b>Claim.</b> Giving learners meaningful control over accepting, rejecting and redirecting AI participation may help preserve their agency and independent reasoning.</p>
+  <p><b>Support.</b> Control is a design obligation in the human–AI guidelines (efficient invocation and dismissal) <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span> and in the automation ladder, where human veto is a level, not an afterthought <span class="cites">[<a class="cite" href="#ref-42">42</a>]</span>. Directability is a defining property of a team player <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span>. Social-response findings suggest that explicit, low-cost rejection is important precisely because rejecting a spoken agent carries social weight <span class="cites">[<a class="cite" href="#ref-37">37</a>]</span>.</p>
+  <p><b>Against.</b> This is the hypothesis with genuinely conflicting evidence rather than merely thin evidence. Learners do not regulate help-seeking well: they avoid help that threatens self-esteem, request answers instead of principles, and misjudge when they need support <span class="cites">[<a class="cite" href="#ref-2">2</a>]</span>. Help-seeking skill is trainable, which implies it is a capacity, not a given <span class="cites">[<a class="cite" href="#ref-47">47</a>]</span>. Worse, control without understanding can be illusory: operators given control at high automation levels still lost situation awareness <span class="cites">[<a class="cite" href="#ref-14">14</a>]</span>, and the direct-manipulation debate turns on whether control actually restores comprehension or only the feeling of it <span class="cites">[<a class="cite" href="#ref-52">52</a>]</span>.</p>
+  <p><b>Verdict: conflicting evidence.</b> The hypothesis is defensible as a value commitment, but as an empirical claim about learning it is unresolved and has a serious counterargument.</p>
+  <p><b>The distinction that resolves the conflict.</b> "The learner can veto" and "the learner must initiate" are different designs, and the evidence supports the first while undermining the second. A system with proactive but fully rejectable participation preserves agency without inheriting the under-helping bias. This distinction should be written into the product definition, because the current phrasing of H4 admits both readings.</p>
+  <p><b>What would settle it.</b> A 2×2 design crossing who initiates with who can veto, measuring learning, voluntary help-seeking, and a validated agency or ownership measure — plus a manipulation check that learners can actually predict what the AI will do.</p>
+
+  <h3>H5 — Long-term continuity</h3>
+  <p><b>Claim.</b> Maintaining relevant context across sessions may improve sustained learning and collaborative problem solving.</p>
+  <p><b>Support.</b> Common ground is the limiting resource in sustained collaboration, and distance matters because maintaining it is expensive <span class="cites">[<a class="cite" href="#ref-38">38</a>]</span>. Transactive memory systems — specialisation, credibility, coordination — predict team performance <span class="cites">[<a class="cite" href="#ref-31">31</a>]</span>. Persistent records support talk about objects over time, and speech alone is often sufficient when the record is shared <span class="cites">[<a class="cite" href="#ref-60">60</a>]</span>. Articulation work is real labour that a partner can absorb <span class="cites">[<a class="cite" href="#ref-50">50</a>]</span>.</p>
+  <p><b>Against.</b> Collaborative memory is not simply additive: groups exhibit retrieval disruption and collaborative inhibition, and a shared record can anchor participants to an earlier, wrong framing <span class="cites">[<a class="cite" href="#ref-45">45</a>]</span>. Accumulated context also produces false confidence in shared understanding, which Olson's framework treats as a failure mode rather than a benefit <span class="cites">[<a class="cite" href="#ref-38">38</a>]</span>. And the mechanism Lemma's hypothesis implies — memory enables personalisation enables learning — is not the mechanism the evidence supports. The supported mechanism is narrower: memory reduces the cost of re-establishing common ground.</p>
+  <p><b>Verdict: insufficient evidence.</b> Theoretically coherent, empirically unestablished for AI partners, and with a credible harm pathway that the product currently does not measure.</p>
+  <p><b>What would settle it.</b> A crossover study over several weeks in which the AI's carried-forward context is (a) full, (b) absent, (c) present but learner-reviewable and correctable. Outcomes: time to re-ground at session start, delayed retention, and the rate at which the learner corrects the AI's representation of prior work.</p>
+
+  <h3>H6 — Voice as coordination</h3>
+  <p><b>Claim.</b> Voice may be especially valuable as a low-friction coordination channel during ongoing cognitive activity, rather than as a replacement for text.</p>
+  <p><b>Support.</b> The modality effect shows a reliable advantage for spoken text accompanying visual material <span class="cites">[<a class="cite" href="#ref-15">15</a>]</span>; multiple-resource theory explains why speech costs little when visual and manual resources are occupied <span class="cites">[<a class="cite" href="#ref-61">61</a>]</span>; and users spontaneously assign descriptive content to speech and spatial content to pen when both are available <span class="cites">[<a class="cite" href="#ref-13">13</a>, <a class="cite" href="#ref-39">39</a>]</span>. Connection, not bandwidth, is what a communication channel supplies <span class="cites">[<a class="cite" href="#ref-36">36</a>]</span>.</p>
+  <p><b>Against.</b> The modality advantage reverses when spoken content is long and transient <span class="cites">[<a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-53">53</a>]</span> — and coordination utterances are short, which helps, but the same literature says the boundary is re-inspectability, not length. Users' experience of conversational agents is dominated by disappointment relative to the conversational promise <span class="cites">[<a class="cite" href="#ref-32">32</a>]</span>, and speech in shared physical space is a public, accountable act <span class="cites">[<a class="cite" href="#ref-44">44</a>]</span>. Oviatt's myths paper warns specifically against assuming that speech is the natural or preferred modality <span class="cites">[<a class="cite" href="#ref-40">40</a>]</span>, and Clark's analysis shows that conversational form is often not what users want for instrumental tasks <span class="cites">[<a class="cite" href="#ref-12">12</a>]</span>.</p>
+  <p><b>Verdict: insufficient evidence.</b> Not contradicted, but untested. Every supporting finding concerns either spoken <em>instructional output</em> or <em>input efficiency</em> in a multimodal desktop task. None concerns voice as a coordination layer over a shared learning workspace, which is the actual claim.</p>
+  <p><b>What would settle it.</b> A within-subject experiment holding the AI policy constant and varying only channel: voice, inline text, and voice-with-deixis. Measure coordination latency (time from intention to successful redirection), repair rate, secondary-task performance as a load proxy, and delayed learning. The prediction from the theory is specific: voice should win on coordination latency and lose on content-heavy acts — if it does not, the coordination thesis is wrong for a reason worth knowing.</p>
+</section>
+
+<!-- ============================ 8 ============================ -->
+<section id="s8">
+  <h2><span class="num">Section 8</span>Unresolved questions</h2>
+
+  <p class="dek">These are questions the literature does not answer and that Lemma cannot avoid answering in design. They are stated so that they can be investigated rather than assumed.</p>
+
+  <ol>
+    <li><b>Does silence have a learning benefit, or only a comfort benefit?</b> No study isolates "the AI decided not to intervene" from "the AI was absent". The productive-failure evidence concerns sequence, not presence, so the benefit of a watching-but-quiet partner is inferred rather than shown.</li>
+    <li><b>Can a learning-relevant boundary be detected in open-ended work?</b> All breakpoint research assumes a task grammar. Mathematical exploration and research have soft boundaries; whether pause-and-edit patterns are a valid proxy is unknown.</li>
+    <li><b>Is a proactive question better than a proactive explanation at equal information?</b> Chi's framework predicts yes <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span>; the assistance dilemma predicts the answer depends on expertise <span class="cites">[<a class="cite" href="#ref-27">27</a>]</span>. Neither has been tested with a language-model partner.</li>
+    <li><b>Does voice interfere with the learner's own verbal processing?</b> The mechanism is plausible from resource theory <span class="cites">[<a class="cite" href="#ref-61">61</a>]</span>, and articulatory suppression is well documented, but no study measures the effect of an AI's speech on a learner's inner speech during reading or reasoning.</li>
+    <li><b>What is the right granularity of participation control?</b> Per act, per session, per task type, per learner? Guidelines recommend dismissal <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span>; nothing establishes whether learners want to configure participation or merely to veto it.</li>
+    <li><b>Does persistent context improve re-grounding or entrench a framing?</b> Both are predicted by different parts of the same literature <span class="cites">[<a class="cite" href="#ref-38">38</a>, <a class="cite" href="#ref-45">45</a>]</span>, and the sign may depend on whether the learner can inspect and correct what is carried forward.</li>
+    <li><b>How should the AI display uncertainty without adding noise?</b> Explanation requirements <span class="cites">[<a class="cite" href="#ref-5">5</a>]</span> and observability <span class="cites">[<a class="cite" href="#ref-26">26</a>]</span> both imply visibility; neither says how often a confidence signal can be shown before it becomes another interruption.</li>
+    <li><b>Is "co-regulation" with a non-regulating agent a coherent construct?</b> Regulation theory assumes a partner with its own goals and self-regulation <span class="cites">[<a class="cite" href="#ref-20">20</a>]</span>. If the AI has neither, what Lemma calls co-regulation may be better described as contingent tool use — which would change what should be measured.</li>
+  </ol>
+</section>
+
+<!-- ============================ 9 ============================ -->
+<section id="s9">
+  <h2><span class="num">Section 9</span>Research gaps</h2>
+
+  <p class="dek">Seven gaps, ordered by how much they block a defensible design decision. Each comes with the study that would close it, because a gap without a proposed study is just a complaint.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 12. Gaps and the studies that would close them</caption>
+    <thead><tr><th style="width:22%">Gap</th><th style="width:34%">Why it matters</th><th>Study design</th></tr></thead>
+    <tbody>
+      <tr><td>G1 · Voice as coordination over a workspace</td><td>The central product hypothesis has no direct evidence in either direction.</td><td>Within-subject, three channel conditions, fixed policy; coordination latency, repair rate, load probe, delayed test.</td></tr>
+      <tr><td>G2 · No measure of appropriate silence</td><td>Without it, every evaluation rewards intervention and the product drifts.</td><td>Log every non-intervention with its context; have experts code a sample for missed opportunity; relate to delayed outcomes.</td></tr>
+      <tr><td>G3 · Boundary inference in open tasks</td><td>The interruption literature's main practical recommendation presumes detectable boundaries.</td><td>Instrument edit and navigation traces; test whether pause patterns predict expert-judged breakpoints and whether acting on them reduces resumption cost.</td></tr>
+      <tr><td>G4 · Learning versus performance in AI tutor trials</td><td>Most trials report immediate post-tests; the assistance dilemma lives in the delayed ones.</td><td>Add delayed retention and transfer measures to any internal evaluation; report both, never one.</td></tr>
+      <tr><td>G5 · Asymmetry of co-regulation with an AI</td><td>Regulation theory assumes reciprocity the AI cannot supply.</td><td>Code learner regulatory talk with and without AI regulatory prompts; test whether the learner's own monitoring increases or is displaced.</td></tr>
+      <tr><td>G6 · Transactive memory with an AI partner</td><td>Determines whether continuity builds calibrated trust or credulous reliance.</td><td>Manipulate the AI's demonstrated reliability; measure whether learners recalibrate, and whether they offload verification.</td></tr>
+      <tr><td>G7 · Long-horizon continuity</td><td>H5 is the least evidenced and most expensive claim to build for.</td><td>Multi-week crossover with full / absent / reviewable context; measure re-grounding time, retention, and correction rate.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============================ 10 ============================ -->
+<section id="s10">
+  <h2><span class="num">Section 10</span>Implications for Lemma AI</h2>
+
+  <p class="dek">Ten principles, each stated as a design commitment with the theory behind it and the observation that would falsify it. These are derived from the review, not retrofitted to existing decisions — several of them argue against features the product currently assumes.</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <caption>Table 13. Interaction principles and their falsifiers</caption>
+    <thead><tr><th style="width:30%">Principle</th><th style="width:26%">Basis</th><th>Would be falsified if</th></tr></thead>
+    <tbody>
+      <tr><td><b>P1</b> Default to silence; act on expected <em>learning</em> value, not on opportunity.</td><td><span class="cites">[<a class="cite" href="#ref-7">7</a>, <a class="cite" href="#ref-27">27</a>, <a class="cite" href="#ref-54">54</a>]</span></td><td>Delayed outcomes are no worse under an always-respond policy.</td></tr>
+      <tr><td><b>P2</b> Fade by demonstrated competence, not by schedule or task difficulty.</td><td><span class="cites">[<a class="cite" href="#ref-21">21</a>, <a class="cite" href="#ref-57">57</a>]</span></td><td>Fixed fading produces equal or better transfer.</td></tr>
+      <tr><td><b>P3</b> Prefer the act that preserves generation: question &gt; hint &gt; explanation &gt; answer &gt; doing it.</td><td><span class="cites">[<a class="cite" href="#ref-9">9</a>, <a class="cite" href="#ref-22">22</a>, <a class="cite" href="#ref-27">27</a>]</span></td><td>Answer-giving at the same moment yields better retention.</td></tr>
+      <tr><td><b>P4</b> Make silence and uncertainty observable states, not absences.</td><td><span class="cites">[<a class="cite" href="#ref-5">5</a>, <a class="cite" href="#ref-11">11</a>, <a class="cite" href="#ref-26">26</a>]</span></td><td>Learners cannot distinguish the states even when they are shown; or showing them adds more interruption than it removes.</td></tr>
+      <tr><td><b>P5</b> A rejection raises the threshold for that function in that episode; never re-offer it unchanged.</td><td><span class="cites">[<a class="cite" href="#ref-5">5</a>, <a class="cite" href="#ref-18">18</a>, <a class="cite" href="#ref-41">41</a>]</span></td><td>Re-offering improves uptake without raising annoyance.</td></tr>
+      <tr><td><b>P6</b> Voice for coordination; text for anything that must be re-read.</td><td><span class="cites">[<a class="cite" href="#ref-28">28</a>, <a class="cite" href="#ref-53">53</a>, <a class="cite" href="#ref-61">61</a>]</span></td><td>Spoken multi-sentence explanations match on-screen text on delayed tests.</td></tr>
+      <tr><td><b>P7</b> Ground before speaking; under referential uncertainty, ask a deictic question rather than assert.</td><td><span class="cites">[<a class="cite" href="#ref-10">10</a>, <a class="cite" href="#ref-49">49</a>]</span></td><td>Confident resolution of ambiguous references produces fewer learner corrections than a clarifying question.</td></tr>
+      <tr><td><b>P8</b> Continuity carries decisions and open questions, not transcripts; it must be reviewable and correctable.</td><td><span class="cites">[<a class="cite" href="#ref-31">31</a>, <a class="cite" href="#ref-38">38</a>, <a class="cite" href="#ref-45">45</a>]</span></td><td>Opaque, transcript-level memory produces better re-grounding and no anchoring.</td></tr>
+      <tr><td><b>P9</b> Measure learning, not session success; instrument delayed and transfer outcomes from the start.</td><td><span class="cites">[<a class="cite" href="#ref-54">54</a>, <a class="cite" href="#ref-58">58</a>]</span></td><td>In-session and delayed measures are shown to converge in this domain.</td></tr>
+      <tr><td><b>P10</b> Treat the learner's workspace actions as epistemic; do not tidy them.</td><td><span class="cites">[<a class="cite" href="#ref-25">25</a>, <a class="cite" href="#ref-63">63</a>]</span></td><td>Workspace tidying improves both process and delayed outcomes.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.1 What follows for the three modes</h3>
+  <p><b>AI ASKS.</b> Questions are the highest-value, highest-cost act: they preserve generation <span class="cites">[<a class="cite" href="#ref-9">9</a>]</span> and they demand a reply, which extends the interruption <span class="cites">[<a class="cite" href="#ref-35">35</a>]</span>. They should therefore be rare, short, and placed at boundaries. The design question is not "what should the AI ask?" but "what is the smallest question that changes what the learner does next?"</p>
+
+  <p><b>AI OFFERS.</b> Offers are cheaper because they do not require uptake, but they are also easier to ignore and easier to over-produce. Their natural form is not a sentence in a chat log but a mark on the object — closer to an annotation than to a message, which also makes the offer re-inspectable and removes the transience penalty <span class="cites">[<a class="cite" href="#ref-28">28</a>]</span>.</p>
+
+  <p><b>AI STAYS QUIET.</b> This is the mode that most needs engineering. As specified, it is indistinguishable from a system that is confused or absent. Rendering it as an observable state is the minimum condition for it to function as a collaboration signal, and the cost of getting this wrong is that the learner attributes the system's silence to their own incomprehensibility — a failure mode with no instrumentation.</p>
+
+  <h3>10.2 What the evidence does not let Lemma claim</h3>
+  <ul>
+    <li>That voice improves learning. No study supports this in a shared workspace, and the transience evidence predicts specific harms for long spoken content.</li>
+    <li>That silence improves learning. The mechanism is plausible and the comparative test has not been run.</li>
+    <li>That proactive intervention is better than learner-initiated help. The strongest direct evidence supports <em>constrained</em> assistance, not <em>AI-initiated</em> assistance <span class="cites">[<a class="cite" href="#ref-7">7</a>, <a class="cite" href="#ref-23">23</a>]</span>.</li>
+    <li>That long-term memory of a learner improves outcomes. The mechanism the evidence supports is cheaper re-grounding, which is a different and smaller claim.</li>
+    <li>That conversation is the wrong container for collaboration. This is a hypothesis about interaction design, and the evidence is consistent with it without establishing it.</li>
+  </ul>
+
+  <h3>10.3 Instrumentation this implies</h3>
+  <p>Three measurements follow directly from the review and are not currently standard in AI tutoring products. First, a <b>silence ledger</b>: every decision not to act, with its context, sampled and coded for missed opportunity — without it, the accounting asymmetry in Section 6.4 guarantees drift. Second, a <b>re-grounding measure</b>: time from session start to the learner's first productive move, which is the operational form of the H2 and H5 claims. Third, <b>paired outcome measurement</b>: every in-session performance metric accompanied by a delayed or transfer measure, because the two are known to diverge <span class="cites">[<a class="cite" href="#ref-54">54</a>]</span>.</p>
+</section>
+
+<!-- ============================ 11 ============================ -->
+<section id="s11">
+  <h2><span class="num">Section 11</span>Bibliography</h2>
+
+  <p class="dek">Sixty-three works. All bibliographic records were resolved against Crossref on 6 November 2026; DOIs are as registered. Numbering is alphabetical by first author and is the numbering used in the citations above.</p>
+
+  <div class="note">
+    <p><b>Source integrity.</b> No paper, author, DOI or finding in this report was generated or inferred. Every entry resolves to a registered record, with two exceptions noted inline: Suchman (1987) is a monograph without a DOI, and Bastani et al. (2025) has a published correction alongside the article. Where a paper's abstract does not report a statistic, none is given here. Full texts were not re-read for this review; each key-paper entry states its basis, and claims are limited to what the abstract and the citing literature support.</p>
+  </div>
+
+  <ol class="bib">
+<li id="ref-1"><span class="bib-au">Adamczyk, P. D., & Bailey, B. P.</span> (2004). If not now, when? The effects of interruption at different moments within task execution. <i>Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (CHI '04), 271–278</i>. <a class="doi" href="https://doi.org/10.1145/985692.985727" target="_blank" rel="noopener">doi:10.1145/985692.985727</a></li>
+<li id="ref-2"><span class="bib-au">Aleven, V., Stahl, E., Schworm, S., Fischer, F., & Wallace, R.</span> (2003). Help seeking and help design in interactive learning environments. <i>Review of Educational Research</i>, 73(3), 277–320. <a class="doi" href="https://doi.org/10.3102/00346543073003277" target="_blank" rel="noopener">doi:10.3102/00346543073003277</a></li>
+<li id="ref-3"><span class="bib-au">Allen, J. F., Guinn, C. I., & Horvitz, E.</span> (1999). Mixed-initiative interaction. <i>IEEE Intelligent Systems</i>, 14(5), 14–23. <a class="doi" href="https://doi.org/10.1109/5254.796083" target="_blank" rel="noopener">doi:10.1109/5254.796083</a></li>
+<li id="ref-4"><span class="bib-au">Altmann, E. M., & Trafton, J. G.</span> (2002). Memory for goals: An activation-based model. <i>Cognitive Science</i>, 26(1), 39–83. <a class="doi" href="https://doi.org/10.1207/s15516709cog2601_2" target="_blank" rel="noopener">doi:10.1207/s15516709cog2601_2</a></li>
+<li id="ref-5"><span class="bib-au">Amershi, S., Weld, D., Vorvoreanu, M., Fourney, A., Nushi, B., Collisson, P., Suh, J., Iqbal, S., Bennett, P. N., Inkpen, K., Teevan, J., Kikin-Gil, R., & Horvitz, E.</span> (2019). Guidelines for human-AI interaction. <i>Proceedings of the 2019 CHI Conference on Human Factors in Computing Systems, 1–13</i>. <a class="doi" href="https://doi.org/10.1145/3290605.3300233" target="_blank" rel="noopener">doi:10.1145/3290605.3300233</a></li>
+<li id="ref-6"><span class="bib-au">Bailey, B. P., & Konstan, J. A.</span> (2006). On the need for attention-aware systems: Measuring effects of interruption on task performance, error rate, and affective state. <i>Computers in Human Behavior</i>, 22(4), 685–708. <a class="doi" href="https://doi.org/10.1016/j.chb.2005.12.009" target="_blank" rel="noopener">doi:10.1016/j.chb.2005.12.009</a></li>
+<li id="ref-7"><span class="bib-au">Bastani, H., Bastani, O., Sungu, A., Ge, H., Kabakcı, Ö., & Mariman, R.</span> (2025). Generative AI without guardrails can harm learning: Evidence from high school mathematics. <i>Proceedings of the National Academy of Sciences</i>, 122(26). <a class="doi" href="https://doi.org/10.1073/pnas.2422633122" target="_blank" rel="noopener">doi:10.1073/pnas.2422633122</a> <span class="bib-note">Earlier version circulated as an SSRN working paper (2024).</span></li>
+<li id="ref-8"><span class="bib-au">Carbonell, J. R.</span> (1970). AI in CAI: An artificial-intelligence approach to computer-assisted instruction. <i>IEEE Transactions on Man-Machine Systems</i>, 11(4), 190–202. <a class="doi" href="https://doi.org/10.1109/tmms.1970.299942" target="_blank" rel="noopener">doi:10.1109/tmms.1970.299942</a></li>
+<li id="ref-9"><span class="bib-au">Chi, M. T. H.</span> (2009). Active-constructive-interactive: A conceptual framework for differentiating learning activities. <i>Topics in Cognitive Science</i>, 1(1), 73–105. <a class="doi" href="https://doi.org/10.1111/j.1756-8765.2008.01005.x" target="_blank" rel="noopener">doi:10.1111/j.1756-8765.2008.01005.x</a></li>
+<li id="ref-10"><span class="bib-au">Clark, H. H., & Wilkes-Gibbs, D.</span> (1986). Referring as a collaborative process. <i>Cognition</i>, 22(1), 1–39. <a class="doi" href="https://doi.org/10.1016/0010-0277(86)90010-7" target="_blank" rel="noopener">doi:10.1016/0010-0277(86)90010-7</a></li>
+<li id="ref-11"><span class="bib-au">Clark, H. H., & Brennan, S. E.</span> (1991). Grounding in communication. <i>In L. B. Resnick, J. M. Levine, & S. D. Teasley (Eds.), <i>Perspectives on Socially Shared Cognition</i> (pp. 127–149). APA</i>. <a class="doi" href="https://doi.org/10.1037/10096-006" target="_blank" rel="noopener">doi:10.1037/10096-006</a> <span class="bib-note">Book chapter.</span></li>
+<li id="ref-12"><span class="bib-au">Clark, L., Pantidi, N., Cooney, O., Doyle, P., Garaialde, D., Edwards, J., Spillane, B., Gilmartin, E., Murad, C., Munteanu, C., Wade, V., & Cowan, B. R.</span> (2019). What makes a good conversation? Challenges in designing truly conversational agents. <i>Proceedings of the 2019 CHI Conference on Human Factors in Computing Systems, 1–12</i>. <a class="doi" href="https://doi.org/10.1145/3290605.3300705" target="_blank" rel="noopener">doi:10.1145/3290605.3300705</a></li>
+<li id="ref-13"><span class="bib-au">Cohen, P. R.</span> (1992). The role of natural language in a multimodal interface. <i>Proceedings of the 5th Annual ACM Symposium on User Interface Software and Technology (UIST '92), 143–149</i>. <a class="doi" href="https://doi.org/10.1145/142621.142641" target="_blank" rel="noopener">doi:10.1145/142621.142641</a></li>
+<li id="ref-14"><span class="bib-au">Endsley, M. R., & Kiris, E. O.</span> (1995). The out-of-the-loop performance problem and level of control in automation. <i>Human Factors</i>, 37(2), 381–394. <a class="doi" href="https://doi.org/10.1518/001872095779064555" target="_blank" rel="noopener">doi:10.1518/001872095779064555</a></li>
+<li id="ref-15"><span class="bib-au">Ginns, P.</span> (2005). Meta-analysis of the modality effect. <i>Learning and Instruction</i>, 15(4), 313–331. <a class="doi" href="https://doi.org/10.1016/j.learninstruc.2005.07.001" target="_blank" rel="noopener">doi:10.1016/j.learninstruc.2005.07.001</a></li>
+<li id="ref-16"><span class="bib-au">Hattie, J., & Timperley, H.</span> (2007). The power of feedback. <i>Review of Educational Research</i>, 77(1), 81–112. <a class="doi" href="https://doi.org/10.3102/003465430298487" target="_blank" rel="noopener">doi:10.3102/003465430298487</a></li>
+<li id="ref-17"><span class="bib-au">Hollan, J., Hutchins, E., & Kirsh, D.</span> (2000). Distributed cognition: Toward a new foundation for human-computer interaction research. <i>ACM Transactions on Computer-Human Interaction</i>, 7(2), 174–196. <a class="doi" href="https://doi.org/10.1145/353485.353487" target="_blank" rel="noopener">doi:10.1145/353485.353487</a></li>
+<li id="ref-18"><span class="bib-au">Horvitz, E.</span> (1999). Principles of mixed-initiative user interfaces. <i>Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (CHI '99), 159–166</i>. <a class="doi" href="https://doi.org/10.1145/302979.303030" target="_blank" rel="noopener">doi:10.1145/302979.303030</a></li>
+<li id="ref-19"><span class="bib-au">Iqbal, S. T., & Horvitz, E.</span> (2007). Disruption and recovery of computing tasks: Field study, analysis, and directions. <i>Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (CHI '07), 677–686</i>. <a class="doi" href="https://doi.org/10.1145/1240624.1240730" target="_blank" rel="noopener">doi:10.1145/1240624.1240730</a></li>
+<li id="ref-20"><span class="bib-au">Järvelä, S., & Hadwin, A. F.</span> (2013). New frontiers: Regulating learning in CSCL. <i>Educational Psychologist</i>, 48(1), 25–39. <a class="doi" href="https://doi.org/10.1080/00461520.2012.748006" target="_blank" rel="noopener">doi:10.1080/00461520.2012.748006</a></li>
+<li id="ref-21"><span class="bib-au">Kalyuga, S., Ayres, P., Chandler, P., & Sweller, J.</span> (2003). The expertise reversal effect. <i>Educational Psychologist</i>, 38(1), 23–31. <a class="doi" href="https://doi.org/10.1207/s15326985ep3801_4" target="_blank" rel="noopener">doi:10.1207/s15326985ep3801_4</a></li>
+<li id="ref-22"><span class="bib-au">Kapur, M.</span> (2008). Productive failure. <i>Cognition and Instruction</i>, 26(3), 379–424. <a class="doi" href="https://doi.org/10.1080/07370000802212669" target="_blank" rel="noopener">doi:10.1080/07370000802212669</a></li>
+<li id="ref-23"><span class="bib-au">Kestin, G., Miller, K., Klales, A., Milbourne, T., & Ponti, G.</span> (2025). AI tutoring outperforms in-class active learning: An RCT introducing a novel research-based design in an authentic educational setting. <i>Scientific Reports</i>, 15, Article 17458. <a class="doi" href="https://doi.org/10.1038/s41598-025-97652-6" target="_blank" rel="noopener">doi:10.1038/s41598-025-97652-6</a></li>
+<li id="ref-24"><span class="bib-au">Kirschner, P. A., Sweller, J., & Clark, R. E.</span> (2006). Why minimal guidance during instruction does not work: An analysis of the failure of constructivist, discovery, problem-based, experiential, and inquiry-based teaching. <i>Educational Psychologist</i>, 41(2), 75–86. <a class="doi" href="https://doi.org/10.1207/s15326985ep4102_1" target="_blank" rel="noopener">doi:10.1207/s15326985ep4102_1</a></li>
+<li id="ref-25"><span class="bib-au">Kirsh, D., & Maglio, P.</span> (1994). On distinguishing epistemic from pragmatic action. <i>Cognitive Science</i>, 18(4), 513–549. <a class="doi" href="https://doi.org/10.1207/s15516709cog1804_1" target="_blank" rel="noopener">doi:10.1207/s15516709cog1804_1</a></li>
+<li id="ref-26"><span class="bib-au">Klein, G., Woods, D. D., Bradshaw, J. M., Hoffman, R. R., & Feltovich, P. J.</span> (2004). Ten challenges for making automation a “team player” in joint human-agent activity. <i>IEEE Intelligent Systems</i>, 19(6), 91–95. <a class="doi" href="https://doi.org/10.1109/mis.2004.74" target="_blank" rel="noopener">doi:10.1109/mis.2004.74</a></li>
+<li id="ref-27"><span class="bib-au">Koedinger, K. R., & Aleven, V.</span> (2007). Exploring the assistance dilemma in experiments with cognitive tutors. <i>Educational Psychology Review</i>, 19(3), 239–264. <a class="doi" href="https://doi.org/10.1007/s10648-007-9049-0" target="_blank" rel="noopener">doi:10.1007/s10648-007-9049-0</a></li>
+<li id="ref-28"><span class="bib-au">Leahy, W., & Sweller, J.</span> (2011). Cognitive load theory, modality of presentation and the transient information effect. <i>Applied Cognitive Psychology</i>, 25(6), 943–951. <a class="doi" href="https://doi.org/10.1002/acp.1787" target="_blank" rel="noopener">doi:10.1002/acp.1787</a></li>
+<li id="ref-29"><span class="bib-au">Lee, H.-P., Sarkar, A., Tankelevitch, L., Drosos, I., Rintel, S., Banks, R., & Wilson, N.</span> (2025). The impact of generative AI on critical thinking: Self-reported reductions in cognitive effort and confidence effects from a survey of knowledge workers. <i>Proceedings of the 2025 CHI Conference on Human Factors in Computing Systems, 1–22</i>. <a class="doi" href="https://doi.org/10.1145/3706598.3713778" target="_blank" rel="noopener">doi:10.1145/3706598.3713778</a></li>
+<li id="ref-30"><span class="bib-au">Leroy, S.</span> (2009). Why is it so hard to do my work? The challenge of attention residue when switching between work tasks. <i>Organizational Behavior and Human Decision Processes</i>, 109(2), 168–181. <a class="doi" href="https://doi.org/10.1016/j.obhdp.2009.04.002" target="_blank" rel="noopener">doi:10.1016/j.obhdp.2009.04.002</a></li>
+<li id="ref-31"><span class="bib-au">Lewis, K.</span> (2003). Measuring transactive memory systems in the field: Scale development and validation. <i>Journal of Applied Psychology</i>, 88(4), 587–604. <a class="doi" href="https://doi.org/10.1037/0021-9010.88.4.587" target="_blank" rel="noopener">doi:10.1037/0021-9010.88.4.587</a></li>
+<li id="ref-32"><span class="bib-au">Luger, E., & Sellen, A.</span> (2016). “Like having a really bad PA”: The gulf between user expectation and experience of conversational agents. <i>Proceedings of the 2016 CHI Conference on Human Factors in Computing Systems, 5286–5297</i>. <a class="doi" href="https://doi.org/10.1145/2858036.2858288" target="_blank" rel="noopener">doi:10.1145/2858036.2858288</a></li>
+<li id="ref-33"><span class="bib-au">Mathieu, J. E., Heffner, T. S., Goodwin, G. F., Salas, E., & Cannon-Bowers, J. A.</span> (2000). The influence of shared mental models on team process and performance. <i>Journal of Applied Psychology</i>, 85(2), 273–283. <a class="doi" href="https://doi.org/10.1037/0021-9010.85.2.273" target="_blank" rel="noopener">doi:10.1037/0021-9010.85.2.273</a></li>
+<li id="ref-34"><span class="bib-au">Molenaar, I.</span> (2022). The concept of hybrid human-AI regulation: Exemplifying how to support young learners' self-regulated learning. <i>Computers and Education: Artificial Intelligence</i>, 3, Article 100070. <a class="doi" href="https://doi.org/10.1016/j.caeai.2022.100070" target="_blank" rel="noopener">doi:10.1016/j.caeai.2022.100070</a></li>
+<li id="ref-35"><span class="bib-au">Monk, C. A., Trafton, J. G., & Boehm-Davis, D. A.</span> (2008). The effect of interruption duration and demand on resuming suspended goals. <i>Journal of Experimental Psychology: Applied</i>, 14(4), 299–313. <a class="doi" href="https://doi.org/10.1037/a0014402" target="_blank" rel="noopener">doi:10.1037/a0014402</a></li>
+<li id="ref-36"><span class="bib-au">Nardi, B. A.</span> (2005). Beyond bandwidth: Dimensions of connection in interpersonal communication. <i>Computer Supported Cooperative Work (CSCW)</i>, 14(2), 91–130. <a class="doi" href="https://doi.org/10.1007/s10606-004-8127-9" target="_blank" rel="noopener">doi:10.1007/s10606-004-8127-9</a></li>
+<li id="ref-37"><span class="bib-au">Nass, C., & Moon, Y.</span> (2000). Machines and mindlessness: Social responses to computers. <i>Journal of Social Issues</i>, 56(1), 81–103. <a class="doi" href="https://doi.org/10.1111/0022-4537.00153" target="_blank" rel="noopener">doi:10.1111/0022-4537.00153</a></li>
+<li id="ref-38"><span class="bib-au">Olson, G. M., & Olson, J. S.</span> (2000). Distance matters. <i>Human-Computer Interaction</i>, 15(2–3), 139–178. <a class="doi" href="https://doi.org/10.1207/s15327051hci1523_4" target="_blank" rel="noopener">doi:10.1207/s15327051hci1523_4</a></li>
+<li id="ref-39"><span class="bib-au">Oviatt, S., DeAngeli, A., & Kuhn, K.</span> (1997). Integration and synchronization of input modes during multimodal human-computer interaction. <i>Proceedings of the ACM SIGCHI Conference on Human Factors in Computing Systems (CHI '97), 415–422</i>. <a class="doi" href="https://doi.org/10.1145/258549.258821" target="_blank" rel="noopener">doi:10.1145/258549.258821</a></li>
+<li id="ref-40"><span class="bib-au">Oviatt, S.</span> (1999). Ten myths of multimodal interaction. <i>Communications of the ACM</i>, 42(11), 74–81. <a class="doi" href="https://doi.org/10.1145/319382.319398" target="_blank" rel="noopener">doi:10.1145/319382.319398</a></li>
+<li id="ref-41"><span class="bib-au">Parasuraman, R., & Riley, V.</span> (1997). Humans and automation: Use, misuse, disuse, abuse. <i>Human Factors</i>, 39(2), 230–253. <a class="doi" href="https://doi.org/10.1518/001872097778543886" target="_blank" rel="noopener">doi:10.1518/001872097778543886</a></li>
+<li id="ref-42"><span class="bib-au">Parasuraman, R., Sheridan, T. B., & Wickens, C. D.</span> (2000). A model for types and levels of human interaction with automation. <i>IEEE Transactions on Systems, Man, and Cybernetics – Part A</i>, 30(3), 286–297. <a class="doi" href="https://doi.org/10.1109/3468.844354" target="_blank" rel="noopener">doi:10.1109/3468.844354</a></li>
+<li id="ref-43"><span class="bib-au">Pea, R. D.</span> (2004). The social and technological dimensions of scaffolding and related theoretical concepts for learning, education, and human activity. <i>Journal of the Learning Sciences</i>, 13(3), 423–451. <a class="doi" href="https://doi.org/10.1207/s15327809jls1303_6" target="_blank" rel="noopener">doi:10.1207/s15327809jls1303_6</a></li>
+<li id="ref-44"><span class="bib-au">Porcheron, M., Fischer, J. E., Reeves, S., & Sharples, S.</span> (2018). Voice interfaces in everyday life. <i>Proceedings of the 2018 CHI Conference on Human Factors in Computing Systems, 1–12</i>. <a class="doi" href="https://doi.org/10.1145/3173574.3174214" target="_blank" rel="noopener">doi:10.1145/3173574.3174214</a></li>
+<li id="ref-45"><span class="bib-au">Rajaram, S., & Pereira-Pasarin, L. P.</span> (2010). Collaborative memory: Cognitive research and theory. <i>Perspectives on Psychological Science</i>, 5(6), 649–663. <a class="doi" href="https://doi.org/10.1177/1745691610388763" target="_blank" rel="noopener">doi:10.1177/1745691610388763</a></li>
+<li id="ref-46"><span class="bib-au">Risko, E. F., & Gilbert, S. J.</span> (2016). Cognitive offloading. <i>Trends in Cognitive Sciences</i>, 20(9), 676–688. <a class="doi" href="https://doi.org/10.1016/j.tics.2016.07.002" target="_blank" rel="noopener">doi:10.1016/j.tics.2016.07.002</a></li>
+<li id="ref-47"><span class="bib-au">Roll, I., Aleven, V., McLaren, B. M., & Koedinger, K. R.</span> (2011). Improving students' help-seeking skills using metacognitive feedback in an intelligent tutoring system. <i>Learning and Instruction</i>, 21(2), 267–280. <a class="doi" href="https://doi.org/10.1016/j.learninstruc.2010.07.004" target="_blank" rel="noopener">doi:10.1016/j.learninstruc.2010.07.004</a></li>
+<li id="ref-48"><span class="bib-au">Roschelle, J., & Teasley, S. D.</span> (1995). The construction of shared knowledge in collaborative problem solving. <i>In C. O'Malley (Ed.), <i>Computer Supported Collaborative Learning</i> (pp. 69–97). Springer</i>. <a class="doi" href="https://doi.org/10.1007/978-3-642-85098-1_5" target="_blank" rel="noopener">doi:10.1007/978-3-642-85098-1_5</a> <span class="bib-note">Book chapter.</span></li>
+<li id="ref-49"><span class="bib-au">Schegloff, E. A., Jefferson, G., & Sacks, H.</span> (1977). The preference for self-correction in the organization of repair in conversation. <i>Language</i>, 53(2), 361–382. <a class="doi" href="https://doi.org/10.2307/413107" target="_blank" rel="noopener">doi:10.2307/413107</a></li>
+<li id="ref-50"><span class="bib-au">Schmidt, K., & Bannon, L.</span> (1992). Taking CSCW seriously: Supporting articulation work. <i>Computer Supported Cooperative Work (CSCW)</i>, 1(1–2), 7–40. <a class="doi" href="https://doi.org/10.1007/bf00752449" target="_blank" rel="noopener">doi:10.1007/bf00752449</a></li>
+<li id="ref-51"><span class="bib-au">Sebanz, N., Bekkering, H., & Knoblich, G.</span> (2006). Joint action: Bodies and minds moving together. <i>Trends in Cognitive Sciences</i>, 10(2), 70–76. <a class="doi" href="https://doi.org/10.1016/j.tics.2005.12.009" target="_blank" rel="noopener">doi:10.1016/j.tics.2005.12.009</a></li>
+<li id="ref-52"><span class="bib-au">Shneiderman, B., & Maes, P.</span> (1997). Direct manipulation vs. interface agents. <i>Interactions</i>, 4(6), 42–61. <a class="doi" href="https://doi.org/10.1145/267505.267514" target="_blank" rel="noopener">doi:10.1145/267505.267514</a></li>
+<li id="ref-53"><span class="bib-au">Singh, A., Marcus, N., & Ayres, P.</span> (2012). The transient information effect: Investigating the impact of segmentation on spoken and written text. <i>Applied Cognitive Psychology</i>, 26(6), 848–853. <a class="doi" href="https://doi.org/10.1002/acp.2885" target="_blank" rel="noopener">doi:10.1002/acp.2885</a></li>
+<li id="ref-54"><span class="bib-au">Soderstrom, N. C., & Bjork, R. A.</span> (2015). Learning versus performance: An integrative review. <i>Perspectives on Psychological Science</i>, 10(2), 176–199. <a class="doi" href="https://doi.org/10.1177/1745691615569000" target="_blank" rel="noopener">doi:10.1177/1745691615569000</a></li>
+<li id="ref-55"><span class="bib-au">Suchman, L. A.</span> (1987). <i>Plans and situated actions: The problem of human-machine communication</i>. Cambridge University Press. . <a class="doi" href="https://doi.org/Book." target="_blank" rel="noopener">doi:Book.</a></li>
+<li id="ref-56"><span class="bib-au">Terveen, L. G.</span> (1995). An overview of human-computer collaboration. <i>Knowledge-Based Systems</i>, 8(2–3), 67–81. <a class="doi" href="https://doi.org/10.1016/0950-7051(95)98369-h" target="_blank" rel="noopener">doi:10.1016/0950-7051(95)98369-h</a></li>
+<li id="ref-57"><span class="bib-au">van de Pol, J., Volman, M., & Beishuizen, J.</span> (2010). Scaffolding in teacher-student interaction: A decade of research. <i>Educational Psychology Review</i>, 22(3), 271–296. <a class="doi" href="https://doi.org/10.1007/s10648-010-9127-6" target="_blank" rel="noopener">doi:10.1007/s10648-010-9127-6</a></li>
+<li id="ref-58"><span class="bib-au">VanLehn, K.</span> (2011). The relative effectiveness of human tutoring, intelligent tutoring systems, and other tutoring systems. <i>Educational Psychologist</i>, 46(4), 197–221. <a class="doi" href="https://doi.org/10.1080/00461520.2011.611369" target="_blank" rel="noopener">doi:10.1080/00461520.2011.611369</a></li>
+<li id="ref-59"><span class="bib-au">Volet, S., Summers, M., & Thurman, J.</span> (2009). High-level co-regulation in collaborative learning: How does it emerge and how is it sustained?. <i>Learning and Instruction</i>, 19(2), 128–143. <a class="doi" href="https://doi.org/10.1016/j.learninstruc.2008.03.001" target="_blank" rel="noopener">doi:10.1016/j.learninstruc.2008.03.001</a></li>
+<li id="ref-60"><span class="bib-au">Whittaker, S.</span> (2003). Things to talk about when talking about things. <i>Human-Computer Interaction</i>, 18(1–2), 149–170. <a class="doi" href="https://doi.org/10.1207/s15327051hci1812_6" target="_blank" rel="noopener">doi:10.1207/s15327051hci1812_6</a></li>
+<li id="ref-61"><span class="bib-au">Wickens, C. D.</span> (2002). Multiple resources and performance prediction. <i>Theoretical Issues in Ergonomics Science</i>, 3(2), 159–177. <a class="doi" href="https://doi.org/10.1080/14639220210123806" target="_blank" rel="noopener">doi:10.1080/14639220210123806</a></li>
+<li id="ref-62"><span class="bib-au">Wood, D., Bruner, J. S., & Ross, G.</span> (1976). The role of tutoring in problem solving. <i>Journal of Child Psychology and Psychiatry</i>, 17(2), 89–100. <a class="doi" href="https://doi.org/10.1111/j.1469-7610.1976.tb00381.x" target="_blank" rel="noopener">doi:10.1111/j.1469-7610.1976.tb00381.x</a></li>
+<li id="ref-63"><span class="bib-au">Zhang, J., & Norman, D. A.</span> (1994). Representations in distributed cognitive tasks. <i>Cognitive Science</i>, 18(1), 87–122. <a class="doi" href="https://doi.org/10.1207/s15516709cog1801_3" target="_blank" rel="noopener">doi:10.1207/s15516709cog1801_3</a></li>
+</ol>
+
+</section>
+
+</main>
+</div>
+</div>
+
+<footer>
+  <span>Lemma AI · Voice System · Theoretical foundations review</span>
+  <span>63 sources · metadata verified 6 Nov 2026</span>
+</footer>
+
+<a href="#" class="top" id="totop">Top</a>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if(el) map[id] = a;
+  });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('on'); });
+        var a = map[e.target.id];
+        if(a) a.classList.add('on');
+      }
+    });
+  }, {rootMargin: '-8% 0px -75% 0px', threshold: 0});
+  Object.keys(map).forEach(function(id){ obs.observe(document.getElementById(id)); });
+
+  var top = document.getElementById('totop');
+  window.addEventListener('scroll', function(){
+    if(window.scrollY > 900) top.classList.add('show');
+    else top.classList.remove('show');
+  }, {passive:true});
+
+  // keep citation targets visible above the fold
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a.cite');
+    if(!a) return;
+    var li = document.querySelector(a.getAttribute('href'));
+    if(!li) return;
+    setTimeout(function(){ li.scrollIntoView({block:'center'}); }, 0);
+  });
+})();
+</script>
+</body>
+</html>
