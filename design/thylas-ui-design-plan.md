@@ -1,7 +1,7 @@
 # Thylas (τ) — UI Prototype Design Plan
 
-**Status:** design planning. No frontend implementation in this document.
-**Scope:** application shell, information architecture, workspace interaction model, visual direction, low-fidelity prototypes.
+**Status:** design planning. No frontend implementation in this document.  
+**Scope:** application shell, information architecture, workspace interaction model, visual direction, low-fidelity prototypes.  
 **Date:** 2026-11-07
 
 ---
@@ -10,12 +10,12 @@
 
 Every claim in this document carries one of four labels. Nothing without a label is a decision.
 
-| Label | Meaning | Who can change it |
-| --- | --- | --- |
-| **[C]** Confirmed | Decided. Reopening requires an argument that beats the stated reason. | Product owner |
-| **[P]** Proposed | Our recommendation, with reasoning and rejected alternatives. | Review |
-| **[?]** Open | Genuinely ambiguous. Alternatives and default shown; needs validation. | Review + user testing |
-| **[A]** Assumption | We believe it, we cannot verify it yet. Must be checked before it becomes a dependency. | Evidence |
+| Label              | Meaning                                                                                 | Who can change it     |
+| ------------------ | --------------------------------------------------------------------------------------- | --------------------- |
+| **[C]** Confirmed  | Decided. Reopening requires an argument that beats the stated reason.                   | Product owner         |
+| **[P]** Proposed   | Our recommendation, with reasoning and rejected alternatives.                           | Review                |
+| **[?]** Open       | Genuinely ambiguous. Alternatives and default shown; needs validation.                  | Review + user testing |
+| **[A]** Assumption | We believe it, we cannot verify it yet. Must be checked before it becomes a dependency. | Evidence              |
 
 Sources are named inline: `CHORD site`, `Kuse`, `HeptaBase RE`. Anything not traceable to one of them is marked **[A]**.
 
@@ -29,25 +29,25 @@ Sources are named inline: `CHORD site`, `Kuse`, `HeptaBase RE`. Anything not tra
 
 **[C]** From the CHORD site, Thylas is *"Cloud platform & user-facing integration — packaged WAM · workspaces · knowledge base"*, status label *"Available as a platform"*. Its four responsibilities as given:
 
-| # | Responsibility | Consequence for UI |
-| --- | --- | --- |
-| 1 | Accessible application interface | Entry cost must be near zero: sign in → a real object in under a minute |
-| 2 | Personal and organizational workspaces | Two ownership scopes, one visual language, different capability sets |
-| 3 | Files, documents, notes, resources | A content model, not a folder tree with a chat box bolted on |
+| # | Responsibility                             | Consequence for UI                                                             |
+| - | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| 1 | Accessible application interface           | Entry cost must be near zero: sign in → a real object in under a minute        |
+| 2 | Personal and organizational workspaces     | Two ownership scopes, one visual language, different capability sets           |
+| 3 | Files, documents, notes, resources         | A content model, not a folder tree with a chat box bolted on                   |
 | 4 | Access to WAM and other CHORD capabilities | Surfaces for execution: status, artifacts, controls — mirrored, never invented |
-| 5 | Accounts, subscriptions, quotas, API | A settings hierarchy that separates person / org / workspace |
+| 5 | Accounts, subscriptions, quotas, API       | A settings hierarchy that separates person / org / workspace                   |
 
 ### 1.2 The boundary that must not blur
 
 **[C]** WAM does semantic understanding, intent interpretation, context management, task planning, agent coordination, execution logic. Thylas does not.
 
-| Question | Answer | Where it appears in the UI |
-| --- | --- | --- |
-| Who decides what a process should do? | WAM | Thylas shows the intent, the plan, and the revision history as **read-only material** |
-| Who decides when a step runs? | WAM | Thylas shows state; controls are those WAM exposes, no more |
-| Who searches files? | Thylas (lexical + metadata) | ⌘K searches names, text, tags, dates |
-| Who searches meaning? | WAM | Offered as an explicit action ("find related work"), labelled as a WAM call |
-| Who remembers context across sessions? | WAM (shared context) | Thylas shows a context summary per process; it does not maintain one |
+| Question                               | Answer                      | Where it appears in the UI                                                            |
+| -------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| Who decides what a process should do?  | WAM                         | Thylas shows the intent, the plan, and the revision history as **read-only material** |
+| Who decides when a step runs?          | WAM                         | Thylas shows state; controls are those WAM exposes, no more                           |
+| Who searches files?                    | Thylas (lexical + metadata) | ⌘K searches names, text, tags, dates                                                  |
+| Who searches meaning?                  | WAM                         | Offered as an explicit action ("find related work"), labelled as a WAM call           |
+| Who remembers context across sessions? | WAM (shared context)        | Thylas shows a context summary per process; it does not maintain one                  |
 
 **Practical rule for future design reviews:** if a screen in Thylas needs to *decide* something about the user's work, the design is wrong. Thylas asks, WAM decides, Thylas reports.
 
@@ -69,27 +69,27 @@ Screens that do not serve that sentence are candidates for removal, not features
 
 Inspected 2026-11-06. Findings that affect UI design:
 
-| Finding | Design consequence |
-| --- | --- |
-| Four-layer stack: Rym (γ, research) → WAM (ω, core) → Thylas (τ, platform) → Knock (κ, in development) | Thylas may present itself as the platform layer, but must not imply Rym or Knock are usable |
-| **"Status labels are honest by design."** Nothing on the site claims a deployment, benchmark, or completed outcome | **[C]** The UI inherits this discipline: never show a capability control that cannot execute; empty states say what is missing instead of faking data |
-| WAM's three named capabilities: shared context, dynamic planning, verifiable execution; centralised "Miracle Agent" coordination | Process surfaces should show **plan revisions** and **verifiable outputs**, because those are the named, defensible capabilities |
-| Operator paradigm: Discover → Abstract → Compose → Generalize | Future direction: a process that worked becomes a named, re-runnable operator. **Not v1 UI.** Mentioned only so the process detail view does not structurally block it |
-| Four work types: autonomous research, collaborative development, competitive problem solving, computational operations | These are the *content* of a workspace. Long horizon, many artifacts, heavy file usage — this is why tab persistence and file lineage matter more than chat history |
-| Documentation: "In preparation" | Do not design links to docs that do not exist. Help entry points must degrade honestly |
+| Finding                                                                                                                          | Design consequence                                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Four-layer stack: Rym (γ, research) → WAM (ω, core) → Thylas (τ, platform) → Knock (κ, in development)                           | Thylas may present itself as the platform layer, but must not imply Rym or Knock are usable                                                                            |
+| **"Status labels are honest by design."** Nothing on the site claims a deployment, benchmark, or completed outcome               | **[C]** The UI inherits this discipline: never show a capability control that cannot execute; empty states say what is missing instead of faking data                  |
+| WAM's three named capabilities: shared context, dynamic planning, verifiable execution; centralised "Miracle Agent" coordination | Process surfaces should show **plan revisions** and **verifiable outputs**, because those are the named, defensible capabilities                                       |
+| Operator paradigm: Discover → Abstract → Compose → Generalize                                                                    | Future direction: a process that worked becomes a named, re-runnable operator. **Not v1 UI.** Mentioned only so the process detail view does not structurally block it |
+| Four work types: autonomous research, collaborative development, competitive problem solving, computational operations           | These are the *content* of a workspace. Long horizon, many artifacts, heavy file usage — this is why tab persistence and file lineage matter more than chat history    |
+| Documentation: "In preparation"                                                                                                  | Do not design links to docs that do not exist. Help entry points must degrade honestly                                                                                 |
 
 ### 2.2 Kuse (`kuse.ai`, `app.kuse.ai`)
 
 **Inspection limit, stated plainly:** `app.kuse.ai` is behind authentication (verified: it returns a login screen). We could not run a hands-on session. Findings below come from the marketing surface (inspected: *"The AI workspace built around your context"*, *Kuse 2.0: The AI OS*; credit-based plans; infinite canvas; files/web/images/video on one canvas; "Source Only Mode"; "Evolving Memory"; schedules/workflows) plus three independent reviews (netizenschoice, popularaitools, booststash — all describing the same structural facts).
 
-| Observed pattern | Adopt / adapt / avoid | Why |
-| --- | --- | --- |
-| Canvas is the default landing surface; you drop material and start | **Adopt the principle, not the surface.** Our equivalent: one intent input on Overview that starts a real object | The lesson is friction, not canvas |
-| Flat list of canvases as the whole organisation | **Avoid** | Week-scale CHORD work needs typed containers (files, boards, processes) and an ownership model |
-| Credits are visible and constrain work | **Adopt** | A platform product must make quota legible before the user hits it |
-| Everything is the same object type on one infinite field | **Avoid** | Kuse is a research/writing tool. Thylas must distinguish a file from a run from a board, because their capabilities differ |
-| "Cumulative context" narrative | **Adopt as language, not mechanism** | We may say the system holds context; we may not build context management in Thylas |
-| No strong information hierarchy — the canvas is the hierarchy | **Avoid** | Our sidebar has to survive 40 workspaces and 3,000 files |
+| Observed pattern                                                   | Adopt / adapt / avoid                                                                                            | Why                                                                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Canvas is the default landing surface; you drop material and start | **Adopt the principle, not the surface.** Our equivalent: one intent input on Overview that starts a real object | The lesson is friction, not canvas                                                                                         |
+| Flat list of canvases as the whole organisation                    | **Avoid**                                                                                                        | Week-scale CHORD work needs typed containers (files, boards, processes) and an ownership model                             |
+| Credits are visible and constrain work                             | **Adopt**                                                                                                        | A platform product must make quota legible before the user hits it                                                         |
+| Everything is the same object type on one infinite field           | **Avoid**                                                                                                        | Kuse is a research/writing tool. Thylas must distinguish a file from a run from a board, because their capabilities differ |
+| "Cumulative context" narrative                                     | **Adopt as language, not mechanism**                                                                             | We may say the system holds context; we may not build context management in Thylas                                         |
+| No strong information hierarchy — the canvas is the hierarchy      | **Avoid**                                                                                                        | Our sidebar has to survive 40 workspaces and 3,000 files                                                                   |
 
 **Honest conclusion:** Kuse validates *entry friction* and *quota legibility*. It does not validate an application shell for typed, owned, long-running work. We take the first two and design the third ourselves.
 
@@ -101,15 +101,15 @@ Inspected: `Plan/01-范围与基准.md`, `02-逐屏规格.md` (S01–S14), `03-�
 
 Verified facts about the reconstruction, and what they teach:
 
-| Artifact | What it actually contains | Lesson for Thylas |
-| --- | --- | --- |
-| `C01 AppShell` | Three columns: left rail, tab strip, main, optional right panel; only widths and toggle state as inputs | A shell component that knows nothing about content is the right level of abstraction |
-| `C03 TabStrip` / `C04 TabItem` | Tabs with **pin**, **group**, close, reorder, unsaved dot | Pin and group are not decoration: they are how a 40-tab session stays legible |
-| `S02` layout numbers | rail 240 / tab strip 40 / right panel 360 / toolbar 48 offset 12 / minimap 160×110 | Reusable density baseline for a 1440-wide desktop target |
-| `06` measured canvas work | 30 wheel events collapsed into one zoom (1.016 instead of 1.616); 150-card drag P95 43 ms → 18 ms after moving viewport to `ref` + CSS-variable drag | Canvas手感 is an engineering property with a measurable threshold. Specify thresholds in the design, not after |
-| `06` interaction table | Hover anchors to start an edge; drag to blank creates a card **and** the edge in one undoable step; hit areas compensated by `1/zoom`; labels on a layer above cards | These are the four interactions that make a canvas feel authored rather than drawn |
-| `对照` §1 | **21 buttons per screen with no handler** — 7 of them app entries, with `onClick` present but the callback `undefined` | A navigation tree that is not complete in the IA becomes dead chrome. Our sidebar must have exactly zero unmapped destinations |
-| `对照` §2 | Reference cards are *white body + tinted header*; sections are *full-bleed tinted ground + solid top bar*. The reconstruction inverted this | Concrete correction for the Thylas whiteboard: keep paper light, tint only the identifying edge |
+| Artifact                       | What it actually contains                                                                                                                                            | Lesson for Thylas                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `C01 AppShell`                 | Three columns: left rail, tab strip, main, optional right panel; only widths and toggle state as inputs                                                              | A shell component that knows nothing about content is the right level of abstraction                                           |
+| `C03 TabStrip` / `C04 TabItem` | Tabs with **pin**, **group**, close, reorder, unsaved dot                                                                                                            | Pin and group are not decoration: they are how a 40-tab session stays legible                                                  |
+| `S02` layout numbers           | rail 240 / tab strip 40 / right panel 360 / toolbar 48 offset 12 / minimap 160×110                                                                                   | Reusable density baseline for a 1440-wide desktop target                                                                       |
+| `06` measured canvas work      | 30 wheel events collapsed into one zoom (1.016 instead of 1.616); 150-card drag P95 43 ms → 18 ms after moving viewport to `ref` + CSS-variable drag                 | Canvas手感 is an engineering property with a measurable threshold. Specify thresholds in the design, not after                   |
+| `06` interaction table         | Hover anchors to start an edge; drag to blank creates a card **and** the edge in one undoable step; hit areas compensated by `1/zoom`; labels on a layer above cards | These are the four interactions that make a canvas feel authored rather than drawn                                             |
+| `对照` §1                        | **21 buttons per screen with no handler** — 7 of them app entries, with `onClick` present but the callback `undefined`                                               | A navigation tree that is not complete in the IA becomes dead chrome. Our sidebar must have exactly zero unmapped destinations |
+| `对照` §2                        | Reference cards are *white body + tinted header*; sections are *full-bleed tinted ground + solid top bar*. The reconstruction inverted this                          | Concrete correction for the Thylas whiteboard: keep paper light, tint only the identifying edge                                |
 
 What we take, concretely:
 
@@ -120,6 +120,8 @@ What we take, concretely:
 5. **Every nav element routes.** No decorative sidebar entries. **[C]**
 
 What we leave behind: the learning layer (mastery badges, spaced repetition, review sessions) — that was a different product hypothesis. Also the 14-screen breadth; Thylas starts from 9 prototype surfaces, not 14.
+
+
 
 ---
 
@@ -287,6 +289,7 @@ The question as given: *global personal knowledge space, workspace-specific mate
 | **C. Notes = separate store, workspace docs = separate store** | Each area stays simple | Two document systems, two search indexes, two editors. The user must remember which one they used |
 | **D. One object, one scope, two views (recommended)** | Single store, single editor, single index; org boundaries respected; personal scratch space exists | Costs a scope filter in the Notes list, and users may not immediately understand why a note appears in two places. Needs one explanatory affordance, not a settings page |
 
+
 **Why Files and Notes do not overlap [C]:** *a file has an original form we did not author; a note has a body we did.* A PDF you upload into a workspace is a File. What you write **about** that PDF is a Note that references it. This is a definition, not a preference — it decides where anything new goes, and it is the only overlap rule the UI has to teach.
 
 `[?]` Cross-scope sharing (one note readable by two workspaces) is out of v1. See §13 Q1.
@@ -446,6 +449,7 @@ This is the section that decides whether Workspace feels like a work environment
 That single rule answers "what is a tab?" without a taxonomy meeting. A board is not a tab *inside* the Whiteboard room tab; opening a board replaces nothing — it appends a detail tab next to the room. Going back to the index is one click on the room tab, not a back button guess.
 
 ### 7.2 Why not the alternatives
+
 
 | Model | Description | Verdict |
 | --- | --- | --- |
@@ -615,6 +619,7 @@ That single rule answers "what is a tab?" without a taxonomy meeting. A board is
 | Output | Artifacts (files, notes, board objects) with `open` actions; a summary; credits consumed | No |
 | Controls | Pause · Stop · Resume · Answer · Approve · Re-run with changes | Mirrored |
 
+
 **[C] Boundary statement to keep in the code comments and the design review:** the five controls above are the *only* controls Thylas may render, and each exists only if WAM exposes the corresponding capability. Thylas has no scheduler, no retry policy, no queue, no model selection logic. If WAM cannot pause, the Pause button does not exist — not "disabled with a tooltip".
 
 **State is the product here.** A run is one of: `queued · running · needs input · succeeded · failed · stopped`. Every surface that shows a process uses the same six words and the same glyph set. `needs input` is the only state that may pull attention (badge, Overview row) because it is the only state where a human is blocking the system.
@@ -782,6 +787,7 @@ Each journey lists the surfaces, the clicks, and the one thing that would make i
 | 4 | Panel | Outline builds from headings; a reference list builds from `[[` and pasted links |
 | 5 | Sidebar → Notes | The note appears under scope=Personal, and disappears from a workspace view it was never in |
 
+
 **Fails if:** creating a note requires choosing a location first, or the same note shows in two lists without a scope chip.
 
 ### J6 · Accessing Files, Whiteboard, Processes
@@ -877,6 +883,17 @@ Defaults are what we will build if no evidence arrives. None of these should blo
 | 5 | Component inventory from the 9 frames (target ~40 parts, not 68) | Component contract table | Frames settled |
 | 6 | Canvas interaction spec with thresholds (§8.2 floor) as acceptance tests | Spec + probe scripts later | Step 2 |
 | 7 | Only then: implementation plan with vertical slices per room | Engineering plan | All above |
+
+**Status, 2026-11-07.** Step 3 and step 2 are done: `design/tokens.css` exists and `design/prototypes/hi-fi.html` renders nine screens from those tokens. Building it forced four decisions this document did not yet contain, now fixed in the prototype:
+
+| Added during prototyping | Value | Consequence |
+| --- | --- | --- |
+| Notes tab strip holds **note tabs only**, no room tab | The Notes sidebar row is the library; the strip holds open notes | Removes the two-active-tabs ambiguity of "Notes room + note detail" in one strip |
+| Index screens (Files, Whiteboard index, Processes) carry **no context panel**; detail screens do | Panel appears with a selection, not with a room | Panel is a selection inspector, not a permanent third column |
+| Card header strip is tinted, section is tinted ground + solid top rule | `#F1E7D8` header on `#FBF9F4`, section `#F0E5D4` | Matches the HeptaBase finding; the inverted version reads as a card UI |
+| Canvas content is authored in a fixed 820×440 scene, scaled to fit | `transform: scale(k)`, capped at 1 | Cards stay legible at 1440; a real canvas needs the §8.2 thresholds |
+
+Steps 1, 4, 5 and 6 remain open. Nothing here changes the boundary in §1.
 
 **Explicitly not next:** building the app, choosing a frontend stack, writing production components, designing pricing pages, or adding a sixth sidebar area.
 

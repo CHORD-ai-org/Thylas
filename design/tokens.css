@@ -1,0 +1,84 @@
+/* Thylas (τ) — design tokens
+   Single source for prototype and app. Values from design/thylas-ui-design-plan.md §3.
+   No component styles here: only tokens. */
+
+:root {
+  /* ---- colour: ground ---- */
+  --bg-app: #F1EBDD;      /* application ground */
+  --bg-paper: #F7F2E9;    /* canvas, whiteboard ground */
+  --bg-surface: #FBF9F4;  /* reader, cards, panels, tab strip */
+  --bg-rail: #EBE4D4;     /* global rail, recessed */
+
+  /* ---- colour: text ---- */
+  --ink: #493626;
+  --ink-2: #927B65;
+  --ink-3: #B3A08C;
+
+  /* ---- colour: line ---- */
+  --line: #E6DED1;
+  --line-strong: #D8CCB9;
+
+  /* ---- colour: accent (reserved: state + current selection only) ---- */
+  --accent: #B56F50;
+  --accent-weak: #F0E2D7;
+
+  /* ---- colour: state ---- */
+  --ok: #5E6B50;
+  --warn: #A8792C;
+  --error: #8C3A2B;
+  --idle: #927B65;
+
+  /* ---- type ---- */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --ui: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, monospace;
+
+  --t-display: 400 28px/34px var(--serif);
+  --t-section: 500 18px/26px var(--serif);
+  --t-read: 400 16px/26px var(--serif);
+  --t-ui: 400 13px/18px var(--ui);
+  --t-ui-strong: 550 13px/18px var(--ui);
+  --t-caption: 450 11px/16px var(--ui);
+  --t-mono: 400 12px/18px var(--mono);
+  --t-mono-s: 400 10.5px/16px var(--mono);
+  --track-caption: .02em;
+  --track-label: .1em;
+
+  /* ---- space ---- */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --s12: 48px;
+
+  /* ---- rows ---- */
+  --h-header: 48px;
+  --h-nav: 32px;
+  --h-switcher: 36px;
+  --h-strip: 40px;
+  --h-tab: 32px;
+  --h-row: 32px;
+  --h-toolbar: 44px;
+
+  /* ---- panels ---- */
+  --w-rail: 240px;
+  --w-rail-collapsed: 56px;
+  --w-panel: 340px;
+  --w-panel-notes: 300px;
+  --w-read: 660px;
+
+  /* ---- corners ---- */
+  --r-chip: 2px;
+  --r-surface: 4px;
+  --r-overlay: 6px;
+
+  /* ---- elevation ---- */
+  --e1: 0 1px 0 rgba(73, 54, 38, .06);
+  --e2: 0 8px 24px -12px rgba(73, 54, 38, .25);
+
+  /* ---- motion ---- */
+  --ease: cubic-bezier(.2, 0, 0, 1);
+  --dur-panel: 160ms;
+  --dur-zoom: 120ms;
+  --dur-pulse: 600ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-panel: 0ms; --dur-zoom: 0ms; --dur-pulse: 0ms; }
+}

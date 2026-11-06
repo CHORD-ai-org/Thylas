@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thylas (τ) — hi-fi prototype</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+/* ============ base ============ */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--bg-app);color:var(--ink);font:var(--t-ui);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:default}
+input{font:inherit;color:inherit;background:none;border:0;outline:0}
+a{color:inherit;text-decoration:none}
+.mono{font:var(--t-mono)}
+.cap{font:var(--t-caption);letter-spacing:var(--track-caption);color:var(--ink-2)}
+.lbl{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2)}
+.row{display:flex;align-items:center}
+.grow{flex:1;min-width:0}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ============ shell ============ */
+.app{display:grid;grid-template-columns:var(--w-rail) 1fr;grid-template-rows:100%;height:100vh;overflow:hidden;transition:grid-template-columns var(--dur-panel) var(--ease)}
+.app.collapsed{grid-template-columns:var(--w-rail-collapsed) 1fr}
+
+/* ---- rail ---- */
+.rail{background:var(--bg-rail);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.rail-hd{flex:0 0 auto;height:var(--h-header);display:flex;align-items:center;gap:8px;padding:0 10px 0 14px}
+.brand{font:500 18px/1 var(--serif);letter-spacing:.02em}
+.brand-name{font:var(--t-ui-strong);flex:1;letter-spacing:.01em}
+.kbd{font:var(--t-mono-s);color:var(--ink-2);border:1px solid var(--line-strong);border-radius:2px;padding:1px 5px;letter-spacing:.04em}
+.ibtn{width:24px;height:24px;flex:0 0 auto;display:grid;place-items:center;border-radius:2px;color:var(--ink-2);font-size:14px;line-height:1}
+.ibtn:hover{background:rgba(73,54,38,.06);color:var(--ink)}
+.rail-scroll{flex:1;min-height:0;overflow-y:auto;padding-bottom:8px}
+.nav{padding:0 8px}
+.nrow{display:flex;align-items:center;gap:10px;height:var(--h-nav);flex:0 0 auto;padding:0 6px;border-radius:2px;font:var(--t-ui);color:var(--ink);position:relative}
+.nrow:hover{background:rgba(73,54,38,.05)}
+.nrow.on{background:var(--bg-app);font:var(--t-ui-strong);box-shadow:inset 0 0 0 1px rgba(230,222,209,.7)}
+.nrow .gi{flex:0 0 14px;width:14px;text-align:center;font-size:11px;color:var(--ink-2)}
+.nrow.on .gi{color:var(--ink)}
+.nrow .tail{margin-left:auto;font:var(--t-caption);color:var(--ink-3)}
+.sec{margin-top:14px;padding:0 8px}
+.sec-h{display:flex;align-items:center;gap:6px;height:var(--h-nav);padding:0 6px;width:100%;font:var(--t-caption);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.sec-h .car{font-size:9px;color:var(--ink-3);margin-left:auto}
+.sec-h:hover{color:var(--ink)}
+.switcher{display:flex;align-items:center;gap:7px;height:var(--h-switcher);padding:0 6px;border-radius:2px;width:100%}
+.switcher:hover{background:rgba(73,54,38,.05)}
+.ws-dot{width:6px;height:6px;border-radius:50%;background:var(--ink);flex:0 0 6px}
+.ws-dot.org{background:var(--ink-2)}
+.ws-name{font:var(--t-ui-strong);flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font:400 9.5px/1 var(--mono);letter-spacing:.06em;color:var(--ink-2);border:1px solid var(--line-strong);border-radius:2px;padding:2px 4px;flex:0 0 auto}
+.car{color:var(--ink-3);font-size:10px}
+.rooms{padding-left:16px;position:relative}
+.rooms::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:1px;background:var(--line-strong)}
+.room{height:var(--h-nav)}
+.room .gi{font-size:10px}
+.pdot{width:5px;height:5px;border-radius:50%;background:var(--warn);margin-left:auto;flex:0 0 5px}
+.newrow{display:flex;align-items:center;gap:8px;height:28px;padding:0 6px;color:var(--ink-2);font:var(--t-ui)}
+.newrow:hover{color:var(--ink)}
+.rail-ft{flex:0 0 auto;border-top:1px solid var(--line);padding:6px 8px}
+.prof{display:flex;align-items:center;gap:9px;height:40px;padding:0 6px;border-radius:2px;width:100%}
+.prof:hover{background:rgba(73,54,38,.05)}
+.avatar{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:var(--bg-app);border:1px solid var(--line-strong);display:grid;place-items:center;font:500 11px/1 var(--serif)}
+.prof-meta{text-align:left;line-height:1.25;overflow:hidden}
+.prof-meta b{display:block;font:var(--t-ui-strong)}
+.prof-meta span{font:var(--t-caption);color:var(--ink-2)}
+
+/* collapsed rail */
+.app.collapsed .rail-txt,.app.collapsed .ws-name,.app.collapsed .badge,.app.collapsed .prof-meta,
+.app.collapsed .sec-h span,.app.collapsed .nrow .tail,.app.collapsed .newrow span,.app.collapsed .sec-h .car{display:none}
+.app.collapsed .rail-hd{justify-content:center;padding:0}
+.app.collapsed .brand-name,.app.collapsed .kbd{display:none}
+.app.collapsed .nrow,.app.collapsed .switcher,.app.collapsed .newrow,.app.collapsed .sec-h{justify-content:center;padding:0}
+.app.collapsed .rooms{padding-left:0}
+.app.collapsed .rooms::before{display:none}
+.app.collapsed .brand{font-size:16px}
+
+/* ---- work column ---- */
+.work{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg-app)}
+.strip{flex:0 0 auto;height:var(--h-strip);display:flex;align-items:center;gap:6px;padding:0 12px;background:var(--bg-surface);border-bottom:1px solid var(--line);overflow:hidden}
+.strip.off{display:none}
+.tab{position:relative;height:var(--h-tab);flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;padding:0 10px;border-radius:3px;font:var(--t-ui);color:var(--ink-2);white-space:nowrap}
+.tab:hover{background:rgba(73,54,38,.04);color:var(--ink)}
+.tab.on{background:var(--bg-app);color:var(--ink);font:var(--t-ui-strong)}
+.tab.on::after{content:"";position:absolute;left:8px;right:8px;bottom:-4px;height:1.5px;background:var(--accent);pointer-events:none}
+.tab .tg{font-size:10px;color:var(--ink-2);width:11px;text-align:center}
+.tab.on .tg{color:var(--ink)}
+.tab .x{font-size:10px;color:var(--ink-3);width:12px;text-align:center;visibility:hidden}
+.tab:hover .x{visibility:visible}
+.tab .x:hover{color:var(--error)}
+.tab .sdot{width:5px;height:5px;border-radius:50%;background:var(--warn)}
+.sep{flex:0 0 1px;width:1px;height:16px;background:var(--line-strong);margin:0 5px}
+.strip .spacer{flex:1}
+.strip .ibtn{color:var(--ink-2)}
+
+.body{flex:1;min-height:0;display:flex}
+.surface{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.screen{display:none;flex:1;min-height:0;overflow:auto}
+.screen.on{display:block}
+.screen[data-fixed]{overflow:hidden}
+.screen[data-fixed].on{display:flex;flex-direction:column}
+
+/* ---- panel ---- */
+.panel{flex:0 0 auto;width:var(--w-panel);border-left:1px solid var(--line);overflow-y:auto;background:var(--bg-app)}
+.panel.off{display:none}
+.panel-h{height:var(--h-toolbar);display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--line)}
+.panel-h .t{font:var(--t-ui-strong);flex:1}
+.pb{padding:16px}
+.pb + .pb{border-top:1px solid var(--line)}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:6px 10px;font:var(--t-ui)}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0}
+.mini-h{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);margin:0 0 10px}
+.reflist{display:flex;flex-direction:column;gap:2px}
+.refrow{display:flex;align-items:center;gap:8px;height:28px;font:var(--t-ui);border-radius:2px;padding:0 4px;margin:0 -4px}
+.refrow:hover{background:rgba(73,54,38,.05)}
+.refrow .gi{font-size:10px;color:var(--ink-2);width:12px;text-align:center}
+.refrow .meta{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3)}
+
+/* ============ shared bits ============ */
+.display{font:var(--t-display);margin:0}
+.sec-title{font:var(--t-section);margin:0}
+.btn{height:32px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:2px;background:var(--bg-surface);font:var(--t-ui);white-space:nowrap}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#FBF6EC;font:var(--t-ui-strong)}
+.btn.primary:hover{background:#A9623F}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:rgba(73,54,38,.05);color:var(--ink)}
+.btn.sm{height:26px;padding:0 9px;font:var(--t-caption)}
+.btn[disabled]{opacity:.45}
+.chips{display:flex;align-items:center;gap:4px}
+.chip{height:24px;padding:0 8px;display:inline-flex;align-items:center;gap:5px;border-radius:2px;font:var(--t-caption);color:var(--ink-2);border:1px solid transparent}
+.chip:hover{color:var(--ink);background:rgba(73,54,38,.05)}
+.chip.on{background:var(--bg-surface);border-color:var(--line-strong);color:var(--ink);font:550 11px/16px var(--ui)}
+.chip .n{font:var(--t-mono-s);color:var(--ink-3)}
+.dot{width:6px;height:6px;border-radius:50%;flex:0 0 6px;background:var(--idle)}
+.dot.run{background:var(--accent);animation:pulse var(--dur-pulse) var(--ease) 1}
+.dot.warn{background:var(--warn)}
+.dot.ok{background:var(--ok)}
+.dot.err{background:var(--error)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(181,111,80,.35)}100%{box-shadow:0 0 0 6px rgba(181,111,80,0)}}
+.pill{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:10px;border:1px solid var(--line-strong);font:var(--t-caption);color:var(--ink-2)}
+.pill.run{color:var(--accent);border-color:#DDBDA9;background:#FBF3EC}
+.pill.warn{color:var(--warn);border-color:#E0CBA4;background:#FAF4E6}
+.pill.ok{color:var(--ok);border-color:#C9D0BE;background:#F4F6F0}
+.pill.err{color:var(--error);border-color:#D9BDB4;background:#FAF1EE}
+.hr{height:1px;background:var(--line);border:0;margin:0}
+.empty{padding:24px;border:1px dashed var(--line-strong);border-radius:var(--r-surface);color:var(--ink-2);font:var(--t-ui);text-align:center}
+
+/* ============ overview ============ */
+.ov{max-width:900px;margin:0 auto;padding:52px 40px 32px}
+.ov .display{margin-bottom:8px}
+.ov .sub{font:var(--t-ui);color:var(--ink-2);margin:0 0 26px;max-width:52ch;line-height:1.55}
+.intent{display:flex;align-items:center;gap:10px;height:56px;padding:0 8px 0 16px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:var(--r-surface);box-shadow:var(--e1)}
+.intent:focus-within{border-color:var(--ink-3);box-shadow:0 0 0 2px rgba(181,111,80,.12)}
+.intent input{flex:1;font:400 14px/20px var(--ui)}
+.intent input::placeholder{color:var(--ink-3)}
+.intent .btn{height:36px;padding:0 16px}
+.hint{display:flex;gap:8px;align-items:center;margin-top:10px;font:var(--t-caption);color:var(--ink-2)}
+.hint b{font-weight:550;color:var(--ink)}
+.ov-cols{display:grid;grid-template-columns:1.25fr 1fr;gap:40px;margin-top:38px}
+.col-h{display:flex;align-items:baseline;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.col-h .t{font:var(--t-caption);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.col-h .n{font:var(--t-mono-s);color:var(--ink-3);margin-left:auto}
+.cont{display:flex;align-items:center;gap:10px;height:46px;padding:0 6px;margin:0 -6px;border-radius:2px}
+.cont:hover{background:rgba(73,54,38,.045)}
+.cont .gi{width:16px;text-align:center;font-size:12px;color:var(--ink-2);flex:0 0 16px}
+.cont .body-t{min-width:0}
+.cont b{display:block;font:var(--t-ui-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cont span{font:var(--t-caption);color:var(--ink-2)}
+.cont .right{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.ws-strip{margin-top:38px}
+.ws-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px}
+.wsc{border:1px solid var(--line);border-radius:var(--r-surface);background:var(--bg-surface);padding:14px 14px 12px;text-align:left}
+.wsc:hover{border-color:var(--line-strong)}
+.wsc .top{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.wsc .nm{font:var(--t-ui-strong);flex:1}
+.wsc .meta{font:var(--t-caption);color:var(--ink-2);line-height:1.6}
+.wsc.new{background:transparent;border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-2);font:var(--t-ui);min-height:88px}
+.quiet{font:var(--t-caption);color:var(--ink-3);margin:16px 0 0;line-height:1.7}
+.lrow{display:flex;align-items:center;gap:10px;height:34px;padding:0 6px;margin:0 -6px;border-radius:2px;font:var(--t-ui)}
+.lrow:hover{background:rgba(73,54,38,.045)}
+.lrow .gi{width:14px;text-align:center;font-size:10px;color:var(--ink-2);flex:0 0 14px}
+.lrow .nm{font:var(--t-ui-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .cap{margin-left:10px;flex:0 0 auto}
+.lrow .tm{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3);flex:0 0 auto}
+
+/* ============ recently ============ */
+.list-page{max-width:880px;margin:0 auto;padding:34px 40px 40px}
+.page-h{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+.page-h h1{font:var(--t-display);margin:0}
+.page-h .cap{margin-left:auto}
+.filters{display:flex;align-items:center;gap:4px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.grp{margin-top:20px}
+.grp-h{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);margin-bottom:2px;padding-left:6px}
+.rrow{display:grid;grid-template-columns:16px minmax(0,1fr) 86px 100px 88px;align-items:center;gap:14px;height:38px;padding:0 6px;border-radius:2px;font:var(--t-ui)}
+.rrow:hover{background:rgba(73,54,38,.045)}
+.rrow .gi{font-size:11px;color:var(--ink-2);text-align:center}
+.rrow .nm{font:var(--t-ui-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .ty{font:var(--t-mono-s);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.rrow .wsy{font:var(--t-caption);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .tm{font:var(--t-mono-s);color:var(--ink-3);text-align:right}
+
+/* ============ files ============ */
+.f-toolbar{height:var(--h-toolbar);flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--line)}
+.crumb{display:flex;align-items:center;gap:6px;font:var(--t-ui);color:var(--ink-2)}
+.crumb b{color:var(--ink);font:var(--t-ui-strong)}
+.crumb .s{color:var(--ink-3)}
+.f-scroll{flex:1;overflow:auto;padding:6px 20px 32px}
+.f-head{display:grid;grid-template-columns:1fr 88px 110px 128px 60px;gap:26px;height:30px;align-items:center;border-bottom:1px solid var(--line);font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);position:sticky;top:0;background:var(--bg-app);z-index:2}
+.f-head .r{text-align:right}
+.frow{display:grid;grid-template-columns:1fr 88px 110px 128px 60px;gap:26px;height:36px;align-items:center;border-bottom:1px solid rgba(230,222,209,.55);font:var(--t-ui)}
+.frow:hover{background:rgba(73,54,38,.04)}
+.frow.sel{background:var(--accent-weak)}
+.frow .nm{display:flex;align-items:center;gap:9px;min-width:0}
+.frow .nm .gi{font-size:11px;color:var(--ink-2);width:13px;text-align:center;flex:0 0 13px}
+.frow .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .sz,.frow .dt{font:var(--t-mono-s);color:var(--ink-2)}
+.frow .sz{text-align:left}
+.frow .r{text-align:right}
+.frow .src{font:var(--t-caption);color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.folders{margin:2px 0 10px}
+.folder{display:flex;align-items:center;gap:9px;height:32px;padding:0 6px;border-radius:2px;font:var(--t-ui);color:var(--ink)}
+.folder:hover{background:rgba(73,54,38,.04)}
+.folder .gi{font-size:10px;color:var(--ink-2);width:13px;text-align:center}
+.folder .cnt{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3)}
+.folder.sub{padding-left:34px;color:var(--ink-2)}
+.folder.sub .gi{color:var(--ink-3)}
+.folder.up{color:var(--ink-2)}
+.f-section{display:flex;align-items:center;gap:8px;height:26px;font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);margin:0 0 0 0}
+.f-section .n{color:var(--ink-3)}
+.f-section::after{content:"";flex:1;height:1px;background:var(--line)}
+.drop{display:none;position:absolute;inset:8px;border:1px dashed var(--ink-3);border-radius:var(--r-surface);background:rgba(251,249,244,.92);place-items:center;z-index:5;text-align:center}
+.surface.dragover .drop{display:grid}
+.drop .in{font:var(--t-ui);color:var(--ink-2)}
+.drop b{display:block;font:500 17px/1.4 var(--serif);color:var(--ink);margin-bottom:4px}
+.fs-wrap{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* ============ boards index ============ */
+.grid-wrap{padding:20px 24px 40px}
+.bcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.bcard{justify-self:stretch;min-width:0;border:1px solid var(--line);border-radius:var(--r-surface);background:var(--bg-surface);overflow:hidden;text-align:left}
+.bcard:hover{border-color:var(--line-strong)}
+.bthumb{height:120px;background:var(--bg-paper);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.bthumb i{position:absolute;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:2px}
+.bmeta{padding:10px 12px}
+.bmeta b{display:block;font:var(--t-ui-strong);margin-bottom:2px}
+.bmeta span{font:var(--t-caption);color:var(--ink-2)}
+
+/* ============ whiteboard ============ */
+.board-wrap{position:relative;flex:1;min-height:0;display:flex}
+.viewport{position:relative;flex:1;min-width:0;overflow:hidden;background-color:var(--bg-paper);background-image:radial-gradient(#DFD5C4 1px,transparent 1px);background-size:24px 24px;background-position:0 0}
+.scene{position:absolute;left:0;top:0;width:820px;height:440px;transform-origin:0 0}
+svg.edges{position:absolute;left:0;top:0;width:820px;height:440px;pointer-events:none}
+.bsec{position:absolute;background:#F0E5D4;border-top:1.5px solid #C6B49B;border-radius:2px}
+.bsec>.bh{position:absolute;left:10px;top:7px;font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:#7E6449}
+
+.scene .bcard{position:absolute;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:3px;overflow:hidden;box-shadow:0 1px 0 rgba(73,54,38,.05)}
+.scene .bcard>.ch{height:20px;display:flex;align-items:center;gap:6px;padding:0 8px;font:9.5px/20px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#7E6449;background:#F1E7D8;border-bottom:1px solid #E3D5C0}
+.bcard>.ch .k{margin-left:auto;font-size:9px;color:#9C8A70}
+.scene .bcard .bd{padding:7px 9px 8px;font:10.5px/15px var(--ui)}
+.scene .bcard .bd b{font:500 13px/18px var(--serif);display:block;margin-bottom:2px;color:var(--ink)}
+.scene .bcard .bd p{margin:0;color:var(--ink-2);font:10.5px/14px var(--ui)}
+.scene .bcard.sel{border-color:var(--accent);box-shadow:0 0 0 1.5px rgba(181,111,80,.35)}
+.scene .bcard.live>.ch{color:var(--accent)}
+.chip-ref{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 5px;border:1px solid var(--line-strong);border-radius:2px;font:9.5px/18px var(--mono);color:var(--ink-2);background:rgba(251,249,244,.7)}
+.chip-ref .gi{font-size:9px}
+.tools{position:absolute;left:10px;top:14px;width:40px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:3px;box-shadow:var(--e1);padding:4px;display:flex;flex-direction:column;gap:2px;z-index:3}
+.tool{height:32px;display:grid;place-items:center;border-radius:2px;font-size:13px;color:var(--ink-2)}
+.tool:hover{background:rgba(73,54,38,.05);color:var(--ink)}
+.tool.on{background:var(--accent-weak);color:var(--ink)}
+.tools .div{height:1px;background:var(--line);margin:3px 4px}
+.zoom{position:absolute;right:16px;bottom:16px;height:28px;display:flex;align-items:center;gap:2px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:2px;padding:0 4px;z-index:3;box-shadow:var(--e1)}
+.zoom .z{font:var(--t-mono-s);padding:0 6px;color:var(--ink-2)}
+.zoom button{width:22px;height:22px;display:grid;place-items:center;border-radius:2px;color:var(--ink-2);font-size:12px}
+.zoom button:hover{background:rgba(73,54,38,.06);color:var(--ink)}
+.minimap{position:absolute;left:16px;bottom:16px;width:160px;height:110px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:2px;z-index:3;overflow:hidden}
+.minimap .mm-h{position:absolute;left:0;right:0;top:0;height:18px;font:9px/18px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding-left:6px;border-bottom:1px solid var(--line)}
+.minimap i{position:absolute;background:#DCD0BC;border-radius:1px}
+.minimap .vp{position:absolute;border:1px solid var(--accent);background:rgba(181,111,80,.10);border-radius:1px}
+.sel-hud{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;height:28px;display:none;align-items:center;gap:10px;padding:0 10px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:2px;box-shadow:var(--e1);font:var(--t-caption);color:var(--ink-2);z-index:4}
+.sel-hud.on{display:flex}
+
+/* ============ processes ============ */
+.p-toolbar{height:var(--h-toolbar);display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--line);flex:0 0 auto;max-width:1020px}
+.p-scroll{flex:1;overflow:auto;padding:6px 20px 32px;max-width:1020px}
+.p-head,.prow{display:grid;grid-template-columns:1fr 108px 122px 86px 74px 62px;gap:10px;align-items:center}
+.p-head{height:30px;font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg-app);z-index:2}
+.p-head .r{text-align:right}
+.prow{height:40px;border-bottom:1px solid rgba(230,222,209,.55);font:var(--t-ui)}
+.prow:hover{background:rgba(73,54,38,.04)}
+.prow.sel{background:var(--accent-weak)}
+.prow .nm{display:flex;align-items:center;gap:9px;min-width:0}
+.prow .nm .gi{font-size:10px;color:var(--ink-2);flex:0 0 12px;width:12px}
+.prow .nm b{font:var(--t-ui-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .ty{font:var(--t-mono-s);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.prow .st{display:flex;align-items:center;gap:6px;font:var(--t-caption);color:var(--ink-2)}
+.prow .tm,.prow .cr{font:var(--t-mono-s);color:var(--ink-2);text-align:right}
+.prow .ar{font:var(--t-mono-s);color:var(--ink-3);text-align:right}
+
+/* ============ run detail ============ */
+.run-head{padding:18px 32px 12px;border-bottom:1px solid var(--line)}
+.run-head .top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.run-head h1{font:500 22px/28px var(--serif);margin:0}
+.run-head .meta{display:flex;gap:16px;font:var(--t-caption);color:var(--ink-2);margin-top:8px}
+.band{border-bottom:1px solid var(--line)}
+.band-h{height:32px;display:flex;align-items:center;gap:10px;padding:0 32px}
+.band-h .k{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2)}
+.band-h .m{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3)}
+.band-b{padding:0 32px 12px}
+.quote{font:400 15px/24px var(--serif);color:var(--ink);border-left:2px solid var(--line-strong);padding-left:14px;margin:0 0 10px}
+.ctxchips{display:flex;gap:6px;flex-wrap:wrap}
+.plan-row{display:grid;grid-template-columns:22px 1fr 150px;gap:10px;align-items:baseline;padding:4px 0;font:var(--t-ui)}
+.plan-row .n{font:var(--t-mono-s);color:var(--ink-3)}
+.plan-row .why{font:var(--t-caption);color:var(--ink-2);text-align:right}
+.act{display:grid;grid-template-columns:62px 16px 1fr auto;gap:10px;align-items:center;height:26px;font:var(--t-ui)}
+.act .tm{font:var(--t-mono-s);color:var(--ink-3)}
+.act .gi{font-size:9px;color:var(--ink-3);text-align:center}
+.act .tx{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act .rt{font:var(--t-mono-s);color:var(--ink-3)}
+.act.art .tx{color:var(--accent)}
+.out-row{display:flex;align-items:center;gap:10px;height:30px;border-bottom:1px solid rgba(230,222,209,.5);font:var(--t-ui)}
+.out-row .gi{font-size:10px;color:var(--ink-2);width:12px;text-align:center}
+.out-row .sz{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3)}
+.out-row .btn{height:24px;font:var(--t-caption);padding:0 8px}
+.controls{display:flex;gap:8px;padding:12px 32px 18px;flex-wrap:wrap}
+.controls .note{font:var(--t-caption);color:var(--ink-2);align-self:center;margin-left:4px}
+
+/* ============ notes ============ */
+.notes{display:flex;flex:1;min-height:0}
+.nlist{flex:0 0 240px;width:240px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:rgba(235,228,212,.35)}
+.nlist-h{padding:14px 16px 8px}
+.nlist-h .t{font:var(--t-ui-strong);display:flex;align-items:center}
+.nlist-h .t .btn{margin-left:auto;height:22px;width:22px;padding:0;justify-content:center;font-size:13px}
+.nscope{display:flex;gap:3px;padding:0 12px 10px;flex-wrap:wrap}
+.nscroll{flex:1;overflow:auto;padding:0 8px 20px}
+.nitem{padding:7px 8px;border-radius:2px;margin-bottom:1px;text-align:left;width:100%}
+.nitem:hover{background:rgba(73,54,38,.045)}
+.nitem.on{background:var(--bg-surface);box-shadow:inset 0 0 0 1px var(--line)}
+.nitem b{display:block;font:var(--t-ui-strong);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nitem span{font:var(--t-caption);color:var(--ink-2)}
+.nitem .sc{font:var(--t-mono-s);font-size:9px;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.reader{flex:1;min-width:0;overflow:auto;background:var(--bg-surface);border-right:1px solid var(--line)}
+.rd{max-width:var(--w-read);margin:0 auto;padding:44px 48px 80px}
+.rd .kicker{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);margin-bottom:14px}
+.rd h1{font:400 30px/38px var(--serif);margin:0 0 10px}
+.rd .byline{font:var(--t-caption);color:var(--ink-2);border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px}
+.rd p{font:var(--t-read);margin:0 0 14px}
+.rd h2{font:500 17px/26px var(--serif);margin:26px 0 8px}
+.rd blockquote{font:400 17px/28px var(--serif);margin:18px 0;padding-left:16px;border-left:2px solid var(--accent);color:var(--ink)}
+.rd .cite{font:var(--t-mono-s);color:var(--ink-3);vertical-align:super;font-size:9px}
+.rd ul{font:var(--t-read);padding-left:20px;margin:0 0 14px}
+.rd li{margin-bottom:4px}
+
+/* ============ account ============ */
+.acc{display:flex;flex:1;min-height:0}
+.anav{flex:0 0 200px;border-right:1px solid var(--line);padding:24px 12px}
+.anav .g{font:var(--t-mono-s);letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-2);padding:0 8px;margin:0 0 6px}
+.anav .g:not(:first-child){margin-top:24px}
+.anav a{display:flex;align-items:center;height:30px;padding:0 8px;border-radius:2px;font:var(--t-ui);color:var(--ink)}
+.anav a:hover{background:rgba(73,54,38,.05)}
+.anav a.on{background:var(--bg-surface);font:var(--t-ui-strong);box-shadow:inset 0 0 0 1px var(--line)}
+.navhint{font:var(--t-caption);color:var(--ink-3);padding:2px 8px 0;line-height:1.5;max-width:150px}
+.acont{flex:1;min-width:0;overflow:auto;padding:34px 40px 60px}
+.acont .inner{max-width:660px}
+.acont h1{font:var(--t-display);margin:0 0 6px}
+.acont .lead{font:var(--t-ui);color:var(--ink-2);margin:0 0 28px}
+.block{margin-bottom:30px}
+.block .bh{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+.block .bh .t{font:var(--t-caption);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.block .bh .r{margin-left:auto;font:var(--t-caption);color:var(--ink-2)}
+.plan{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);background:var(--bg-surface);border-radius:var(--r-surface)}
+.plan .nm b{display:block;font:500 17px/24px var(--serif)}
+.plan .nm span{font:var(--t-caption);color:var(--ink-2)}
+.plan .btn{margin-left:auto}
+.rows{border-top:1px solid var(--line)}
+.srow{display:flex;align-items:center;gap:12px;height:44px;border-bottom:1px solid var(--line)}
+.srow .nm{flex:0 0 190px;font:var(--t-ui)}
+.srow .nm .cap{display:block}
+.meter{flex:1;height:4px;background:#E7DFD0;border-radius:2px;position:relative;overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+.meter i.hi{background:var(--warn)}
+.srow .val{font:var(--t-mono-s);color:var(--ink-2);flex:0 0 108px;text-align:right}
+.srow .btn{margin-left:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.small{font:var(--t-caption);color:var(--ink-2);line-height:1.6}
+.org-note{padding:12px 14px;border:1px solid var(--line);border-left:2px solid var(--line-strong);background:rgba(251,249,244,.5);font:var(--t-caption);color:var(--ink-2);line-height:1.7}
+.org-note b{color:var(--ink);font-weight:550}
+
+/* ============ file preview ============ */
+.pv{flex:1;overflow:auto;background:var(--bg-app);padding:28px 0 60px}
+.pv .page{width:640px;margin:0 auto;background:var(--bg-surface);border:1px solid var(--line);padding:44px 48px 60px;box-shadow:0 1px 0 rgba(73,54,38,.05)}
+.pv .page .kicker{font:var(--t-mono-s);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px}
+.pv .page h1{font:400 22px/30px var(--serif);margin:0 0 18px}
+.pv .page .line{height:9px;background:#EDE5D7;border-radius:1px;margin-bottom:10px}
+.pv .page .line.s{width:62%}
+.pv .page .line.m{width:84%}
+
+@media (max-width:1180px){.minimap{display:none}.sel-hud{display:none}}
+
+/* ============ palette ============ */
+.scrim{position:fixed;inset:0;background:rgba(73,54,38,.20);display:none;z-index:50}
+.scrim.on{display:block}
+.pal{position:fixed;left:50%;top:12vh;transform:translateX(-50%);width:560px;background:var(--bg-surface);border:1px solid var(--line-strong);border-radius:var(--r-overlay);box-shadow:var(--e2);z-index:51;display:none;overflow:hidden}
+.pal.on{display:block}
+.pal input{width:100%;height:46px;padding:0 16px;font:400 14px/20px var(--ui);border-bottom:1px solid var(--line)}
+.pal input::placeholder{color:var(--ink-3)}
+.pal .res{padding:6px}
+.pal .ph{font:var(--t-mono-s);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:8px 10px 4px}
+.pitem{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:2px;font:var(--t-ui)}
+.pitem:hover,.pitem.on{background:var(--accent-weak)}
+.pitem .gi{font-size:10px;color:var(--ink-2);width:12px;text-align:center}
+.pitem .k{margin-left:auto;font:var(--t-mono-s);color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ============ RAIL ============ -->
+  <aside class="rail" id="rail">
+    <div class="rail-hd">
+      <span class="brand">τ</span>
+      <span class="brand-name rail-txt">Thylas</span>
+      <span class="kbd rail-txt">⌘K</span>
+      <button class="ibtn" title="New" aria-label="New">+</button>
+    </div>
+
+    <div class="rail-scroll">
+      <nav class="nav">
+        <a class="nrow" data-go="overview"><span class="gi">○</span><span class="rail-txt">Overview</span></a>
+        <a class="nrow" data-go="recently"><span class="gi">◷</span><span class="rail-txt">Recently</span></a>
+      </nav>
+
+      <div class="sec">
+        <button class="sec-h" data-collapse-sec="ws"><span>Workspace</span><span class="car">▾</span></button>
+        <div id="wsGroup">
+          <button class="switcher" data-palette="switch">
+            <span class="ws-dot"></span>
+            <span class="ws-name">Research</span>
+            <span class="badge">PERSONAL</span>
+            <span class="car">⌄</span>
+          </button>
+          <div class="rooms">
+            <a class="nrow room" data-go="files"><span class="gi">▢</span><span class="rail-txt">Files</span></a>
+            <a class="nrow room" data-go="boards"><span class="gi">◇</span><span class="rail-txt">Whiteboard</span></a>
+            <a class="nrow room" data-go="processes"><span class="gi">▷</span><span class="rail-txt">Processes</span><span class="pdot"></span></a>
+          </div>
+
+          <button class="switcher" style="margin-top:4px">
+            <span class="ws-dot org"></span>
+            <span class="ws-name">Onda Lab</span>
+            <span class="badge">ORG · MEMBER</span>
+            <span class="car">⌄</span>
+          </button>
+          <div class="newrow"><span>+</span><span>New workspace</span></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <a class="nrow" data-go="notes"><span class="gi">▤</span><span class="rail-txt">Notes</span></a>
+        <a class="nrow" data-go="account"><span class="gi">⚙</span><span class="rail-txt">Account</span></a>
+      </div>
+
+      <div class="sec">
+        <button class="nrow" id="collapseBtn" style="width:100%;color:var(--ink-2)"><span class="gi">⇤</span><span class="rail-txt">Collapse sidebar</span></button>
+      </div>
+    </div>
+
+    <div class="rail-ft">
+      <button class="prof">
+        <span class="avatar">C</span>
+        <span class="prof-meta grow"><b>Ceaser Zhao</b><span>Personal · Free</span></span>
+        <span class="car rail-txt">⌄</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ WORK ============ -->
+  <div class="work">
+    <div class="strip" id="strip"></div>
+
+    <div class="body">
+      <div class="surface" id="surface">
+
+        <!-- ---------- OVERVIEW ---------- -->
+        <section class="screen" data-screen="overview">
+          <div class="ov">
+            <h1 class="display">Welcome back, Ceaser.</h1>
+            <p class="sub">Two processes need a decision. Pick up the thread you dropped, or describe something new.</p>
+
+            <div class="intent">
+              <input placeholder="Describe what you want to work on…" aria-label="Describe what you want to work on">
+              <button class="btn primary">Start</button>
+            </div>
+            <div class="hint">
+              <span>Runs in <b>Research</b></span><span class="cap">·</span>
+              <span>you can change the workspace and the context before it starts</span>
+            </div>
+
+            <div class="ov-cols">
+              <section>
+                <div class="col-h"><span class="t">Continue</span><span class="n">3</span></div>
+                <a class="cont" data-go="board">
+                  <span class="gi">◇</span>
+                  <span class="body-t grow"><b>lit-review</b><span>Whiteboard · Research · moved 2h ago</span></span>
+                  <span class="right"><span class="cap">open</span></span>
+                </a>
+                <a class="cont" data-go="notes">
+                  <span class="gi">▤</span>
+                  <span class="body-t grow"><b>Method — how we measure comparability</b><span>Note · Research · edited yesterday</span></span>
+                  <span class="right"><span class="cap">open</span></span>
+                </a>
+                <a class="cont" data-go="run">
+                  <span class="gi">▷</span>
+                  <span class="body-t grow"><b>baseline-sweep</b><span>Process · Research · running 12m</span></span>
+                  <span class="right"><span class="dot run"></span><span class="cap">live</span></span>
+                </a>
+              </section>
+
+              <section>
+                <div class="col-h"><span class="t">Needs you</span><span class="n">2</span></div>
+                <a class="cont" data-go="run">
+                  <span class="gi">◐</span>
+                  <span class="body-t grow"><b>lit-review</b><span>asked a question · 4m</span></span>
+                  <span class="right"><span class="pill warn">answer</span></span>
+                </a>
+                <a class="cont" data-go="run">
+                  <span class="gi">▷</span>
+                  <span class="body-t grow"><b>draft-methods</b><span>ready for approval · 1h</span></span>
+                  <span class="right"><span class="pill ok">review</span></span>
+                </a>
+                <p class="quiet" style="margin-top:18px">Nothing else is waiting. The other two runs are working on their own.</p>
+              </section>
+            </div>
+
+            <section class="ws-strip">
+              <div class="col-h"><span class="t">Workspaces</span><span class="n">2</span></div>
+              <div class="ws-cards">
+                <button class="wsc" data-go="files">
+                  <div class="top"><span class="ws-dot"></span><span class="nm">Research</span><span class="badge">PERSONAL</span></div>
+                  <div class="meta">24 files · 2 boards · 4 processes</div>
+                </button>
+                <button class="wsc">
+                  <div class="top"><span class="ws-dot org"></span><span class="nm">Onda Lab</span><span class="badge">ORG</span></div>
+                  <div class="meta">8 members · 61 files · you are a member</div>
+                </button>
+                <button class="wsc new">+ New workspace</button>
+              </div>
+            </section>
+
+            <section class="ws-strip" style="margin-top:34px">
+              <div class="col-h"><span class="t">Recently</span><span class="n">4</span></div>
+              <a class="lrow" data-go="board"><span class="gi">◇</span><span class="nm">lit-review</span><span class="cap">board · Research</span><span class="tm">2h ago</span></a>
+              <a class="lrow" data-go="files"><span class="gi">▢</span><span class="nm">raw-runs.parquet</span><span class="cap">file · Research</span><span class="tm">2h ago</span></a>
+              <a class="lrow" data-go="notes"><span class="gi">▤</span><span class="nm">Method — how we measure comparability</span><span class="cap">note · Research</span><span class="tm">yesterday</span></a>
+              <a class="lrow" data-go="processes"><span class="gi">▷</span><span class="nm">ablation-7</span><span class="cap">process · Research</span><span class="tm">failed 3h ago</span></a>
+            </section>
+          </div>
+        </section>
+
+        <!-- ---------- RECENTLY ---------- -->
+        <section class="screen" data-screen="recently">
+          <div class="list-page">
+            <div class="page-h"><h1>Recently</h1><span class="cap">last 50 objects you touched</span></div>
+            <div class="filters chips" data-filter-group="recent">
+              <button class="chip on" data-filter="all">All</button>
+              <button class="chip" data-filter="note">Notes</button>
+              <button class="chip" data-filter="board">Boards</button>
+              <button class="chip" data-filter="file">Files</button>
+              <button class="chip" data-filter="run">Processes</button>
+            </div>
+
+            <div class="grp">
+              <div class="grp-h">Today</div>
+              <a class="rrow" data-type="board" data-go="board"><span class="gi">◇</span><span class="nm">lit-review</span><span class="ty">board</span><span class="wsy">Research</span><span class="tm">2h ago</span></a>
+              <a class="rrow" data-type="run" data-go="run"><span class="gi">▷</span><span class="nm">baseline-sweep</span><span class="ty">process</span><span class="wsy">Research</span><span class="tm">12m</span></a>
+              <a class="rrow" data-type="file" data-go="files"><span class="gi">▢</span><span class="nm">raw-runs.parquet</span><span class="ty">file</span><span class="wsy">Research</span><span class="tm">2h ago</span></a>
+              <a class="rrow" data-type="note" data-go="notes"><span class="gi">▤</span><span class="nm">Method — how we measure comparability</span><span class="ty">note</span><span class="wsy">Research</span><span class="tm">yesterday</span></a>
+            </div>
+
+            <div class="grp">
+              <div class="grp-h">Yesterday</div>
+              <a class="rrow" data-type="file" data-go="files"><span class="gi">▢</span><span class="nm">protocol-v3.pdf</span><span class="ty">file</span><span class="wsy">Research</span><span class="tm">yesterday</span></a>
+              <a class="rrow" data-type="board" data-go="board"><span class="gi">◇</span><span class="nm">positioning-map</span><span class="ty">board</span><span class="wsy">Onda Lab</span><span class="tm">yesterday</span></a>
+              <a class="rrow" data-type="run" data-go="processes"><span class="gi">▷</span><span class="nm">ablation-7</span><span class="ty">process</span><span class="wsy">Research</span><span class="tm">3h</span></a>
+            </div>
+
+            <div class="grp">
+              <div class="grp-h">Earlier this week</div>
+              <a class="rrow" data-type="note" data-go="notes"><span class="gi">▤</span><span class="nm">Reading list — tokenizers</span><span class="ty">note</span><span class="wsy">Personal</span><span class="tm">mon</span></a>
+              <a class="rrow" data-type="file" data-go="files"><span class="gi">▢</span><span class="nm">eval-log.csv</span><span class="ty">file</span><span class="wsy">Research</span><span class="tm">mon</span></a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- FILES ---------- -->
+        <section class="screen" data-fixed data-screen="files">
+          <div class="fs-wrap">
+            <div class="f-toolbar">
+              <div class="crumb"><b>Research</b><span class="s">/</span>datasets<span class="s">/</span>2026-11</div>
+              <div class="grow"></div>
+              <button class="btn sm">↑ Upload</button>
+              <button class="btn sm">New folder</button>
+            </div>
+            <div class="f-scroll">
+              <div class="folders">
+                <div class="folder up"><span class="gi">↑</span>datasets</div>
+                <div class="folder sub"><span class="gi">▢</span>raw<span class="cnt">4</span></div>
+                <div class="folder sub"><span class="gi">▢</span>normalized<span class="cnt">2</span></div>
+              </div>
+              <div class="f-section">Files<span class="n">5</span></div>
+              <div class="f-head">
+                <div>Name</div><div>Size</div><div>Updated</div><div>Source</div><div class="r">Used by</div>
+              </div>
+              <div id="fileRows">
+                <div class="frow sel" data-i="0" data-name="raw-runs.parquet">
+                  <div class="nm"><span class="gi">▢</span><span>raw-runs.parquet</span></div>
+                  <div class="sz">1.2 GB</div><div class="dt">2h ago</div>
+                  <div class="src">produced · #12</div>
+                  <div class="ar r mono">3</div>
+                </div>
+                <div class="frow" data-i="1" data-name="eval-log.csv">
+                  <div class="nm"><span class="gi">▢</span><span>eval-log.csv</span></div>
+                  <div class="sz">88 MB</div><div class="dt">2h ago</div>
+                  <div class="src">produced · #12</div>
+                  <div class="ar r mono">2</div>
+                </div>
+                <div class="frow" data-i="2" data-name="protocol-v3.pdf">
+                  <div class="nm"><span class="gi">▢</span><span>protocol-v3.pdf</span></div>
+                  <div class="sz">2.4 MB</div><div class="dt">yesterday</div>
+                  <div class="src">uploaded</div>
+                  <div class="ar r mono">4</div>
+                </div>
+                <div class="frow" data-i="3" data-name="notes-on-baseline.md">
+                  <div class="nm"><span class="gi">▢</span><span>notes-on-baseline.md</span></div>
+                  <div class="sz">12 KB</div><div class="dt">3d ago</div>
+                  <div class="src">imported</div>
+                  <div class="ar r mono">1</div>
+                </div>
+                <div class="frow" data-i="4" data-name="tokens-per-run.csv">
+                  <div class="nm"><span class="gi">▢</span><span>tokens-per-run.csv</span></div>
+                  <div class="sz">6 MB</div><div class="dt">3d ago</div>
+                  <div class="src">produced · #9</div>
+                  <div class="ar r mono">1</div>
+                </div>
+              </div>
+            </div>
+            <div class="drop"><div class="in"><b>Drop to add to Research / datasets / 2026-11</b>Files upload immediately. Nothing is moved out of another workspace.</div></div>
+          </div>
+        </section>
+
+        <!-- ---------- BOARDS INDEX ---------- -->
+        <section class="screen" data-screen="boards">
+          <div class="grid-wrap">
+            <div class="page-h" style="margin-bottom:8px"><h1 style="font:var(--t-section)">Whiteboard</h1><span class="cap" style="margin-left:auto">2 boards · flat in v1</span></div>
+            <div class="bcards">
+              <button class="bcard" data-go="board">
+                <div class="bthumb">
+                  <i style="left:12px;top:14px;width:62px;height:34px"></i>
+                  <i style="left:86px;top:24px;width:54px;height:26px"></i>
+                  <i style="left:12px;top:56px;width:48px;height:22px"></i>
+                  <i style="left:96px;top:58px;width:44px;height:30px"></i>
+                </div>
+                <div class="bmeta"><b>lit-review</b><span>14 cards · edited 2h ago</span></div>
+              </button>
+              <button class="bcard">
+                <div class="bthumb">
+                  <i style="left:14px;top:20px;width:80px;height:48px"></i>
+                  <i style="left:104px;top:34px;width:40px;height:40px"></i>
+                </div>
+                <div class="bmeta"><b>positioning-map</b><span>6 cards · edited yesterday</span></div>
+              </button>
+              <button class="bcard" style="border-style:dashed;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--ink-2)">
+                <span style="font:var(--t-ui)">+ New board</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- WHITEBOARD ---------- -->
+        <section class="screen" data-fixed data-screen="board">
+          <div class="board-wrap">
+            <div class="viewport" id="viewport">
+              <div class="scene" id="scene">
+
+                <svg class="edges" viewBox="0 0 820 440" fill="none">
+                  <path d="M268 102 C300 102 300 114 332 114" stroke="#BFAD93" stroke-width="1.2"/>
+                  <path d="M548 114 C580 114 580 104 612 104" stroke="#BFAD93" stroke-width="1.2" stroke-dasharray="4 3"/>
+                  <path d="M548 230 C580 230 580 206 612 206" stroke="#BFAD93" stroke-width="1.2"/>
+                  <circle cx="268" cy="102" r="2.2" fill="#BFAD93"/>
+                  <circle cx="612" cy="104" r="2.2" fill="#BFAD93"/>
+                  <circle cx="612" cy="206" r="2.2" fill="#BFAD93"/>
+                  <text x="300" y="97" font-family="Consolas, monospace" font-size="8" fill="#8A7358" letter-spacing=".04em" text-anchor="middle">SUPPORTS</text>
+                  <text x="580" y="99" font-family="Consolas, monospace" font-size="8" fill="#8A7358" letter-spacing=".04em" text-anchor="middle">AGAINST</text>
+                </svg>
+
+                <div class="bsec" style="left:60px;top:24px;width:216px;height:246px"><div class="bh">Question</div></div>
+                <div class="bcard" style="left:68px;top:56px;width:200px;height:94px">
+                  <div class="ch">Claim · 1</div>
+                  <div class="bd"><b>Baselines are not comparable</b><p>Tokenizers differ, so the denominator does too.</p></div>
+                </div>
+                <div class="bcard" style="left:68px;top:160px;width:200px;height:86px">
+                  <div class="ch">Claim · 2</div>
+                  <div class="bd"><b>Normalize by tokens</b><p>§3 of the protocol says so; nothing implements it.</p></div>
+                </div>
+
+                <div class="bsec" style="left:324px;top:24px;width:232px;height:392px"><div class="bh">Evidence</div></div>
+                <div class="bcard sel" style="left:332px;top:56px;width:216px;height:116px">
+                  <div class="ch">Paper</div>
+                  <div class="bd">
+                    <b>Wu 2025 — 12 models</b>
+                    <p>Reports a 6–11% swing when the tokenizer changes.</p>
+                    <span class="chip-ref" style="margin-top:6px">▢ wu-2025.pdf</span>
+                  </div>
+                </div>
+                <div class="bcard live" style="left:332px;top:182px;width:216px;height:96px">
+                  <div class="ch"><span class="dot run" style="width:4px;height:4px"></span>Live · #12</div>
+                  <div class="bd">
+                    <b>Δ = 7.4% <span style="font:9.5px/12px var(--mono);color:var(--ink-2)">n=1,240</span></b>
+                    <p>Read-only. Produced by baseline-sweep.</p>
+                  </div>
+                </div>
+                <div class="bcard" style="left:332px;top:288px;width:216px;height:84px">
+                  <div class="ch">Note</div>
+                  <div class="bd"><p style="font:11.5px/16px var(--serif);color:var(--ink)">Ask WAM to re-run with the old tokenizer as a control.</p></div>
+                </div>
+
+                <div class="bsec" style="left:604px;top:24px;width:216px;height:246px"><div class="bh">Counter-evidence</div></div>
+                <div class="bcard" style="left:612px;top:56px;width:200px;height:94px">
+                  <div class="ch">Paper</div>
+                  <div class="bd"><b>Replication failed 2 / 3</b><p>Effect disappears when prompts are fixed.</p></div>
+                </div>
+                <div class="bcard" style="left:612px;top:160px;width:200px;height:86px">
+                  <div class="ch">Objection</div>
+                  <div class="bd"><b>Different task</b><p>Not the same measurement.</p></div>
+                </div>
+              </div>
+
+              <div class="tools">
+                <button class="tool on" title="Select">⌖</button>
+                <button class="tool" title="Card">▢</button>
+                <button class="tool" title="Text">T</button>
+                <button class="tool" title="Section">▤</button>
+                <div class="div"></div>
+                <button class="tool" title="Connect">↗</button>
+                <button class="tool" title="Comment">◌</button>
+              </div>
+
+              <div class="minimap">
+                <div class="mm-h">Board</div>
+                <i style="left:10px;top:26px;width:32px;height:26px"></i>
+                <i style="left:48px;top:26px;width:34px;height:38px"></i>
+                <i style="left:88px;top:26px;width:26px;height:26px"></i>
+                <i style="left:10px;top:60px;width:30px;height:18px"></i>
+                <div class="vp" style="left:14px;top:30px;width:74px;height:52px"></div>
+              </div>
+
+              <div class="zoom">
+                <button title="Zoom out">−</button><span class="z">100%</span><button title="Zoom in">+</button>
+                <button title="Fit" style="width:auto;padding:0 6px;font:var(--t-mono-s)">⌘0</button>
+              </div>
+
+              <div class="sel-hud on">Selected 1 · <span class="mono">Wu 2025</span> &nbsp;·&nbsp; <span style="color:var(--accent)">Start a process with this</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- PROCESSES ---------- -->
+        <section class="screen" data-screen="processes">
+          <div class="p-toolbar">
+            <div class="chips">
+              <button class="chip on" data-filter="all">All <span class="n">6</span></button>
+              <button class="chip" data-filter="run">Running <span class="n">3</span></button>
+              <button class="chip" data-filter="warn">Needs input <span class="n">1</span></button>
+              <button class="chip" data-filter="ok">Done <span class="n">1</span></button>
+            </div>
+            <div class="grow"></div>
+            <button class="btn sm">+ Start</button>
+          </div>
+          <div class="p-scroll">
+            <div class="p-head"><div>Process</div><div>Type</div><div>State</div><div class="r">Activity</div><div class="r">Credits</div><div class="r">Out</div></div>
+            <div id="procRows">
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>baseline-sweep</b></div><div class="ty">experiment</div><div class="st"><span class="dot run"></span>running</div><div class="tm">12m</div><div class="cr">42</div><div class="ar">3</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>lit-review</b></div><div class="ty">task</div><div class="st"><span class="dot warn"></span>needs you</div><div class="tm">4m</div><div class="cr">11</div><div class="ar">1</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>data-audit</b></div><div class="ty">operation</div><div class="st"><span class="dot"></span>queued</div><div class="tm">—</div><div class="cr">—</div><div class="ar">0</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>draft-methods</b></div><div class="ty">task</div><div class="st"><span class="dot ok"></span>done</div><div class="tm">1h</div><div class="cr">118</div><div class="ar">2</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>ablation-7</b></div><div class="ty">experiment</div><div class="st"><span class="dot err"></span>failed</div><div class="tm">3h</div><div class="cr">67</div><div class="ar">1</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>tokenizer-notes</b></div><div class="ty">brainstorm</div><div class="st"><span class="dot"></span>queued</div><div class="tm">—</div><div class="cr">—</div><div class="ar">0</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>read: wu-2025</b></div><div class="ty">task</div><div class="st"><span class="dot ok"></span>done</div><div class="tm">yesterday</div><div class="cr">24</div><div class="ar">1</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>normalize-tokens</b></div><div class="ty">operation</div><div class="st"><span class="dot ok"></span>done</div><div class="tm">mon</div><div class="cr">9</div><div class="ar">2</div></div>
+              <div class="prow" data-go="run"><div class="nm"><span class="gi">▷</span><b>weekly-digest</b></div><div class="ty">task</div><div class="st"><span class="dot err"></span>failed</div><div class="tm">mon</div><div class="cr">31</div><div class="ar">0</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- RUN ---------- -->
+        <section class="screen" data-screen="run">
+          <div class="run-head">
+            <div class="top">
+              <span class="dot run"></span>
+              <span class="cap">Process · experiment</span>
+              <span class="pill run">running</span>
+              <span class="cap" style="margin-left:auto">credits 42 · started 12m ago</span>
+            </div>
+            <h1>baseline-sweep</h1>
+            <div class="meta"><span>Research</span><span>run #12</span><span>4 artifacts</span><span>3 participants</span></div>
+          </div>
+
+          <div class="band">
+            <div class="band-h"><span class="k">Intent</span><span class="m">verbatim · not editable</span></div>
+            <div class="band-b">
+              <p class="quote">"Re-run the baseline with the old tokenizer as a control, and report the delta with a confidence interval."</p>
+              <div class="ctxchips">
+                <span class="chip-ref"><span class="gi">◇</span>lit-review</span>
+                <span class="chip-ref"><span class="gi">▢</span>raw-runs.parquet</span>
+                <span class="chip-ref"><span class="gi">▢</span>protocol-v3.pdf</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="band">
+            <div class="band-h"><span class="k">Plan</span><span class="m">rev 2 · 1 change</span></div>
+            <div class="band-b">
+              <div class="plan-row"><span class="n">01</span><span>Load the recorded run and its tokenizer manifest</span><span class="why">unchanged</span></div>
+              <div class="plan-row"><span class="n">02</span><span>Replay with the 2024 tokenizer, fixed prompts</span><span class="why">rev 2 · added control</span></div>
+              <div class="plan-row"><span class="n">03</span><span>Report Δ per benchmark with a 95% CI</span><span class="why">unchanged</span></div>
+              <div class="plan-row"><span class="n">04</span><span>Write artifacts back to datasets / 2026-11</span><span class="why">unchanged</span></div>
+              <div class="cap" style="margin-top:8px">Rev 2 changed because the intent mentioned a control run, which rev 1 omitted.</div>
+            </div>
+          </div>
+
+          <div class="band">
+            <div class="band-h"><span class="k">Activity</span><span class="m">live</span></div>
+            <div class="band-b" style="padding-top:8px">
+              <div class="act"><span class="tm">00:00</span><span class="gi">●</span><span class="tx">Run accepted · plan rev 1</span><span class="rt">—</span></div>
+              <div class="act"><span class="tm">00:02</span><span class="gi">→</span><span class="tx">tool: files.read(raw-runs.parquet)</span><span class="rt">1.2 GB</span></div>
+              <div class="act"><span class="tm">00:03</span><span class="gi">→</span><span class="tx">tool: manifest.diff(tokenizer)</span><span class="rt">2 versions</span></div>
+              <div class="act"><span class="tm">00:05</span><span class="gi">◇</span><span class="tx">checkpoint · plan revised to rev 2</span><span class="rt">—</span></div>
+              <div class="act"><span class="tm">00:06</span><span class="gi">→</span><span class="tx">tool: eval.replay(3 benchmarks, 12 models)</span><span class="rt">4m 12s</span></div>
+              <div class="act art"><span class="tm">00:10</span><span class="gi">▢</span><span class="tx">artifact produced · eval-log.csv</span><span class="rt">88 MB</span></div>
+              <div class="act"><span class="tm">00:12</span><span class="gi">●</span><span class="tx">estimating confidence interval</span><span class="rt">running</span></div>
+            </div>
+          </div>
+
+          <div class="band">
+            <div class="band-h"><span class="k">Output</span><span class="m">4 artifacts · 42 credits</span></div>
+            <div class="band-b">
+              <div class="out-row"><span class="gi">▢</span><span>eval-log.csv</span><span class="sz">88 MB</span><button class="btn sm">Open</button></div>
+              <div class="out-row"><span class="gi">▢</span><span>delta-summary.parquet</span><span class="sz">2 MB</span><button class="btn sm">Open</button></div>
+              <div class="out-row"><span class="gi">▤</span><span>Method — rev 2 note</span><span class="sz">1 note</span><button class="btn sm">Open</button></div>
+              <div class="out-row" style="border-bottom:0"><span class="gi">◇</span><span>lit-review · 3 cards added</span><span class="sz">board</span><button class="btn sm">Open</button></div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="btn">Pause</button>
+            <button class="btn">Stop</button>
+            <button class="btn">Answer</button>
+            <button class="btn" disabled>Approve</button>
+            <span class="note">Controls mirror what WAM exposes for this run. Nothing here invents a capability.</span>
+          </div>
+        </section>
+
+        <!-- ---------- NOTES ---------- -->
+        <section class="screen" data-fixed data-screen="notes">
+          <div class="notes">
+            <div class="nlist">
+              <div class="nlist-h">
+                <div class="t">Notes<button class="btn sm" style="margin-left:auto;height:22px;width:22px;justify-content:center">+</button></div>
+              </div>
+              <div class="nscope chips">
+                <button class="chip on">All</button>
+                <button class="chip">Personal</button>
+                <button class="chip">Research</button>
+              </div>
+              <div class="nscroll" id="noteList">
+                <button class="nitem on" data-note="method"><b>Method — how we measure comparability</b><span>Research · yesterday</span></button>
+                <button class="nitem" data-note="reading"><b>Reading list — tokenizers</b><span>Personal · mon</span></button>
+                <button class="nitem" data-note=""><b>Questions for the WAM team</b><span>Research · 3d ago</span></button>
+                <button class="nitem" data-note=""><b>Interview notes — 4 sessions</b><span>Research · last week</span></button>
+                <button class="nitem" data-note=""><b>Naming: boards vs canvases</b><span>Personal · last week</span></button>
+              </div>
+            </div>
+
+            <div class="reader" id="reader">
+              <div class="rd">
+                <div class="kicker">Note · Research</div>
+                <h1>Method — how we measure comparability</h1>
+                <div class="byline">Ceaser Zhao · edited yesterday 18:40 · 6 min read · 3 references</div>
+
+                <p>Two runs are comparable when the prompt set, the tokenizer, and the normalization are the same. If any of the three changes, the number changes, and we are no longer measuring the model.</p>
+
+                <h2>1 · The problem</h2>
+                <p>Our earlier baselines were reported per item. When the tokenizer changed, the item count stayed the same but the token count did not, so a lower score could mean a worse model or a shorter denominator.<span class="cite">[1]</span></p>
+                <blockquote>The denominator is part of the measurement. Changing it silently is changing the claim.</blockquote>
+
+                <h2>2 · What we do instead</h2>
+                <ul>
+                  <li>Record the tokenizer version in the run manifest, always.</li>
+                  <li>Normalize per 1,000 tokens, never per item.</li>
+                  <li>Report Δ with a 95% interval; a point estimate alone is not a result.</li>
+                  <li>Re-run the previous tokenizer as a control whenever it changes.</li>
+                </ul>
+
+                <h2>3 · Open</h2>
+                <p>Wu 2025 reports a 6–11% swing, but two of three replications failed once prompts were fixed. We do not yet know which of the two effects dominates. The control run in <em>baseline-sweep</em> is meant to answer that.</p>
+
+                <h2>References</h2>
+                <p style="font:var(--t-ui);color:var(--ink-2)">[1] Wu et al. 2025 — <span style="font-family:var(--mono);font-size:12px">wu-2025.pdf</span><br>
+                [2] Protocol v3, §3 — <span style="font-family:var(--mono);font-size:12px">protocol-v3.pdf</span><br>
+                [3] baseline-sweep, run #12 — <span style="font-family:var(--mono);font-size:12px">process</span></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- ACCOUNT ---------- -->
+        <section class="screen" data-fixed data-screen="account">
+          <div class="acc">
+            <nav class="anav">
+              <div class="g">Person</div>
+              <a class="on">Profile</a>
+              <a>Plan &amp; billing</a>
+              <a>Usage &amp; quota</a>
+              <a>API keys</a>
+              <a>Preferences</a>
+              <div class="g">Organization</div>
+              <a>Onda Lab · admin</a>
+              <a>Members</a>
+              <div class="g">Workspace</div>
+              <div class="navhint">Set inside each workspace</div>
+            </nav>
+
+            <div class="acont">
+              <div class="inner">
+                <h1>Account</h1>
+                <p class="lead">Person-level settings. Workspace settings live inside each workspace; organization settings only appear for admins.</p>
+
+                <div class="block">
+                  <div class="bh"><span class="t">Plan</span><span class="r">renews 1 Dec</span></div>
+                  <div class="plan">
+                    <div class="nm"><b>Free</b><span>1 personal workspace · 200 credits / month</span></div>
+                    <button class="btn">Change plan</button>
+                  </div>
+                </div>
+
+                <div class="block">
+                  <div class="bh"><span class="t">Usage this cycle</span><span class="r">resets in 9 days</span></div>
+                  <div class="rows">
+                    <div class="srow">
+                      <div class="nm">Credits<span class="cap">processes and WAM calls</span></div>
+                      <div class="meter"><i class="hi" style="width:62%"></i></div>
+                      <div class="val">1,240 / 2,000</div>
+                    </div>
+                    <div class="srow">
+                      <div class="nm">Storage<span class="cap">all workspaces</span></div>
+                      <div class="meter"><i style="width:18%"></i></div>
+                      <div class="val">3.6 / 20 GB</div>
+                    </div>
+                    <div class="srow">
+                      <div class="nm">Concurrent runs<span class="cap">peak today</span></div>
+                      <div class="meter"><i style="width:75%"></i></div>
+                      <div class="val">3 / 4</div>
+                    </div>
+                  </div>
+                  <p class="small" style="margin-top:10px">Quota is enforced by the service, not by the interface. This screen reports what the service returns.</p>
+                </div>
+
+                <div class="block">
+                  <div class="bh"><span class="t">API keys</span><span class="r">2 active</span></div>
+                  <div class="rows">
+                    <div class="srow">
+                      <div class="nm">cli · local<span class="cap mono">th_live_••••7f21 · created 12 Sep</span></div>
+                      <div class="grow"></div>
+                      <button class="btn sm">Revoke</button>
+                    </div>
+                    <div class="srow">
+                      <div class="nm">notebook<span class="cap mono">th_live_••••3c08 · created 2 Nov</span></div>
+                      <div class="grow"></div>
+                      <button class="btn sm">Revoke</button>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px"><button class="btn sm">Create key</button></div>
+                </div>
+
+                <div class="block">
+                  <div class="bh"><span class="t">Organization</span><span class="r">you are a member of 1</span></div>
+                  <div class="org-note">
+                    <b>Onda Lab</b> — member. Organization settings (members, billing, workspace creation) are administered by its admins and are not part of this account page.
+                    <br>Organization administration is a separate surface: <span class="mono">Account → Onda Lab</span>, visible to admins only.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- FILE PREVIEW ---------- -->
+        <section class="screen" data-screen="file">
+          <div class="pv">
+            <div class="page">
+              <div class="kicker" id="pvMeta">PDF · 2.4 MB · uploaded yesterday</div>
+              <h1 id="pvName">protocol-v3.pdf</h1>
+              <div class="line" style="width:92%"></div>
+              <div class="line m"></div>
+              <div class="line"></div>
+              <div class="line s"></div>
+              <div class="line" style="width:96%"></div>
+              <div class="line m"></div>
+              <div class="line" style="height:120px;background:#F1EBDD;border:1px solid var(--line)"></div>
+              <div class="line"></div>
+              <div class="line s"></div>
+              <div class="line m"></div>
+              <div class="line" style="height:9px;width:0"></div>
+              <div class="line"></div>
+              <div class="line s"></div>
+              <div class="cap" style="margin-top:18px">Page 1 of 14 · preview is read-only; the original file is untouched.</div>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /surface -->
+
+      <!-- ============ PANEL ============ -->
+      <aside class="panel" id="panel">
+        <div class="panel-h"><span class="t" id="panelTitle">Details</span><button class="ibtn" id="panelClose" title="Toggle panel (⌘\)">✕</button></div>
+
+        <div class="pb" data-panel="files">
+          <div id="fName" style="font:var(--t-ui-strong);margin-bottom:10px">raw-runs.parquet</div>
+          <dl class="kv">
+            <dt>Size</dt><dd class="mono" id="fSize">1.2 GB</dd>
+            <dt>Updated</dt><dd id="fDate">2h ago</dd>
+            <dt>Source</dt><dd id="fSrc">produced · run #12</dd>
+            <dt>Folder</dt><dd>datasets / 2026-11</dd>
+          </dl>
+          <div style="margin-top:14px;display:flex;gap:6px"><button class="btn sm">Open</button><button class="btn sm">Download</button></div>
+        </div>
+
+        <div class="pb" data-panel="files">
+          <div class="mini-h">Used by</div>
+          <div class="reflist">
+            <div class="refrow"><span class="gi">◇</span>lit-review<span class="meta">3 cards</span></div>
+            <div class="refrow"><span class="gi">▤</span>Method — rev 2<span class="meta">note</span></div>
+            <div class="refrow"><span class="gi">▷</span>baseline-sweep<span class="meta">#12</span></div>
+          </div>
+          <p class="small" style="margin-top:12px">References, not copies. Removing this file breaks these three.</p>
+        </div>
+
+        <div class="pb" data-panel="board">
+                    <div style="font:var(--t-ui-strong);margin-bottom:8px">Wu 2025 — 12 models, 3 benchmarks</div>
+          <dl class="kv">
+            <dt>Type</dt><dd>Card · paper</dd>
+            <dt>Section</dt><dd>Evidence</dd>
+            <dt>Refs</dt><dd>wu-2025.pdf</dd>
+          </dl>
+          <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn sm">Open reference</button><button class="btn sm">Start a process</button>
+          </div>
+        </div>
+
+        <div class="pb" data-panel="board">
+          <div class="mini-h">This board</div>
+          <dl class="kv">
+            <dt>Cards</dt><dd class="mono">14</dd>
+            <dt>Live results</dt><dd class="mono">1</dd>
+            <dt>Edited</dt><dd>2h ago</dd>
+          </dl>
+          <p class="small" style="margin-top:12px">A card can be bound to a process artifact. The binding is read-only: Thylas does not compute here.</p>
+        </div>
+
+        <div class="pb" data-panel="run">
+                    <dl class="kv">
+            <dt>State</dt><dd>running</dd>
+            <dt>Started</dt><dd class="mono">12m ago</dd>
+            <dt>Credits</dt><dd class="mono">42</dd>
+            <dt>Workspace</dt><dd>Research</dd>
+          </dl>
+        </div>
+
+        <div class="pb" data-panel="run">
+          <div class="mini-h">Given to WAM</div>
+          <div class="reflist">
+            <div class="refrow"><span class="gi">◇</span>lit-review</div>
+            <div class="refrow"><span class="gi">▢</span>raw-runs.parquet</div>
+            <div class="refrow"><span class="gi">▢</span>protocol-v3.pdf</div>
+          </div>
+        </div>
+
+        <div class="pb" data-panel="notes">
+                    <dl class="kv">
+            <dt>Home</dt><dd>Research</dd>
+            <dt>Visible in</dt><dd>Notes · Research</dd>
+            <dt>Edited</dt><dd>yesterday</dd>
+          </dl>
+          <p class="small" style="margin-top:12px">One note, one scope. It appears in two places because it has one owner and two views.</p>
+          <div style="margin-top:12px"><button class="btn sm">Move to…</button></div>
+        </div>
+
+        <div class="pb" data-panel="notes">
+          <div class="mini-h">References</div>
+          <div class="reflist">
+            <div class="refrow"><span class="gi">▢</span>wu-2025.pdf<span class="meta">2.1 MB</span></div>
+            <div class="refrow"><span class="gi">▢</span>protocol-v3.pdf<span class="meta">2.4 MB</span></div>
+            <div class="refrow"><span class="gi">▷</span>baseline-sweep<span class="meta">#12</span></div>
+          </div>
+        </div>
+
+        <div class="pb" data-panel="file">
+                    <dl class="kv">
+            <dt>Type</dt><dd>PDF · 14 pages</dd>
+            <dt>Folder</dt><dd>datasets / 2026-11</dd>
+            <dt>Source</dt><dd>uploaded</dd>
+          </dl>
+          <p class="small" style="margin-top:12px">Preview is an object tab. Closing it destroys nothing.</p>
+        </div>
+      </aside>
+
+    </div><!-- /body -->
+  </div><!-- /work -->
+</div><!-- /app -->
+
+<div class="scrim" id="scrim"></div>
+<div class="pal" id="palette">
+  <input id="palInput" placeholder="Search objects, or type a command…">
+  <div class="res">
+    <div class="ph">Go to</div>
+    <div class="pitem" data-go="files"><span class="gi">▢</span>Files — Research<span class="k">⌘1</span></div>
+    <div class="pitem" data-go="boards"><span class="gi">◇</span>Whiteboard — Research<span class="k">⌘2</span></div>
+    <div class="pitem" data-go="processes"><span class="gi">▷</span>Processes — Research<span class="k">⌘3</span></div>
+    <div class="pitem" data-go="notes"><span class="gi">▤</span>Notes</div>
+    <div class="ph">Commands</div>
+    <div class="pitem"><span class="gi">＋</span>New note<span class="k">N</span></div>
+    <div class="pitem"><span class="gi">↗</span>Switch workspace<span class="k">⌘⇧O</span></div>
+    <div class="pitem"><span class="gi">⌘\</span>Toggle context panel</div>
+  </div>
+</div>
+
+<script>
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+
+const state = {
+  screen:'overview',
+  wsTabs:[{id:'board',label:'lit-review',glyph:'◇'},{id:'run',label:'run #12',glyph:'▷',dot:'run'}],
+  noteTabs:[{id:'method',label:'Method — comparability',glyph:'▤'}],
+  noteId:'method',
+  panelOn:true
+};
+
+const NOTE_TITLE = {method:'Method — how we measure comparability'};
+
+/* ---------- tabs ---------- */
+function routeOf(el){ return el.dataset.go; }
+
+function renderStrip(){
+  const strip = $('#strip');
+  const s = state.screen;
+  strip.classList.toggle('off', ['overview','recently','account'].includes(s));
+  if(strip.classList.contains('off')) return;
+
+  const isNotes = (s === 'notes');
+  const rooms = isNotes ? [] : [{id:'files',label:'Files',glyph:'▢'},{id:'boards',label:'Whiteboard',glyph:'◇'},{id:'processes',label:'Processes',glyph:'▷'}];
+  const objects = isNotes ? state.noteTabs : state.wsTabs;
+
+  let h = rooms.map(r=>`<button class="tab ${s===r.id?'on':''}" data-go="${r.id}"><span class="tg">${r.glyph}</span>${r.label}</button>`).join('');
+  if(isNotes){
+    h += objects.map(o=>`<button class="tab ${state.noteId===o.id?'on':''}" data-note-tab="${o.id}">
+      <span class="tg">▤</span>${o.label}<span class="x" data-close-note="${o.id}">✕</span>
+    </button>`).join('');
+  } else {
+    h += `<span class="sep"></span>`;
+    h += objects.map(o=>`<button class="tab ${o.id===s?'on':''}" data-go="${o.id}">
+      <span class="tg">${o.glyph}</span>${o.label}
+      ${o.dot?`<span class="sdot"></span>`:`<span class="x" data-close="${o.id}">✕</span>`}
+    </button>`).join('');
+  }
+  h += `<button class="tab" style="color:var(--ink-3);padding:0 8px">＋</button>`;
+  h += `<span class="spacer"></span><button class="ibtn" id="stripPanel" title="Toggle panel (⌘\\)">⧉</button>`;
+  strip.innerHTML = h;
+}
+
+/* ---------- screens ---------- */
+function go(s){
+  if(!s) return;
+  state.screen = s;
+  $$('.screen').forEach(el=>el.classList.toggle('on', el.dataset.screen===s));
+  $$('.nrow[data-go]').forEach(el=>el.classList.toggle('on', el.dataset.go===s));
+  renderStrip();
+  updatePanel();
+  if(s==='board') requestAnimationFrame(fitBoard);
+  document.querySelector('.screen.on')?.scrollTo?.(0,0);
+}
+
+function updatePanel(){
+  const s = state.screen;
+  const panel = $('#panel');
+  const hide = ['overview','recently','account','processes','boards'].includes(s) || !state.panelOn;
+  panel.classList.toggle('off', hide);
+  if(hide) return;
+  const key = s==='boards' ? 'board' : s;
+  $$('[data-panel]').forEach(el=>el.style.display = (el.dataset.panel===key)?'':'none');
+  const titles = {files:'Details',board:'Selection',run:'Run',notes:'Scope',file:'File'};
+  $('#panelTitle').textContent = titles[key] || 'Details';
+  panel.style.width = (s==='notes') ? 'var(--w-panel-notes)' : 'var(--w-panel)';
+}
+
+/* ---------- board fit ---------- */
+function fitBoard(){
+  const vp = $('#viewport'), sc = $('#scene');
+  if(!vp||!sc) return;
+  const k = Math.min(1, (vp.clientWidth-56)/820, (vp.clientHeight-56)/440);
+  sc.style.transform = `scale(${k})`;
+  sc.style.left = Math.max(16, Math.round((vp.clientWidth-820*k)/2)) + 'px';
+  sc.style.top = Math.max(16, Math.round((vp.clientHeight-440*k)/2)) + 'px';
+}
+
+/* ---------- notes ---------- */
+function selectNote(id){
+  state.noteId = id;
+  $$('.nitem').forEach(el=>el.classList.toggle('on', el.dataset.note===id));
+  if(id && !state.noteTabs.find(t=>t.id===id)) state.noteTabs.push({id,label:NOTE_TITLE[id]||'Note',glyph:'▤'});
+}
+
+/* ---------- files ---------- */
+const FILES = [
+  {n:'raw-runs.parquet',sz:'1.2 GB',d:'2h ago',src:'produced · run #12'},
+  {n:'eval-log.csv',sz:'88 MB',d:'2h ago',src:'produced · run #12'},
+  {n:'protocol-v3.pdf',sz:'2.4 MB',d:'yesterday',src:'uploaded'},
+  {n:'notes-on-baseline.md',sz:'12 KB',d:'3d ago',src:'imported'},
+  {n:'tokens-per-run.csv',sz:'6 MB',d:'3d ago',src:'produced · run #9'}
+];
+function selectFile(i){
+  $$('#fileRows .frow').forEach(el=>el.classList.toggle('sel', +el.dataset.i===i));
+  const f = FILES[i]; if(!f) return;
+  $('#fName').textContent = f.n;
+  $('#fSize').textContent = f.sz;
+  $('#fDate').textContent = f.d;
+  $('#fSrc').textContent = f.src;
+  state.panelOn = true; updatePanel();
+}
+
+/* ---------- palette ---------- */
+function togglePalette(force){
+  const on = force!==undefined?force:!$('#palette').classList.contains('on');
+  $('#palette').classList.toggle('on',on);
+  $('#scrim').classList.toggle('on',on);
+  if(on){ $('#palInput').value=''; setTimeout(()=>$('#palInput').focus(),10); }
+}
+
+/* ---------- wire ---------- */
+document.addEventListener('click', e=>{
+  const close = e.target.closest('[data-close]');
+  if(close){
+    e.stopPropagation();
+    const id = close.dataset.close;
+    state.wsTabs = state.wsTabs.filter(t=>t.id!==id);
+    if(state.screen===id) go('files');
+    renderStrip();
+    return;
+  }
+  const closeN = e.target.closest('[data-close-note]');
+  if(closeN){
+    e.stopPropagation();
+    const id = closeN.dataset.closeNote;
+    state.noteTabs = state.noteTabs.filter(t=>t.id!==id);
+    renderStrip();
+    return;
+  }
+  const ntab = e.target.closest('[data-note-tab]');
+  if(ntab){ selectNote(ntab.dataset.noteTab); go('notes'); renderStrip(); return; }
+
+  const goEl = e.target.closest('[data-go]');
+  if(goEl){ go(routeOf(goEl)); return; }
+
+  if(e.target.closest('[data-palette]')){ togglePalette(true); return; }
+
+  const chip = e.target.closest('.chip');
+  if(chip){
+    const group = chip.parentElement;
+    $$('.chip', group).forEach(c=>c.classList.remove('on'));
+    chip.classList.add('on');
+    const f = chip.dataset.filter;
+    if(group.dataset.filterGroup==='recent'){
+      $$('.rrow').forEach(r=>r.style.display = (f==='all'||r.dataset.type===f)?'':'none');
+      $$('.grp').forEach(g=>{
+        const vis = $$('.rrow',g).some(r=>r.style.display!=='none');
+        g.style.display = vis?'':'none';
+      });
+    }
+    return;
+  }
+
+  const frow = e.target.closest('.frow');
+  if(frow){
+    selectFile(+frow.dataset.i);
+    if(e.detail===2){
+      const f = FILES[+frow.dataset.i];
+      $('#pvName').textContent = f.n;
+      $('#pvMeta').textContent = (f.n.endsWith('.pdf')?'PDF':'Document') + ' · ' + f.sz + ' · ' + f.src;
+      const t = state.wsTabs.find(t=>t.id==='file');
+      if(t){ t.label = f.n; } else { state.wsTabs.push({id:'file',label:f.n,glyph:'▢'}); }
+      go('file');
+    }
+    return;
+  }
+
+  const nitem = e.target.closest('.nitem');
+  if(nitem){
+    const id = nitem.dataset.note;
+    if(!id) return;
+    selectNote(id);
+    renderStrip();
+    return;
+  }
+
+  const prow = e.target.closest('.prow');
+  if(prow){
+    $$('.prow').forEach(p=>p.classList.remove('sel'));
+    prow.classList.add('sel');
+    go('run');
+    return;
+  }
+
+  if(e.target.closest('#collapseBtn')){
+    const app = $('#app');
+    app.classList.toggle('collapsed');
+    localStorage.setItem('thylas.rail', app.classList.contains('collapsed')?'1':'0');
+    return;
+  }
+
+  if(e.target.closest('#panelClose') || e.target.closest('#stripPanel')){
+    state.panelOn = !state.panelOn; updatePanel(); return;
+  }
+
+  if(e.target.closest('#scrim')){ togglePalette(false); return; }
+
+  if(e.target.closest('.wsc.new')) return;
+});
+
+$('#palInput')?.addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase();
+  $$('.pitem').forEach(el=>el.style.display = el.textContent.toLowerCase().includes(q)?'':'none');
+});
+
+document.addEventListener('keydown', e=>{
+  const meta = e.metaKey||e.ctrlKey;
+  if(meta && e.key.toLowerCase()==='k'){ e.preventDefault(); togglePalette(); }
+  if(meta && e.key==='\\'){ e.preventDefault(); state.panelOn=!state.panelOn; updatePanel(); }
+  if(e.key==='Escape'){ togglePalette(false); }
+  if(meta && ['1','2','3'].includes(e.key)){
+    e.preventDefault();
+    go(['files','boards','processes'][+e.key-1]);
+  }
+});
+
+/* ---------- drop ---------- */
+const surface = $('#surface');
+surface.addEventListener('dragover', e=>{ e.preventDefault(); surface.classList.add('dragover'); });
+surface.addEventListener('dragleave', ()=>surface.classList.remove('dragover'));
+surface.addEventListener('drop', e=>{ e.preventDefault(); surface.classList.remove('dragover'); });
+
+/* ---------- boot ---------- */
+(function(){
+  if(localStorage.getItem('thylas.rail')==='1') $('#app').classList.add('collapsed');
+  const h = (location.hash||'').replace('#','');
+  const known = ['overview','recently','files','boards','processes','run','notes','account','file','board'];
+  go(known.includes(h)?h:'overview');
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('hashchange', ()=>{
+    const x = (location.hash||'').replace('#','');
+    if(known.includes(x)) go(x);
+  });
+})();
+</script>
+</body>
+</html>
