@@ -16,7 +16,7 @@ A surface is on-brand if all five are true. They are used in review, not as deco
 | --- | --- | --- |
 | 1 | Exactly one accent-coloured element per region | Three terracotta buttons and no hierarchy |
 | 2 | Every separation is a 1px hairline or a tone step | Cards floating on shadows |
-| 3 | The largest type on the surface is serif | An all-Inter dashboard |
+| 3 | ~~The largest type on the surface is serif~~ → the largest type comes from the display step and occurs once per screen | An all-Inter dashboard (superseded by `typography.md`; no serif remains) |
 | 4 | No corner radius above 4px except overlays | 12px pills everywhere |
 | 5 | Nothing moves unless its state changed | Entrance animations on tab switch |
 
@@ -46,6 +46,8 @@ The palette is fixed. The roles are the part that has to be enforced.
 
 ## 3. Typography: three families, five roles
 
+> **Superseded on 2026-11-07 by [`typography.md`](typography.md).** The system described below shipped and was audited: the stacks never resolved to their first choices, weights 450/550 were synthesised, and 8–10.5px labels carried the hierarchy (`visual-audit.md` §1). The binding contract is now IBM Plex Sans / Noto Sans SC / IBM Plex Mono with a seven-step scale. This section is kept as the record of what was built, not as guidance.
+
 | Role | Family | Size / line | Weight | Where it is used in code |
 | --- | --- | --- | --- | --- |
 | Display | serif | 28 / 34 | 400 | Overview greeting, note title (30/36 in the reader), board section titles |
@@ -61,7 +63,7 @@ Rules that the implementation actually obeys:
 1. **Serif never below 14px.** Section labels in chrome are mono, not small serif.
 2. **Numbers that align in columns are mono.** File size, updated, credits, outputs — all `--t` mono. This is why the file table reads as a table and not as prose.
 3. **No letter-spacing on serif.** Tracking is only used on mono labels at 0.1em, which is what makes `USED BY` and `WORKSPACE` read as rules rather than words.
-4. **Font stacks are system-first** (`Iowan Old Style / Palatino / Georgia`; `Inter / Segoe UI`). Nothing is downloaded. On Windows the serif resolves to Palatino Linotype; on macOS to Iowan. The identity survives either because the metric relationships — not the files — carry it. **Open:** licensed webfonts would make the serif consistent; that is a budget decision, not a design one.
+4. ~~**Font stacks are system-first** (`Iowan Old Style / Palatino / Georgia`; `Inter / Segoe UI`). Nothing is downloaded. On Windows the serif resolves to Palatino Linotype; on macOS to Iowan.~~ **Correction (2026-11-07):** measuring a real machine showed Palatino Linotype and Iowan are both absent, so the stack resolved to **Georgia**, and Inter to **Segoe UI**. The identity did not survive; it depended on the OS. Superseded by self-hosted fonts in `typography.md` §2.
 5. **Reading measure is 660px**, set by `--w-read`. At 1440 with both notes columns open the reading column is exactly that; it does not stretch.
 
 ## 4. Geometry

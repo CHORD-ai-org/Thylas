@@ -18,6 +18,12 @@
 | 6 | [`design/visual-system.md`](design/visual-system.md) | 10 min | Colour, type, geometry, density — as implemented |
 | 7 | [`design/spatial-language.md`](design/spatial-language.md) | 8 min | Zones, nesting, scrolling, responsive rules |
 | 8 | [`design/interaction-model.md`](design/interaction-model.md) | 8 min | Routes, tabs, keyboard, what is real vs sample |
+| 9 | [`design/visual-audit.md`](design/visual-audit.md) | 12 min | What is wrong with the implemented UI, with file evidence |
+| 10 | [`design/typography.md`](design/typography.md) | 10 min | The type contract: families, loading, 7-step scale |
+| 11 | [`design/interaction-contract.md`](design/interaction-contract.md) | 12 min | Navigation, tabs, panels, states, honesty rules |
+| 12 | [`design/motion-guidelines.md`](design/motion-guidelines.md) | 6 min | The four allowed motions and the banned ones |
+| 13 | [`design/ui-redesign-roadmap.md`](design/ui-redesign-roadmap.md) | 12 min | Six phases, exact files, acceptance, 19–26 days |
+| 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
 
@@ -31,7 +37,9 @@ If you read only one: `product/definition.md` §8 (responsibility matrix). If yo
 | `architecture/application.md` | Stack and its costs, layering rules, state ownership, routes, WAM interface, failure handling, test strategy, technical unknowns | Visual design, milestone timing |
 | `planning/file-plan.md` | Repository tree, per-file responsibilities, dependency graph, build order, files not to create | What each screen looks like |
 | `planning/roadmap.md` | Milestones, scope in and out, acceptance tests, risks, what invalidates the plan | File-level detail |
-| `design/*.md` (new) | The visual system, spatial rules, component inventory and interaction contract **as built** | Product boundaries, milestones, anything about WAM |
+| `design/*.md` | The visual system, spatial rules, component inventory and interaction contract **as built** | Product boundaries, milestones, anything about WAM |
+| `design/{visual-audit,typography,interaction-contract,motion-guidelines,ui-redesign-roadmap}.md` | The audit of that build, and the contracts + phased plan for redesigning it | Implementation itself |
+| `brand/branding-desk.md` | The identity: philosophy, type voice, colour semantics, geometry, voice, applications, tokens, anti-patterns | Screen-by-screen implementation detail |
 | `design/` (existing) | Visual system, IA, tabs, rooms, canvas, notes, settings, journeys, wireframes, prototype | Why the product exists; anything technical |
 | `AGENT.md` (existing) | The reasoning protocol and the classification framework used above | Any conclusion; it deliberately refuses to decide |
 
