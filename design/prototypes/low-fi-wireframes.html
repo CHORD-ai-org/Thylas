@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thylas τ — Low-Fidelity UI Prototypes</title>
+<style>
+  :root{
+    --app:#F1EBDD; --paper:#F7F2E9; --surface:#FBF9F4; --rail:#EBE4D4;
+    --ink:#493626; --ink2:#927B65; --ink3:#B3A08C; --line:#E6DED1;
+    --accent:#B56F50; --accent-w:#F0E2D7;
+    --ok:#5E6B50; --warn:#A8792C; --err:#8C3A2B;
+    --serif:Georgia,"Times New Roman",serif;
+    --ui:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:Consolas,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#221C16;color:#E9E0D0;font:13px/1.5 var(--ui);padding:40px 32px 80px}
+
+  /* ---- page chrome ---- */
+  .doc-head{max-width:1300px;margin:0 auto 36px}
+  .doc-head .kicker{font:11px/1 var(--mono);letter-spacing:.12em;color:#8E7A63;text-transform:uppercase}
+  .doc-head h1{font:400 30px/1.2 var(--serif);color:#F1EBDD;margin:10px 0 8px}
+  .doc-head p{color:#A99B87;max-width:720px}
+  .swatches{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
+  .sw{width:74px;font:10px/1.4 var(--mono);color:#8E7A63}
+  .sw i{display:block;height:22px;border-radius:2px;margin-bottom:4px}
+
+  .sheet{max-width:1300px;margin:0 auto 56px}
+  .sheet > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;border-bottom:1px solid #3A2F25;padding-bottom:8px}
+  .sheet > header .id{font:11px/1 var(--mono);color:#B56F50;letter-spacing:.08em}
+  .sheet > header h2{font:400 17px/1.2 var(--serif);color:#F1EBDD}
+  .sheet > header p{color:#8E7A63;font-size:12px;margin-left:auto;max-width:420px;text-align:right}
+
+  .stage{position:relative;width:1296px;height:calc(900px * .9 + 2px);overflow:hidden;border:1px solid #3A2F25;background:#1A1510}
+  .wf{position:absolute;top:0;left:0;width:1440px;height:900px;transform:scale(.9);transform-origin:top left;
+      background:var(--app);color:var(--ink);overflow:hidden;display:flex}
+
+  .notes{list-style:none;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:4px 28px}
+  .notes li{color:#A99B87;font-size:12px;display:flex;gap:8px}
+  .notes li b{color:#B56F50;font:11px/1.6 var(--mono);flex:0 0 auto}
+
+  /* ---- wireframe primitives ---- */
+  .rail{width:240px;flex:0 0 240px;background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .rail .hd{flex:0 0 auto;height:48px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)}
+  .mark{width:18px;height:18px;border:1px solid var(--ink);border-radius:2px;display:grid;place-items:center;font:11px/1 var(--serif)}
+  .rail .nm{font:13px/1 var(--ui);font-weight:600}
+  .rail .hd .r{margin-left:auto;color:var(--ink2);font:11px/1 var(--mono)}
+  .nav{padding:8px 8px 0}
+  .ni{flex:0 0 auto;height:32px;display:flex;align-items:center;gap:9px;padding:0 8px;border-radius:2px;color:var(--ink);font-size:13px}
+  .ni .g{width:14px;height:14px;border:1px solid var(--ink2);border-radius:2px;flex:0 0 14px}
+  .ni.on{background:var(--surface);box-shadow:inset 2px 0 0 var(--accent);font-weight:600}
+  .ni .c{margin-left:auto;font:10px/1 var(--mono);color:var(--ink2)}
+  .sec{margin-top:12px;padding:0 8px}
+  .sec-h{flex:0 0 auto;height:32px;display:flex;align-items:center;gap:7px;padding:0 8px;font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2);text-transform:uppercase}
+  .grp{margin:2px 0 8px;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+  .sw-row{flex:0 0 auto;height:36px;display:flex;align-items:center;gap:8px;padding:0 9px;border-bottom:1px solid var(--line)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:0 0 7px}
+  .dot.h{background:transparent;box-shadow:inset 0 0 0 1px var(--ink2)}
+  .sw-row .n{font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap}
+  .badge{margin-left:auto;font:9px/1 var(--mono);letter-spacing:.06em;color:var(--ink2);border:1px solid var(--line);border-radius:2px;padding:3px 4px;background:var(--app)}
+  .room{flex:0 0 auto;height:32px;display:flex;align-items:center;gap:8px;padding:0 9px 0 12px;font-size:13px;color:var(--ink)}
+  .room .g{width:13px;height:13px;border:1px solid var(--ink2);border-radius:2px;flex:0 0 13px}
+  .room.on{background:var(--accent-w)}
+  .room .c{margin-left:auto;font:10px/1 var(--mono);color:var(--ink2)}
+  .newrow{flex:0 0 auto;height:28px;display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--ink2);font-size:12px}
+  .prof{flex:0 0 auto;margin-top:auto;height:44px;border-top:1px solid var(--line);display:flex;align-items:center;gap:9px;padding:0 12px}
+  .av{width:22px;height:22px;border-radius:50%;background:var(--ink3);flex:0 0 22px}
+  .prof .pn{font-size:12px;font-weight:600}
+  .prof .pl{font:10px/1 var(--mono);color:var(--ink2)}
+
+  .col{flex:1;display:flex;flex-direction:column;min-width:0}
+  .strip{height:40px;flex:0 0 40px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:2px;padding:0 8px}
+  .tab{height:32px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:3px;font-size:12px;color:var(--ink2);white-space:nowrap}
+  .tab .g{width:12px;height:12px;border:1px solid var(--ink3);border-radius:2px;flex:0 0 12px}
+  .tab.on{background:var(--app);color:var(--ink);font-weight:600;box-shadow:inset 0 -1.5px 0 var(--accent)}
+  .strip .tab{font-weight:500;color:var(--ink)}
+  .strip .sep ~ .tab{font-weight:400;color:var(--ink2)}
+  .strip .sep ~ .tab.on{font-weight:600;color:var(--ink)}
+  .sep{width:1px;height:18px;background:var(--line);margin:0 8px}
+  .strip .r{margin-left:auto;display:flex;gap:10px;color:var(--ink2);font:11px/1 var(--mono)}
+
+  .main{flex:1;display:flex;min-height:0;overflow:hidden}
+  .body{flex:1;min-width:0;padding:26px 34px;overflow:hidden}
+  .panel{width:340px;flex:0 0 340px;border-left:1px solid var(--line);background:var(--surface);padding:16px}
+  .panel h4{font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2);text-transform:uppercase;margin-bottom:12px}
+
+  h1.display{font:400 28px/1.25 var(--serif);margin-bottom:6px}
+  h2.sect{font:500 17px/1.3 var(--serif);margin:0 0 10px}
+  .lead{color:var(--ink2);font-size:13px}
+  .caption{font:10px/1.5 var(--mono);letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
+
+  .intent{margin:22px 0 8px;border:1px solid var(--ink3);border-radius:3px;background:var(--surface);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .intent .ph{color:var(--ink3);font-size:14px}
+  .intent .go{margin-left:auto;border:1px solid var(--accent);color:var(--accent);border-radius:2px;padding:5px 10px;font:11px/1 var(--ui);font-weight:600}
+  .drop{margin-top:8px;border:1px dashed var(--ink3);border-radius:3px;height:44px;display:grid;place-items:center;color:var(--ink3);font-size:12px}
+
+  .rowl{display:flex;align-items:center;gap:10px;height:36px;border-bottom:1px solid var(--line);font-size:13px}
+  .rowl .t{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .rowl .w{margin-left:auto;font:10px/1 var(--mono);color:var(--ink2)}
+  .rowl .g{width:13px;height:13px;border:1px solid var(--ink2);border-radius:2px;flex:0 0 13px}
+  .two{display:grid;grid-template-columns:1.35fr .9fr;gap:40px}
+  .block{margin-top:26px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:3px;overflow:hidden;position:absolute}
+  .card .ch{height:22px;background:var(--accent-w);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 8px;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.06em}
+  .card .cb{padding:8px;font-size:11px;color:var(--ink2);line-height:1.6}
+  .card .cb .ln{height:5px;background:#EDE6D8;border-radius:1px;margin-bottom:5px}
+  .sec-box{position:absolute;border:1px solid var(--ink3);border-radius:2px;background:rgba(181,111,80,.05)}
+  .sec-box .st{height:20px;background:var(--ink3);color:var(--surface);font:10px/20px var(--mono);padding:0 8px;letter-spacing:.08em}
+  .canvas-wrap{position:relative;flex:1;background:var(--paper);overflow:hidden}
+  .dots{position:absolute;inset:0;background-image:radial-gradient(#DFD5C4 1px,transparent 1px);background-size:24px 24px}
+  .vbarbtn{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:40px;border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:6px 0;display:grid;gap:8px;justify-items:center}
+  .vbarbtn i{width:14px;height:14px;border:1px solid var(--ink2);border-radius:2px;display:block}
+  .zoom{position:absolute;right:16px;bottom:16px;background:var(--surface);border:1px solid var(--line);border-radius:3px;font:11px/1 var(--mono);padding:7px 9px}
+  .mini{position:absolute;left:16px;bottom:16px;width:130px;height:90px;background:var(--surface);border:1px solid var(--line);border-radius:2px}
+  .mini .vp{position:absolute;left:34px;top:26px;width:50px;height:34px;border:1px solid var(--accent)}
+
+  .statechip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:0 0 auto;font:10px/1 var(--mono);padding:3px 6px;border-radius:2px;border:1px solid var(--line);color:var(--ink2);background:var(--app)}
+  .s-run{color:var(--accent);border-color:#E3C7B8;background:#F8EDE5}
+  .s-need{color:var(--warn);border-color:#E2D2AF;background:#F7F0E0}
+  .s-done{color:var(--ok);border-color:#CFD3C4;background:#F0F1EA}
+  .s-fail{color:var(--err);border-color:#DCC2BA;background:#F7E9E5}
+
+  .plist{width:100%;border-collapse:collapse;font-size:12px}
+  .plist th{text-align:left;font:10px/1 var(--mono);letter-spacing:.08em;color:var(--ink2);text-transform:uppercase;padding:0 8px 8px;border-bottom:1px solid var(--line);font-weight:400}
+  .plist td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .plist td.m{font:11px/1 var(--mono);color:var(--ink2)}
+
+  .band{border:1px solid var(--line);border-radius:3px;margin-bottom:10px;background:var(--surface)}
+  .band .bh{height:26px;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--line);font:10px/1 var(--mono);letter-spacing:.08em;color:var(--ink2);text-transform:uppercase}
+  .band .bb{padding:10px;font-size:12px;color:var(--ink)}
+  .band.locked .bb{color:var(--ink2)}
+
+  .reader{max-width:680px}
+  .reader h3{font:400 27px/1.3 var(--serif);margin-bottom:6px}
+  .reader .meta{font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.05em;margin-bottom:22px}
+  .reader p{font:400 15px/1.75 var(--serif);color:var(--ink);margin-bottom:14px}
+  .reader h5{font:500 17px/1.4 var(--serif);margin:22px 0 8px}
+
+  .setrow{display:flex;align-items:center;gap:10px;height:44px;border-bottom:1px solid var(--line);font-size:13px}
+  .setrow .v{margin-left:auto;font:11px/1 var(--mono);color:var(--ink2)}
+  .meter{height:4px;background:#EDE6D8;border-radius:1px;margin-top:6px}
+  .meter i{display:block;height:4px;background:var(--accent);border-radius:1px}
+
+  .mk{display:inline-block;width:24px;height:24px;border-radius:50%;background:#493626;color:#FBF9F4;font:600 12px/24px var(--mono);text-align:center;vertical-align:middle;margin-left:8px;letter-spacing:0;box-shadow:0 0 0 2px #F7F2E9}
+  .anno{position:absolute;width:21px;height:21px;border-radius:50%;background:#221C16;color:#F1EBDD;font:600 11px/21px var(--mono);text-align:center;z-index:20;box-shadow:0 0 0 2px rgba(241,235,221,.9)}
+  .varrow{display:flex;gap:28px;padding:26px 34px}
+  .var{width:260px}
+  .var h4{font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2);margin-bottom:8px}
+  .var .pick{border:1px solid var(--accent);border-radius:3px;height:420px;background:var(--rail);padding:8px;overflow:hidden}
+  .var .nop{border:1px solid var(--line);border-radius:3px;height:420px;background:var(--rail);padding:8px;overflow:hidden}
+  .var .why{font-size:11px;color:var(--ink2);margin-top:8px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <div class="kicker">Thylas τ · design planning · appendix</div>
+  <h1>Low-fidelity UI prototypes</h1>
+  <p>Nine structural wireframes. Real labels, real hierarchy, no polish. Every frame answers one question from §12 of the design plan; annotations point at the decisions, not the pixels.</p>
+  <div class="swatches">
+    <div class="sw"><i style="background:#F1EBDD"></i>#F1EBDD app</div>
+    <div class="sw"><i style="background:#F7F2E9"></i>#F7F2E9 paper</div>
+    <div class="sw"><i style="background:#FBF9F4"></i>#FBF9F4 surface</div>
+    <div class="sw"><i style="background:#EBE4D4"></i>#EBE4D4 rail</div>
+    <div class="sw"><i style="background:#493626"></i>#493626 ink</div>
+    <div class="sw"><i style="background:#927B65"></i>#927B65 ink2</div>
+    <div class="sw"><i style="background:#B56F50"></i>#B56F50 accent</div>
+    <div class="sw"><i style="background:#E6DED1"></i>#E6DED1 line</div>
+  </div>
+</div>
+
+<!-- ============ P01 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P01</span>
+    <h2>Overview — resume and start on one screen</h2>
+    <p>Both paths visible without scrolling at 1440×900. No metric tiles, no greeting, no charts.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="nav">
+        <div class="ni on"><span class="g"></span>Overview</div>
+        <div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div>
+      </div>
+      <div class="sec">
+        <div class="sec-h">▾ Workspace</div>
+        <div class="grp">
+          <div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div>
+          <div class="room"><span class="g"></span>Files</div>
+          <div class="room"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room"><span class="g"></span>Processes<span class="c">3</span></div>
+          <div class="room"><span class="g"></span>Notes</div>
+        </div>
+        <div class="grp">
+          <div class="sw-row"><span class="dot h"></span><span class="n">Research</span><span class="badge">ORG</span></div>
+        </div>
+        <div class="newrow">+ New workspace</div>
+      </div>
+      <div class="sec"><div class="ni"><span class="g"></span>Notes</div><div class="ni"><span class="g" style="border-radius:50%"></span>Account</div></div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab on"><span class="g"></span>Overview</div><div class="strip-r r"><span>⌘K</span><span>⧉</span></div></div>
+      <div class="main"><div class="body">
+        <div class="two">
+          <div>
+            <h1 class="display">Pick up, or start.</h1>
+            <div class="intent"><span class="ph">Describe what you want to work on…</span><span class="go">Start</span><b class="mk">1</b></div>
+            <div class="drop">Drop files to add them to Personal<b class="mk">2</b></div>
+
+            <div class="block">
+              <div class="caption" style="margin-bottom:8px">Continue</div><b class="mk">3</b>
+              <div class="rowl"><span class="g" style="transform:rotate(45deg)"></span><span class="t">lit-review · Whiteboard</span><span class="w">12m ago</span></div>
+              <div class="rowl"><span class="g"></span><span class="t">report-draft · Notes</span><span class="w">2h ago</span></div>
+              <div class="rowl"><span class="g"></span><span class="t">baseline-sweep · Run #12</span><span class="w">2h ago</span></div>
+            </div>
+
+            <div class="block">
+              <div class="caption" style="margin-bottom:8px">Needs you</div><b class="mk">4</b>
+              <div class="rowl"><span class="g"></span><span class="t">lit-review</span><span class="statechip s-need">needs input</span><span class="w">4m</span></div>
+              <div class="rowl"><span class="g"></span><span class="t">ablation-7</span><span class="statechip s-fail">failed</span><span class="w">3h</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="caption" style="margin-bottom:8px">Workspaces</div>
+            <div class="rowl"><span class="dot"></span><span class="t">Personal</span><span class="w">4 files</span></div>
+            <div class="rowl"><span class="dot h"></span><span class="t">Research</span><span class="w">org · 6</span></div>
+            <div class="newrow" style="padding-left:0">+ New workspace</div>
+
+            <div class="block">
+              <div class="caption" style="margin-bottom:8px">New</div>
+              <div class="newrow" style="padding-left:0">▤ New note</div>
+              <div class="newrow" style="padding-left:0">◇ New board</div>
+              <div class="newrow" style="padding-left:0">▢ Upload file</div>
+              <div class="newrow" style="padding-left:0">▷ Start process</div>
+            </div>
+
+            <div class="block">
+              <div class="caption" style="margin-bottom:8px">Recent</div>
+              <div class="rowl"><span class="g"></span><span class="t">protocol-v3.pdf</span><span class="w">yesterday</span></div>
+              <div class="rowl"><span class="g"></span><span class="t">eval-log.csv</span><span class="w">yesterday</span></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>One input, one Enter → creates a process (a WAM run). No template, no model picker, no workspace choice.</li>
+    <li><b>2</b>Drop zone is the second path. It creates Files, not a canvas — Kuse's lesson without Kuse's canvas.</li>
+    <li><b>3</b>Continue restores workspace + tab + scroll/viewport in one click.</li>
+    <li><b>4</b>Needs-you only carries the two states where a human blocks the system. Empty → block absent.</li>
+  </ol>
+</section>
+
+<!-- ============ P02 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P02</span>
+    <h2>Sidebar expanded — five areas, one scoped workspace group</h2>
+    <p>Survives 2 workspaces + 1 org + rooms without becoming a tree. 3 depth levels max, 14 rows above the fold.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail" style="background:var(--rail)">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K ＋</span></div>
+      <div class="nav">
+        <div class="ni"><span class="g"></span>Overview</div>
+        <div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div>
+      </div>
+      <div class="sec">
+        <div class="sec-h">▾ Workspace</div><b class="mk">1</b>
+        <div class="grp">
+          <div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span><span style="color:var(--ink2);font-size:10px">⌄</span><b class="mk">2</b></div>
+          <div class="room"><span class="g"></span>Files</div>
+          <div class="room on"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room"><span class="g"></span>Processes<span class="c">3</span></div><b class="mk">4</b>
+          <div class="room"><span class="g"></span>Notes</div>
+        </div>
+        <div class="grp">
+          <div class="sw-row"><span class="dot h"></span><span class="n">Research</span><span class="badge">ORG·MEMBER</span><b class="mk">3</b></div>
+        </div>
+        <div class="grp">
+          <div class="sw-row"><span class="dot h"></span><span class="n">Lab 2026</span><span class="badge">ORG·ADMIN</span></div>
+        </div>
+        <div class="newrow">+ New workspace</div>
+      </div>
+      <div class="sec">
+        <div class="ni"><span class="g"></span>Notes</div>
+        <div class="ni"><span class="g" style="border-radius:50%"></span>Account</div>
+      </div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab">◇ Whiteboard</div><div class="sep"></div><div class="tab on"><span class="g" style="transform:rotate(45deg)"></span>lit-review</div><div class="strip-r r"><span>⧉</span></div></div>
+      <div class="main"><div class="canvas-wrap"><div class="dots"></div>
+        <div style="position:absolute;left:50px;top:40px;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.1em">PERSONAL / WHITEBOARD</div>
+        <div class="card" style="left:50px;top:70px;width:200px"><div class="ch">LIT-REVIEW</div><div class="cb"><div class="ln" style="width:80%"></div><div class="ln" style="width:60%"></div><div class="ln" style="width:70%"></div></div></div>
+        <div class="card" style="left:290px;top:70px;width:200px"><div class="ch">OPEN QUESTION</div><div class="cb"><div class="ln" style="width:70%"></div><div class="ln" style="width:50%"></div></div></div>
+      </div></div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>Section header is collapsible; label is mono caption, not a big title.</li>
+    <li><b>2</b>Switcher row carries the scope badge. Scope must be readable at rest, not only in a menu.</li>
+    <li><b>3</b>Inactive workspaces collapse to one row. 40 workspaces must not mean 40 open trees.</li>
+    <li><b>4</b>Rooms show a badge only when it carries state (3 running). No decorative counts.</li>
+  </ol>
+</section>
+
+<!-- ============ P03 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P03</span>
+    <h2>Workspace with tabs — rooms pinned, objects closable</h2>
+    <p>With 3 rooms + 4 object tabs, can the user say where they are? Rooms and objects must differ at a glance.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="nav"><div class="ni"><span class="g"></span>Overview</div><div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div></div>
+      <div class="sec"><div class="sec-h">▾ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div>
+          <div class="room"><span class="g"></span>Files</div>
+          <div class="room"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room"><span class="g"></span>Processes<span class="c">3</span></div>
+          <div class="room"><span class="g"></span>Notes</div>
+        </div>
+        <div class="grp"><div class="sw-row"><span class="dot h"></span><span class="n">Research</span><span class="badge">ORG</span></div></div>
+      </div>
+      <div class="sec"><div class="ni"><span class="g"></span>Notes</div><div class="ni"><span class="g" style="border-radius:50%"></span>Account</div></div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip">
+        <div class="tab"><span class="g"></span>Files</div>
+        <div class="tab"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+        <div class="tab"><span class="g"></span>Processes<span class="statechip s-run" style="padding:1px 4px">3</span></div><b class="mk">1</b>
+        <div class="sep"></div>
+        <div class="tab on"><span class="g" style="transform:rotate(45deg)"></span>lit-review</div><b class="mk">2</b>
+        <div class="tab"><span class="g"></span>report-draft<span style="color:var(--accent)">•</span></div>
+        <div class="tab"><span class="g"></span>run #12</div>
+        <div class="tab"><span class="g"></span>protocol-v3.pdf</div>
+        <div class="tab" style="color:var(--ink3)">＋</div><b class="mk">3</b>
+        <div class="strip-r r"><span>⋯</span><span>⧉</span></div>
+      </div>
+      <div class="main">
+        <div class="canvas-wrap"><div class="dots"></div>
+          <div class="sec-box" style="left:36px;top:56px;width:520px;height:420px"><div class="st">EVIDENCE · 6</div></div>
+          <div class="card" style="left:56px;top:96px;width:190px;height:112px"><div class="ch">PAPER · 2024</div><div class="cb"><div class="ln" style="width:85%"></div><div class="ln" style="width:65%"></div><div class="ln" style="width:75%"></div><div class="ln" style="width:40%"></div></div></div>
+          <div class="card" style="left:270px;top:96px;width:190px;height:96px"><div class="ch">FINDING</div><div class="cb"><div class="ln" style="width:70%"></div><div class="ln" style="width:88%"></div><div class="ln" style="width:55%"></div></div></div>
+          <div class="card" style="left:56px;top:240px;width:190px;height:88px"><div class="ch">FILE · PDF</div><div class="cb"><div class="ln" style="width:60%"></div><div class="ln" style="width:80%"></div></div></div>
+          <div class="card" style="left:270px;top:230px;width:190px;height:110px"><div class="ch">LIVE RESULT ▸ #12</div><b class="mk">4</b><div class="cb"><div class="ln" style="width:88%"></div><div class="ln" style="width:72%"></div><div class="ln" style="width:50%"></div></div></div>
+          <div class="vbarbtn"><i></i><i></i><i style="transform:rotate(45deg)"></i><i></i><i></i></div>
+          <div class="mini"><div class="vp"></div></div>
+          <div class="zoom">100%</div>
+        </div>
+        <div class="panel">
+          <h4>Selection</h4>
+          <div style="font:500 15px/1.4 var(--serif);margin-bottom:4px">Finding · 3 studies disagree</div>
+          <div style="font:10px/1.6 var(--mono);color:var(--ink2);margin-bottom:16px">CARD · PERSONAL / LIT-REVIEW</div>
+          <h4>References</h4>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">protocol-v3.pdf</span></div>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">report-draft</span></div>
+          <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:14px">
+            <h4>With selection</h4>
+            <div class="newrow" style="padding-left:0">▷ Start a process with 1 object</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>Pinned rooms sit left of a divider. No close button — they cannot be closed, so there is nothing to hover for.</li>
+    <li><b>2</b>Object tabs: glyph + name + unsaved dot. Active = surface fill + 1.5px accent underline.</li>
+    <li><b>3</b>Overflow starts at 8 tabs: scroll + a ⋯ list with filter. Tab text never shrinks below 96px.</li>
+    <li><b>4</b>A card bound to a run shows state, read-only. Thylas does not compute here — it reports.</li>
+  </ol>
+</section>
+
+<!-- ============ P04 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P04</span>
+    <h2>Files — dense rows, one scroll, preview as a tab</h2>
+    <p>Five columns must stay readable at 1440 without turning into a spreadsheet.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="nav"><div class="ni"><span class="g"></span>Overview</div><div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div></div>
+      <div class="sec"><div class="sec-h">▾ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div>
+          <div class="room on"><span class="g"></span>Files</div>
+          <div class="room"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room"><span class="g"></span>Processes</div>
+          <div class="room"><span class="g"></span>Notes</div>
+        </div>
+      </div>
+      <div class="sec"><div class="ni"><span class="g"></span>Notes</div><div class="ni"><span class="g" style="border-radius:50%"></span>Account</div></div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab on"><span class="g"></span>Files</div><div class="sep"></div><div class="tab"><span class="g"></span>raw-runs.parquet</div><div class="strip-r r"><span>⧉</span></div></div>
+      <div class="main">
+        <div class="body" style="padding:22px 28px">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+            <span style="font:10px/1 var(--mono);color:var(--ink2)">PERSONAL / FILES /</span>
+            <span style="font:10px/1 var(--mono);color:var(--ink)">datasets</span>
+            <span style="margin-left:auto;font:10px/1 var(--mono);color:var(--ink2)">⌘⇧N　⤒</span>
+          </div>
+          <h1 class="display" style="font-size:24px;margin:6px 0 16px">datasets</h1>
+          <div style="display:flex;gap:4px;margin-bottom:14px">
+            <span class="statechip" style="background:var(--surface)">All 24</span>
+            <span class="statechip">Data 12</span>
+            <span class="statechip">Docs 7</span>
+            <span class="statechip">Produced 5</span>
+          </div>
+          <table class="plist">
+            <thead><tr><th style="width:44%">Name</th><th>Size</th><th>Updated</th><th>Source</th><th>Used by</th></tr></thead>
+            <tbody>
+              <tr style="background:var(--accent-w)"><td>▢ raw-runs.parquet</td><td class="m">1.2 GB</td><td class="m">2h ago</td><td class="m">uploaded</td><td class="m">3</td></tr>
+              <tr><td>▢ eval-log.csv</td><td class="m">88 MB</td><td class="m">2h ago</td><td class="m">produced · #12</td><b class="mk">1</b><td class="m">2</td></tr>
+              <tr><td>▢ protocol-v3.pdf</td><td class="m">2.4 MB</td><td class="m">yesterday</td><td class="m">uploaded</td><td class="m">4</td></tr>
+              <tr><td>▢ notes-on-baseline.md</td><td class="m">12 KB</td><td class="m">3d ago</td><td class="m">imported</td><td class="m">1</td></tr>
+              <tr><td>◇ findings.board</td><td class="m">—</td><td class="m">3d ago</td><td class="m">created</td><td class="m">1</td></tr>
+              <tr><td>▢ sweep-1/</td><td class="m">4 items</td><td class="m">4d ago</td><td class="m">produced · #9</td><td class="m">0</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:14px;border:1px dashed var(--ink3);border-radius:3px;height:56px;display:grid;place-items:center;color:var(--ink3);font-size:12px">Drop anything here — it lands in this folder<b class="mk">3</b></div>
+        </div>
+        <div class="panel">
+          <h4>Details</h4>
+          <div style="font:500 14px/1.4 var(--serif);margin-bottom:2px">raw-runs.parquet</div>
+          <div style="font:10px/1.6 var(--mono);color:var(--ink2);margin-bottom:16px">1.2 GB · uploaded 6 Nov</div>
+          <h4>Used by</h4><b class="mk">2</b>
+          <div class="rowl" style="height:30px"><span class="g" style="transform:rotate(45deg)"></span><span class="t" style="font-size:12px">lit-review · card</span></div>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">report-draft · note</span></div>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">baseline-sweep · run</span></div>
+          <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:14px">
+            <h4>Actions</h4>
+            <div class="newrow" style="padding-left:0">Open preview</div>
+            <div class="newrow" style="padding-left:0">Start a process with this file</div>
+            <div class="newrow" style="padding-left:0">Copy reference</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>Source column separates uploaded / imported / produced. A produced file links back to its run.</li>
+    <li><b>2</b>Panel answers "what is this and who points at it", not "what is inside". Inside is a tab.</li>
+    <li><b>3</b>Drop target is scoped to the open folder and says so. No invisible full-app drop.</li>
+  </ol>
+</section>
+
+<!-- ============ P05 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P05</span>
+    <h2>Whiteboard — paper, not cards on a canvas</h2>
+    <p>Does the surface read as material with structure? One accent element per screen; card body stays light.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="sec"><div class="sec-h">▾ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div>
+          <div class="room"><span class="g"></span>Files</div>
+          <div class="room on"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room"><span class="g"></span>Processes</div>
+        </div>
+      </div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div><div class="sep"></div><div class="tab on"><span class="g" style="transform:rotate(45deg)"></span>lit-review</div><div class="strip-r r"><span>⋯</span><span>⧉</span></div></div>
+      <div class="main">
+        <div class="canvas-wrap"><div class="dots"></div>
+          <div style="position:absolute;left:18px;top:14px;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.06em">Whiteboard / lit-review</div>
+
+          <div class="card" style="left:70px;top:80px;width:210px;height:104px">
+            <div class="ch">PAPER</div><b class="mk">1</b>
+            <div class="cb"><div class="ln" style="width:86%"></div><div class="ln" style="width:64%"></div><div class="ln" style="width:72%"></div></div>
+          </div>
+          <div class="card" style="left:410px;top:80px;width:210px;height:104px">
+            <div class="ch">CLAIM</div>
+            <div class="cb"><div class="ln" style="width:78%"></div><div class="ln" style="width:52%"></div></div>
+          </div>
+          <div class="card" style="left:410px;top:280px;width:210px;height:120px">
+            <div class="ch">COUNTER-EVIDENCE</div><b class="mk">2</b>
+            <div class="cb"><div class="ln" style="width:70%"></div><div class="ln" style="width:84%"></div><div class="ln" style="width:44%"></div></div>
+          </div>
+          <div class="sec-box" style="left:60px;top:230px;width:300px;height:210px">
+            <div class="st">DATA · 3</div><b class="mk">3</b>
+            <div style="padding:10px 8px">
+              <div class="ln" style="height:6px;background:#EDE6D8;width:70%;margin-bottom:8px;border-radius:1px"></div>
+              <div class="ln" style="height:6px;background:#EDE6D8;width:88%;margin-bottom:8px;border-radius:1px"></div>
+              <div class="ln" style="height:6px;background:#EDE6D8;width:56%;border-radius:1px"></div>
+            </div>
+          </div>
+
+          <svg style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none">
+            <path d="M280 132 C 340 132 350 132 410 132" stroke="#927B65" stroke-width="1" fill="none"/>
+            <path d="M515 184 C 515 230 515 240 515 280" stroke="#927B65" stroke-width="1" fill="none"/>
+            <path d="M410 340 C 360 340 350 300 360 300" stroke="#B56F50" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+            <text x="330" y="122" font-family="Consolas,monospace" font-size="9" fill="#927B65">cites</text>
+            <text x="522" y="240" font-family="Consolas,monospace" font-size="9" fill="#927B65">contradicts</text>
+          </svg>
+
+          <div style="position:absolute;left:280px;top:132px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:1.5px solid var(--accent)"></div>
+          <div style="position:absolute;left:280px;top:76px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:1px solid var(--ink2)"></div>
+          <div style="position:absolute;left:280px;top:184px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:1px solid var(--ink2)"></div>
+
+          <div class="vbarbtn" style="left:14px;top:60px;transform:none"><i></i><i></i><i style="transform:rotate(45deg)"></i><i></i><i></i><i></i></div>
+          <div style="position:absolute;left:66px;bottom:16px;display:flex;gap:6px">
+            <span class="statechip" style="background:var(--surface)">Selected 1</span><b class="mk">4</b>
+            <span class="statechip" style="background:var(--surface)">⌘Z undo · 1 step</span>
+          </div>
+          <div class="zoom">62%</div>
+          <div class="mini"><div class="vp" style="left:20px;top:30px;width:60px;height:30px"></div></div>
+        </div>
+        <div class="panel">
+          <h4>Card</h4>
+          <div style="font:500 14px/1.4 var(--serif);margin-bottom:10px">Claim · the effect is smaller than reported</div>
+          <div class="setrow" style="height:32px"><span>Section</span><span class="v">data</span></div>
+          <div class="setrow" style="height:32px"><span>Edges</span><span class="v">2 in · 1 out</span></div>
+          <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">
+            <h4>Bound to</h4>
+            <div style="font:11px/1.7 var(--mono);color:var(--ink2)">run #12 · succeeded</div>
+            <div class="newrow" style="padding-left:0">Open run</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>Card = light body + 3px tinted header. This is the correction the HeptaBase comparison produced; the inverted version reads as a sticky-note app.</li>
+    <li><b>2</b>Hover reveals 4 anchors. Only the hovered card pays that visual cost — anchors are not permanent furniture.</li>
+    <li><b>3</b>Dashed edge = proposed/contradicting relation, in accent. Only one chromatic element in this region.</li>
+    <li><b>4</b>Selection HUD states the undo consequence, not just the count. Canvas trust is built from reversible actions.</li>
+  </ol>
+</section>
+
+<!-- ============ P06 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P06</span>
+    <h2>Processes — list and run detail</h2>
+    <p>Can a non-expert tell what the system is doing and what needs them? Same six state words everywhere.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="sec"><div class="sec-h">▾ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div>
+          <div class="room"><span class="g"></span>Files</div>
+          <div class="room"><span class="g" style="transform:rotate(45deg)"></span>Whiteboard</div>
+          <div class="room on"><span class="g"></span>Processes<span class="c">3</span></div>
+        </div>
+      </div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab"><span class="g"></span>Processes<span class="statechip s-run" style="padding:1px 4px">3</span></div><div class="sep"></div><div class="tab on"><span class="g"></span>run #12</div><div class="strip-r r"><span>⧉</span></div></div>
+      <div class="main">
+        <div class="body" style="padding:22px 28px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span class="statechip" style="background:var(--surface)">All 18</span>
+            <span class="statechip">Running 3</span>
+            <span class="statechip">Needs input 1</span>
+            <span class="statechip">Done 12</span>
+            <span style="margin-left:auto;border:1px solid var(--accent);color:var(--accent);border-radius:2px;padding:5px 10px;font:11px/1 var(--ui);font-weight:600">+ Start</span>
+          </div>
+          <table class="plist">
+            <thead><tr><th style="width:6%"></th><th style="width:34%">Process</th><th>Type</th><th>State</th><th>Activity</th><th>Credits</th><th>Artifacts</th></tr></thead>
+            <tbody>
+              <tr style="background:var(--accent-w)"><td>▷</td><td>baseline-sweep</td><td class="m">experiment</td><td><span class="statechip s-run">running</span><b class="mk">1</b></td><td class="m">12m</td><td class="m">42</td><td class="m">6</td></tr>
+              <tr><td>▷</td><td>lit-review</td><td class="m">task</td><td><span class="statechip s-need">needs input</span></td><td class="m">4m</td><td class="m">31</td><td class="m">2</td></tr>
+              <tr><td>▷</td><td>data-audit</td><td class="m">operation</td><td><span class="statechip">queued</span></td><td class="m">—</td><td class="m">—</td><td class="m">0</td></tr>
+              <tr><td>▷</td><td>draft-methods</td><td class="m">task</td><td><span class="statechip s-done">succeeded</span></td><td class="m">1h</td><td class="m">118</td><td class="m">3</td></tr>
+              <tr><td>▷</td><td>ablation-7</td><td class="m">experiment</td><td><span class="statechip s-fail">failed</span></td><td class="m">3h</td><td class="m">67</td><td class="m">1</td></tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top:24px;display:flex;gap:28px">
+            <div style="flex:1.55">
+              <div class="band"><div class="bh">Intent</div><div class="bb">“Run a baseline sweep over the three datasets in Personal / datasets and report where the numbers disagree.”</div></div>
+              <div class="band"><div class="bh">Plan <span style="color:var(--ink2)">· rev 2</span></div><b class="mk">2</b><div class="bb">1 Audit inputs · 2 Fit baselines · 3 Compare · 4 Write report <span style="color:var(--ink2)">(rev 1 skipped step 1)</span></div></div>
+              <div class="band locked"><div class="bh">Activity</div><div class="bb" style="font-family:var(--mono);font-size:11px;line-height:1.9">14:02 audit → 3 files ok<br>14:09 fit → 4 baselines<br>14:31 compare → 2 disagreements<br><span style="color:var(--accent)">14:33 needs input · which metric is canonical?</span></div></div>
+            </div>
+            <div style="flex:1">
+              <div class="band"><div class="bh">Output</div><div class="bb">▢ eval-log.csv<br>▤ notes · disagreements<br>◇ board · sweep-findings</div></div>
+              <div class="band"><div class="bh">Controls</div><b class="mk">3</b><div class="bb">
+                <span class="statechip" style="background:var(--surface)">Answer</span>
+                <span class="statechip" style="background:var(--surface)">Pause</span>
+                <span class="statechip">Stop</span>
+                <div style="margin-top:8px;font:10px/1.5 var(--mono);color:var(--ink2)">only what WAM exposes</div>
+              </div></div>
+              <div class="band"><div class="bh">Cost</div><div class="bb" style="font-family:var(--mono);font-size:11px">42 credits · 12m 04s</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>One state vocabulary, six values. The list is the room; the run is a detail tab. No second navigation inside a run.</li>
+    <li><b>2</b>Plan revisions are shown, not hidden — dynamic planning is a named WAM capability, so its history is the evidence.</li>
+    <li><b>3</b>Controls are mirrored. If WAM cannot pause, the button does not exist. Never "disabled with a tooltip".</li>
+  </ol>
+</section>
+
+<!-- ============ P07 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P07</span>
+    <h2>Notes — a different material in the same shell</h2>
+    <p>Serif body at 660, 13px UI chrome. Scope chip explains why a note appears in two lists.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="nav"><div class="ni"><span class="g"></span>Overview</div><div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div></div>
+      <div class="sec"><div class="sec-h">▸ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div></div>
+      </div>
+      <div class="sec"><div class="ni on"><span class="g"></span>Notes</div><div class="ni"><span class="g" style="border-radius:50%"></span>Account</div></div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="strip"><div class="tab on"><span class="g"></span>Notes</div><b class="mk">1</b><div class="sep"></div><div class="tab on" style="background:var(--app)"><span class="g"></span>report-draft<span style="color:var(--accent)">•</span></div><div class="strip-r r"><span>⧉</span></div></div>
+      <div class="main">
+        <div style="width:240px;flex:0 0 240px;border-right:1px solid var(--line);background:var(--surface);padding:14px 0">
+          <div style="padding:0 14px 10px;display:flex;gap:4px;flex-wrap:wrap">
+            <span class="statechip" style="background:var(--app)">All</span><b class="mk">2</b>
+            <span class="statechip" style="background:var(--surface)">Personal</span>
+            <span class="statechip" style="background:var(--surface)">Research</span>
+          </div>
+          <div style="padding:0 14px 8px;font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2)">COLLECTIONS</div>
+          <div class="newrow" style="padding-left:14px;height:26px">▸ Method notes</div>
+          <div class="newrow" style="padding-left:14px;height:26px">▸ Reading</div>
+          <div style="padding:12px 14px 8px;font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2)">TAGS</div>
+          <div style="padding:0 14px 12px;font-size:12px;color:var(--ink2)">sweeps · baselines · todo</div>
+          <div style="border-top:1px solid var(--line);padding-top:8px">
+            <div style="padding:8px 14px;background:var(--accent-w)">
+              <div style="font-size:13px;font-weight:600">report-draft</div>
+              <div style="font:10px/1.6 var(--mono);color:var(--ink2)">PERSONAL · 2h</div>
+            </div>
+            <div style="padding:8px 14px"><div style="font-size:13px">lit-review</div><div style="font:10px/1.6 var(--mono);color:var(--ink2)">PERSONAL · 1d</div></div>
+            <div style="padding:8px 14px"><div style="font-size:13px">protocol notes</div><div style="font:10px/1.6 var(--mono);color:var(--ink2)">RESEARCH · 3d</div></div>
+          </div>
+        </div>
+        <div class="body" style="display:flex;justify-content:center;padding:34px 20px 0">
+          <div class="reader">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+              <span class="statechip" style="background:var(--surface)">PERSONAL</span>
+              <span style="font:10px/1 var(--mono);color:var(--ink2)">· edited 2h ago · 1,240 words</span>
+              <span style="margin-left:auto;font:10px/1 var(--mono);color:var(--accent)">draft saved</span>
+            </div>
+            <h3>Method</h3><b class="mk">3</b>
+            <div class="meta">REPORT-DRAFT / 2026-11-07</div>
+            <p>We ran three sweeps against the same corpus. The first two agreed to within two points; the third diverged on every metric we did not normalise.</p>
+            <h5>What changed between sweeps</h5>
+            <p>The only difference was the input set: sweep three added the two files produced by <span style="border-bottom:1px solid var(--line)">run #12</span>. That is enough to make the disagreement a data problem, not a method problem.</p>
+            <div style="border-left:2px solid var(--accent);padding:4px 0 4px 14px;margin:16px 0;font:400 15px/1.7 var(--serif);color:var(--ink2)">Open question: is <span style="text-decoration:underline">metric A</span> canonical, or is it an artefact of the labelling?</div>
+          </div>
+        </div>
+        <div class="panel" style="width:300px;flex:0 0 300px">
+          <h4>Outline</h4>
+          <div class="setrow" style="height:26px;font-size:12px"><span>Method</span></div>
+          <div class="setrow" style="height:26px;font-size:12px;padding-left:10px"><span style="color:var(--ink2)">What changed between sweeps</span></div>
+          <h4 style="margin-top:20px">References</h4><b class="mk">4</b>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">protocol-v3.pdf</span></div>
+          <div class="rowl" style="height:30px"><span class="g"></span><span class="t" style="font-size:12px">run #12</span></div>
+          <h4 style="margin-top:20px">Backlinks</h4>
+          <div style="font-size:12px;color:var(--ink2)">cited by 2 cards</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>Notes has its own strip: it is the second (and only other) tab context. Switching to a workspace swaps the strip.</li>
+    <li><b>2</b>Scope filter is the first control in the list. It is the explanation for why a note can appear twice.</li>
+    <li><b>3</b>Serif at 660/26. Same shell, different material — the reader is the only place the UI drops to 12px chrome.</li>
+    <li><b>4</b>References sit in the panel, not inline as decoration. The body keeps one typeface and one column.</li>
+  </ol>
+</section>
+
+<!-- ============ P08 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P08</span>
+    <h2>Account — person, not workspace</h2>
+    <p>No workspace name may appear here except as a usage breakdown row. Plan visible at rest.</p>
+  </header>
+  <div class="stage"><div class="wf">
+    <aside class="rail">
+      <div class="hd"><span class="mark">τ</span><span class="nm">Thylas</span><span class="r">⌘K</span></div>
+      <div class="nav"><div class="ni"><span class="g"></span>Overview</div><div class="ni"><span class="g" style="border-radius:50%"></span>Recently</div></div>
+      <div class="sec"><div class="sec-h">▸ Workspace</div>
+        <div class="grp"><div class="sw-row"><span class="dot"></span><span class="n">Personal</span><span class="badge">PERSONAL</span></div></div>
+      </div>
+      <div class="sec"><div class="ni"><span class="g"></span>Notes</div><div class="ni on"><span class="g" style="border-radius:50%"></span>Account</div></div>
+      <div class="prof"><span class="av"></span><div><div class="pn">Ceaser Zhao</div><div class="pl">plan · credited</div></div></div>
+    </aside>
+    <div class="col">
+      <div class="main">
+        <div style="width:220px;flex:0 0 220px;border-right:1px solid var(--line);padding:22px 0;background:var(--app)">
+          <div style="padding:0 18px 14px;font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2)">ACCOUNT</div>
+          <div class="room on" style="margin:0 8px;border-radius:2px;height:30px">Profile</div>
+          <div class="room" style="margin:0 8px;height:30px">Plan &amp; billing</div>
+          <div class="room" style="margin:0 8px;height:30px">Usage &amp; quota</div>
+          <div class="room" style="margin:0 8px;height:30px">API keys</div>
+          <div class="room" style="margin:0 8px;height:30px">Preferences</div>
+          <div style="padding:22px 18px 14px;font:10px/1 var(--mono);letter-spacing:.1em;color:var(--ink2)">ORGANIZATION</div><b class="mk">3</b>
+          <div class="room" style="margin:0 8px;height:30px">Research · admin</div>
+        </div>
+        <div class="body" style="padding:28px 36px;max-width:760px">
+          <h1 class="display" style="font-size:24px">Account</h1><b class="mk">1</b>
+          <div class="lead" style="margin-bottom:24px">Person-level settings. Workspace settings live in the workspace.</div>
+
+          <div class="setrow"><span>Name</span><span class="v">Ceaser Zhao</span></div>
+          <div class="setrow"><span>Email</span><span class="v">zhaoceaser@gmail.com</span></div>
+          <div class="setrow"><span>Sign-in</span><span class="v">Google · GitHub</span></div>
+
+          <div style="margin-top:28px;border:1px solid var(--line);border-radius:3px;background:var(--surface);padding:16px">
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <div style="font:500 16px/1.3 var(--serif)">Credited plan</div>
+              <div style="font:10px/1 var(--mono);color:var(--ink2)">RENEWS 12 DEC</div>
+              <span style="margin-left:auto;font:11px/1 var(--ui);color:var(--accent)">Change plan</span>
+            </div>
+            <div style="display:flex;gap:40px;margin-top:14px">
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;font:11px/1 var(--mono);color:var(--ink2)"><span>CREDITS</span><span>1,240 / 2,000</span><b class="mk">2</b></div>
+                <div class="meter"><i style="width:62%"></i></div>
+              </div>
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;font:11px/1 var(--mono);color:var(--ink2)"><span>STORAGE</span><span>18.4 / 50 GB</span></div>
+                <div class="meter"><i style="width:37%"></i></div>
+              </div>
+            </div>
+            <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px;font:10px/1.9 var(--mono);color:var(--ink2)">
+              BY WORKSPACE　Personal 640　Research 600
+            </div>
+          </div>
+
+          <div style="margin-top:22px">
+            <div class="setrow"><span>API keys</span><span class="v">2 active · last used 3d ago</span><span style="color:var(--ink2)">›</span></div>
+            <div class="setrow"><span>Preferences</span><span class="v">appearance · editor · shortcuts</span><span style="color:var(--ink2)">›</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ol class="notes">
+    <li><b>1</b>No tab strip in Account. Settings are not locations you accumulate — the only two tab contexts are a workspace and Notes.</li>
+    <li><b>2</b>Quota as two numbers with a period, not a donut. Breakdown is a mono line, not a chart.</li>
+    <li><b>3</b>Organization is a separate block below a divider, present only for admins.</li>
+  </ol>
+</section>
+
+<!-- ============ P09 ============ -->
+<section class="sheet">
+  <header>
+    <span class="id">P09</span>
+    <h2>Variant sheet — three sidebar organisations</h2>
+    <p>Only one wins. Chosen on scope honesty first, scaling second, concept count third.</p>
+  </header>
+  <div class="stage" style="height:auto"><div class="wf" style="position:relative;transform:none;height:auto;display:block;padding-bottom:20px">
+    <div class="varrow">
+      <div class="var">
+        <h4>V1 · FLAT FIVE</h4>
+        <div class="nop">
+          <div class="newrow" style="padding-left:4px">○ Overview</div>
+          <div class="newrow" style="padding-left:4px">◷ Recently</div>
+          <div class="newrow" style="padding-left:4px">▤ Workspace</div>
+          <div class="newrow" style="padding-left:16px">● Personal</div>
+          <div class="newrow" style="padding-left:28px">Files · Whiteboard · Processes</div>
+          <div class="newrow" style="padding-left:16px">● Research</div>
+          <div class="newrow" style="padding-left:28px">Files · Whiteboard · Processes</div>
+          <div class="newrow" style="padding-left:16px">● Lab 2026</div>
+          <div class="newrow" style="padding-left:28px">Files · Whiteboard · Processes</div>
+          <div class="newrow" style="padding-left:4px">▤ Notes</div>
+          <div class="newrow" style="padding-left:4px">◔ Account</div>
+        </div>
+        <div class="why">Fewest concepts and closest to the brief. Rooms of inactive workspaces are invisible; at 6 workspaces the rail is a scroll of empty rooms.</div>
+      </div>
+      <div class="var">
+        <h4>V2 · WORKSPACE-FIRST</h4>
+        <div class="nop">
+          <div class="newrow" style="padding-left:4px;color:#B56F50">● Personal ⌄</div>
+          <div class="newrow" style="padding-left:16px">○ Today</div>
+          <div class="newrow" style="padding-left:16px">▢ Files</div>
+          <div class="newrow" style="padding-left:16px">◇ Whiteboard</div>
+          <div class="newrow" style="padding-left:16px">▷ Processes</div>
+          <div class="newrow" style="padding-left:16px">▤ Notes</div>
+          <div class="newrow" style="padding-left:4px">● Research</div>
+          <div class="newrow" style="padding-left:4px">● Lab 2026</div>
+          <div style="border-top:1px solid var(--line);margin:8px 0"></div>
+          <div class="newrow" style="padding-left:4px">◷ Recently</div>
+          <div class="newrow" style="padding-left:4px">◔ Account</div>
+        </div>
+        <div class="why">Ownership is unambiguous and scales to many workspaces. But Recently and Account do not belong to a workspace, so half the rail sits outside the frame — the model lies.</div>
+      </div>
+      <div class="var">
+        <h4>V3 · SCOPED GROUP — CHOSEN</h4>
+        <div class="pick">
+          <div class="newrow" style="padding-left:4px">○ Overview</div>
+          <div class="newrow" style="padding-left:4px">◷ Recently</div>
+          <div style="font:9px/1 var(--mono);color:#927B65;letter-spacing:.08em;padding:8px 4px 4px">WORKSPACE</div>
+          <div class="grp" style="margin:0">
+            <div class="sw-row" style="height:30px"><span class="dot"></span><span class="n" style="font-size:12px">Personal</span><span class="badge">PERSONAL</span></div>
+            <div class="room" style="height:26px;font-size:12px">Files</div>
+            <div class="room" style="height:26px;font-size:12px">Whiteboard</div>
+            <div class="room" style="height:26px;font-size:12px">Processes</div>
+            <div class="room" style="height:26px;font-size:12px">Notes</div>
+          </div>
+          <div class="grp" style="margin-top:4px"><div class="sw-row" style="height:30px;border:0"><span class="dot h"></span><span class="n" style="font-size:12px">Research</span><span class="badge">ORG</span></div></div>
+          <div class="grp" style="margin-top:4px"><div class="sw-row" style="height:30px;border:0"><span class="dot h"></span><span class="n" style="font-size:12px">Lab 2026</span><span class="badge">ADMIN</span></div></div>
+          <div class="newrow" style="padding-left:4px;font-size:11px">+ New workspace</div>
+          <div class="newrow" style="padding-left:4px;margin-top:10px">▤ Notes</div>
+          <div class="newrow" style="padding-left:4px">◔ Account</div>
+        </div>
+        <div class="why">Every area keeps its true scope, inactive workspaces cost one row, scope is visible at rest. Costs one extra pattern (collapsed group + badge).</div>
+      </div>
+    </div>
+    <div style="padding:0 34px 10px;display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:0;border-top:1px solid var(--line);font-size:12px">
+      <div style="padding:10px 0;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.06em">CRITERION</div>
+      <div style="padding:10px 0;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.06em">V1</div>
+      <div style="padding:10px 0;font:10px/1 var(--mono);color:var(--ink2);letter-spacing:.06em">V2</div>
+      <div style="padding:10px 0;font:10px/1 var(--mono);color:#B56F50;letter-spacing:.06em">V3</div>
+      <div style="padding:8px 0;border-top:1px solid var(--line)">Scope honesty</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#8C3A2B">fails at 4+</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#8C3A2B">fails</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">passes</div>
+      <div style="padding:8px 0;border-top:1px solid var(--line)">Scales to 40 workspaces</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#8C3A2B">no</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">yes</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">yes</div>
+      <div style="padding:8px 0;border-top:1px solid var(--line)">Concept count</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">3</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">3</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#A8792C">4</div>
+      <div style="padding:8px 0;border-top:1px solid var(--line)">Matches the five-area brief</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">exact</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#8C3A2B">no</div><div style="padding:8px 0;border-top:1px solid var(--line);color:#5E6B50">exact</div>
+    </div>
+  </div></div>
+</section>
+
+<div class="doc-head" style="margin-top:20px">
+  <p style="font-size:12px;color:#8E7A63">Frames are structural. No shadows, no illustrations, no final micro-interaction. Content is realistic, not final. See <span style="font-family:var(--mono);color:#B56F50">design/thylas-ui-design-plan.md</span> §12 for what each frame must prove.</p>
+</div>
+
+</body>
+</html>
