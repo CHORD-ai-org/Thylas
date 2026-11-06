@@ -1,8 +1,13 @@
-/* App tokens. The palette, type ramps, spacing, rows and panel widths live in
-   design/tokens.css and are NOT redefined here — this file only adds what the
-   running application needs beyond the prototype. */
+/* App tokens. Colour, space, rows and panel widths come from design/tokens.css
+   (frozen as the prototype's archive). Type comes from typography.css, which is
+   imported after it and therefore wins. This file adds only what a running app
+   needs beyond the prototype: tints, scrim, layering and a second duration. */
 
+/* Order matters: faces first, then the design archive (colour/space/motion),
+   then our type contract, which overrides the archive's ramps. */
+@import './fonts.css';
 @import '../../design/tokens.css';
+@import './typography.css';
 
 :root {
   /* tints derived from the palette; no new hues */

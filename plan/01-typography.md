@@ -74,6 +74,26 @@ Then: DevTools → Network → Font, English route = 1 request; paste 中文 int
 - **R2 two token files.** `design/tokens.css` is imported by `design/prototypes/hi-fi.html`. Freezing it means the prototype keeps the old type — that is intended, but say so in the commit body.
 - **R3 subsetting mistakes** are silent: a missing punctuation glyph falls back mid-sentence. Check `“”—–…·℃` and full-width `，。：；` in the specimen.
 
+## Result (2026-11-07, done)
+
+Shipped: **7 woff2 + `OFL.txt`** in `public/fonts/` — Plex Sans 400/500/600 (22.6/24.2/24.3 KB), Plex Mono 400 (14.7 KB), Plex Sans **Greek** 400 (9.9 KB), Noto Sans SC 400/500 (1.05/1.06 MB). `src/styles/fonts.css` has 7 faces; `src/styles/typography.css` has the 8 token steps (7 + `--t-mono-s`).
+
+Verified against the running app (CDP, `document.fonts` + resource timing):
+
+| Screen | woff2 requests | Notes |
+| --- | --- | --- |
+| `/overview`, English | 4 — Plex 400, 500, Mono 400, Greek 400 | no CJK |
+| same, after typing 中文 | + `NotoSansSC-Regular.woff2` | CJK is fetched on glyph demand, not on load |
+
+**Deviations from the steps, with reasons**
+
+1. **Source of the files.** Google Fonts and jsDelivr are unreachable from this network (`curl` → 000); the npm registry is not. Plex came from `@fontsource/ibm-plex-*` tarballs (`npm pack`, nothing added to `package.json`); Noto SC was **subset locally** from the installed `C:/Windows/Fonts/NotoSansSC-VF.ttf` with `fonttools` (one-off pip install, not a project dependency). Subset = GB2312 (7,445 chars) + Latin-1 + general/CJK punctuation + fullwidth.
+2. **A seventh face.** The `τ` mark is Greek; the Plex Latin subset has no Greek, so an English screen was fetching 1 MB of Noto for one glyph. Added `IBMPlexSans-Greek.woff2` (9.9 KB).
+3. **Symbol fallback.** `⌘ ▦ ▶ ▤` are not in any Plex subset and still triggered the CJK fetch. The `--ui` stack now puts `Segoe UI Symbol` / `Apple Symbols` before `Noto Sans SC`. Symbol glyphs should still become SVG icons (02/04/07), at which point the symbol faces stop being used.
+4. **Mechanical cleanup that belonged to later sub-plans** was done here because 01's done-when requires it: 6× `font-weight: 550` → 500; 4 `var(--serif)` → `var(--ui)`/`--t-read`; 7 page titles moved from `--t-display` with a hardcoded size override to `--t-page`.
+
+**Left for 02–05:** some rules still carry a `font-size` override next to a token (e.g. board canvas title, panel name); the notes panel is still 340 not 300; `--t-ui` line-height moved 18 → 20, so a few rows will be remeasured in 04.
+
 ## Handoff
 
 02 may start once `--t-ui` resolves to Plex on this machine. It does not need the specimen to be finished, but it does need the six faces present — otherwise it will tune spacing against Georgia.

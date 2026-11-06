@@ -1,0 +1,25 @@
+/* Type contract — docs/design/typography.md §3.
+   Seven steps, three weights, no serif. Component styles must not declare
+   font-size or font-weight directly; they use these tokens. */
+
+:root {
+  /* Symbol faces sit before the CJK face on purpose: ⌘, ▦, ▶ and friends are not
+     in the Plex subset, and without a symbol fallback they would pull 1 MB of
+     Noto Sans SC onto an English screen for four glyphs. */
+  --ui: 'IBM Plex Sans', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans SC', system-ui,
+    -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', 'Cascadia Mono', 'SF Mono', Consolas, monospace;
+
+  --t-caption: 500 11px/16px var(--ui);
+  --t-mono-s: 400 11px/16px var(--mono);
+  --t-ui: 400 13px/20px var(--ui);
+  --t-ui-strong: 500 13px/20px var(--ui);
+  --t-read: 400 16px/26px var(--ui);
+  --t-section: 500 20px/28px var(--ui);
+  --t-page: 500 24px/32px var(--ui);
+  --t-display: 500 32px/40px var(--ui);
+  --t-mono: 400 12px/18px var(--mono);
+
+  --track-caption: 0.02em;
+  --track-label: 0.06em;
+}

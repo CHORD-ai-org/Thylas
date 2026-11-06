@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thylas · type specimen</title>
+    <style>
+      /* Same six faces as src/styles/fonts.css, with paths that work from this file. */
+      @font-face { font-family: 'IBM Plex Sans'; src: url('../../public/fonts/IBMPlexSans-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+      @font-face { font-family: 'IBM Plex Sans'; src: url('../../public/fonts/IBMPlexSans-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+      @font-face { font-family: 'IBM Plex Sans'; src: url('../../public/fonts/IBMPlexSans-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+      @font-face { font-family: 'IBM Plex Mono'; src: url('../../public/fonts/IBMPlexMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+      @font-face { font-family: 'Noto Sans SC'; src: url('../../public/fonts/NotoSansSC-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+      @font-face { font-family: 'Noto Sans SC'; src: url('../../public/fonts/NotoSansSC-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+
+      :root {
+        --ui: 'IBM Plex Sans', 'Noto Sans SC', system-ui, sans-serif;
+        --mono: 'IBM Plex Mono', Consolas, monospace;
+        --ink: #493626; --ink-2: #75604B; --ink-3: #B3A08C;
+        --line: #E6DED1; --line-strong: #D8CCB9;
+        --bg: #F1EBDD; --surface: #FBF9F4; --paper: #F7F2E9;
+        --accent: #B56F50; --accent-weak: #F0E2D7;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--ink);
+        font: 400 13px/20px var(--ui); -webkit-font-smoothing: antialiased;
+        font-synthesis: none;
+      }
+      main { max-width: 920px; margin: 0 auto; padding: 56px 48px 120px; }
+      h1 { font: 500 32px/40px var(--ui); letter-spacing: -0.015em; margin: 0 0 6px; }
+      .meta { color: var(--ink-2); font: 400 11px/16px var(--mono); }
+      .rule { height: 1px; background: var(--line); margin: 32px 0 0; }
+      section { padding-top: 32px; }
+      .label {
+        font: 500 11px/16px var(--ui); letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--ink-2); display: flex; align-items: center; gap: 6px;
+        padding-bottom: 8px; border-bottom: 1px solid var(--line);
+      }
+      .label::before { content: ''; width: 6px; height: 1px; background: var(--line-strong); }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th { text-align: left; font: 400 11px/16px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+      td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+      td.spec { width: 210px; color: var(--ink-3); font: 400 11px/16px var(--mono); white-space: nowrap; }
+      td.use { width: 260px; color: var(--ink-2); }
+      .s-caption { font: 500 11px/16px var(--ui); letter-spacing: .02em; }
+      .s-mono-s { font: 400 11px/16px var(--mono); }
+      .s-ui { font: 400 13px/20px var(--ui); }
+      .s-ui-strong { font: 500 13px/20px var(--ui); }
+      .s-read { font: 400 16px/26px var(--ui); }
+      .s-section { font: 500 20px/28px var(--ui); letter-spacing: -0.005em; }
+      .s-page { font: 500 24px/32px var(--ui); letter-spacing: -0.01em; }
+      .s-display { font: 500 32px/40px var(--ui); letter-spacing: -0.015em; }
+
+      .prose { max-width: 660px; margin-top: 16px; }
+      .prose p { font: 400 16px/26px var(--ui); margin: 0 0 14px; }
+      .prose .zh { letter-spacing: 0.01em; }
+      .prose h3 { font: 500 20px/28px var(--ui); margin: 22px 0 8px; }
+
+      .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 16px; }
+      .nums { width: 100%; border-collapse: collapse; }
+      .nums td { font: 400 13px/20px var(--ui); border-bottom: 1px solid var(--line); padding: 6px 0; }
+      .nums td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+      .nums.mono td:last-child { font: 400 12px/18px var(--mono); font-variant-numeric: normal; }
+      .numhead { font: 400 11px/16px var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; padding-bottom: 6px; border-bottom: 1px solid var(--line-strong); display: flex; justify-content: space-between; }
+
+      .weights p { margin: 0 0 8px; font-size: 20px; line-height: 28px; }
+      .w400 { font-weight: 400; } .w500 { font-weight: 500; } .w600 { font-weight: 600; }
+
+      .glyphs { font: 400 16px/30px var(--ui); margin-top: 12px; }
+      .note { margin-top: 14px; color: var(--ink-2); font: 400 11px/16px var(--ui); max-width: 62ch; }
+      .swatch { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 6px; border: 1px solid var(--line-strong); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Type specimen</h1>
+      <p class="meta">IBM Plex Sans 400/500/600 · IBM Plex Mono 400 · Noto Sans SC 400/500 · commit 4e7fcbb</p>
+      <div class="rule"></div>
+
+      <section>
+        <div class="label">01 · the seven steps</div>
+        <table>
+          <thead>
+            <tr><th>Token</th><th>Specimen</th><th>Use</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="spec">--t-caption · 11/16 · 500</td><td class="s-caption">2h ago · 12 credits · updated</td><td class="use">metadata, counts, table headers</td></tr>
+            <tr><td class="spec">--t-mono-s · 11/16 · 400</td><td class="s-mono-s">run-12 · 4m 12s · ⌘K</td><td class="use">ids, durations, shortcuts</td></tr>
+            <tr><td class="spec">--t-ui · 13/20 · 400</td><td class="s-ui">The workspace holds the material and the work on it.</td><td class="use">rail, tabs, tables, buttons</td></tr>
+            <tr><td class="spec">--t-ui-strong · 13/20 · 500</td><td class="s-ui-strong">Method — how we measure comparability</td><td class="use">active tab, selected row, file names</td></tr>
+            <tr><td class="spec">--t-read · 16/26 · 400</td><td class="s-read">Two runs are comparable when the prompt set is the same.</td><td class="use">note body, run intent</td></tr>
+            <tr><td class="spec">--t-section · 20/28 · 500</td><td class="s-section">Workspace</td><td class="use">panel names, section titles</td></tr>
+            <tr><td class="spec">--t-page · 24/32 · 500</td><td class="s-page">Recently</td><td class="use">page title</td></tr>
+            <tr><td class="spec">--t-display · 32/40 · 500</td><td class="s-display">Welcome back</td><td class="use">one per screen</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <div class="label">02 · latin + 中文 at the read step</div>
+        <div class="prose">
+          <h3>Method — 如何衡量可比性</h3>
+          <p>
+            Two runs are comparable when the prompt set, the tokenizer, and the normalization are
+            the same. If any of the three changes, the number changes, and we are no longer
+            measuring the model.
+          </p>
+          <p class="zh">
+            当提示集、分词器与归一化三者中有任何一项发生变化时，数值就会随之变化，此时我们测量的
+            不再是模型本身。分母也是计量的一部分，悄悄替换分母等于替换结论。
+          </p>
+          <p>
+            Report Δ with a 95% interval; a point estimate alone is not a result. 置信区间与点估计
+            必须同时给出，否则无法判断差异是否来自随机波动。
+          </p>
+        </div>
+        <p class="note">
+          Check: Latin baseline sits on the same line as 中文, line height holds at 26px, and no
+          glyph falls back (watch 「，。：；「」（）」and the em dash).
+        </p>
+      </section>
+
+      <section>
+        <div class="label">03 · numbers: proportional vs tabular vs mono</div>
+        <div class="cols">
+          <div>
+            <div class="numhead"><span>tabular (--t-ui + tnum)</span><span>credits</span></div>
+            <table class="nums">
+              <tr><td>baseline-sweep</td><td>1,204</td></tr>
+              <tr><td>lit-review</td><td>118</td></tr>
+              <tr><td>data-audit</td><td>9,607</td></tr>
+              <tr><td>weekly-digest</td><td>42</td></tr>
+            </table>
+          </div>
+          <div>
+            <div class="numhead"><span>mono (--t-mono)</span><span>size</span></div>
+            <table class="nums mono">
+              <tr><td>raw-runs.parquet</td><td>1.2 GB</td></tr>
+              <tr><td>eval-log.csv</td><td>88 MB</td></tr>
+              <tr><td>protocol-v3.pdf</td><td>2.4 MB</td></tr>
+              <tr><td>promptset-v2.json</td><td>240 KB</td></tr>
+            </table>
+          </div>
+        </div>
+        <p class="note">Both columns must align on the digit. If only the mono column aligns, tabular numerals are not applied.</p>
+      </section>
+
+      <section>
+        <div class="label">04 · weights that actually exist</div>
+        <div class="weights">
+          <p class="w400">400 · The run is still running.</p>
+          <p class="w500">500 · The run is still running.</p>
+          <p class="w600">600 · The run is still running.</p>
+        </div>
+        <p class="note">No 450, no 550. With <code>font-synthesis: none</code> a missing weight resolves, it does not fake.</p>
+      </section>
+
+      <section>
+        <div class="label">05 · punctuation and symbols in the subset</div>
+        <div class="glyphs">
+          “ ” ‘ ’ — – … · ℃ × ÷ ° ′ ″ ≤ ≥ ≠ ± → ← ↑ ↓ ／ ： ； ， 。 「 」 （ ） 【 】 、 ？ ！
+        </div>
+        <p class="note">If any of these renders in a different face, the subset is missing a range — fix the subset, not the CSS.</p>
+      </section>
+    </main>
+  </body>
+</html>

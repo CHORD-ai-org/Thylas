@@ -15,9 +15,7 @@
 }
 
 .title {
-  font: var(--t-display);
-  font-size: 22px;
-  line-height: 30px;
+  font: var(--t-page);
 }
 
 .hint {

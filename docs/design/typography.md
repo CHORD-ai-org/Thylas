@@ -24,14 +24,18 @@ Licensing `[C]`: both IBM Plex and Noto are SIL Open Font License 1.1. Self-host
 Nothing is loaded today; the identity resolves to Georgia + Segoe UI + Cascadia/Consolas on Windows and Iowan + Inter + SF Mono on macOS (`visual-audit.md` A1). Replace with self-hosted files. No CDN, no `@import`, no font package from npm at runtime.
 
 ```
-public/fonts/
-  IBMPlexSans-Regular.woff2      400 · latin + latin-ext       ~34 KB
-  IBMPlexSans-Medium.woff2       500 · latin + latin-ext       ~34 KB
-  IBMPlexSans-SemiBold.woff2     600 · latin + latin-ext       ~35 KB
-  IBMPlexMono-Regular.woff2      400 · latin + symbols         ~22 KB
-  NotoSansSC-Regular.woff2       400 · GB2312 + punctuation    ~1.1 MB
-  NotoSansSC-Medium.woff2        500 · GB2312 + punctuation    ~1.1 MB
+public/fonts/                                 (shipped 2026-11-07)
+  IBMPlexSans-Regular.woff2      400 · latin                    22.6 KB
+  IBMPlexSans-Medium.woff2       500 · latin                    24.2 KB
+  IBMPlexSans-SemiBold.woff2     600 · latin (reserved)         24.3 KB
+  IBMPlexSans-Greek.woff2        400 · greek (the τ mark only)   9.9 KB
+  IBMPlexMono-Regular.woff2      400 · latin                    14.7 KB
+  NotoSansSC-Regular.woff2       400 · GB2312 (7,445) + punct    1.05 MB
+  NotoSansSC-Medium.woff2        500 · same                     1.06 MB
+  OFL.txt                        both families + subset notice
 ```
+
+Measurements from the running build: `/overview` in English makes **4** font requests (Plex 400, 500, mono, greek) and **no** CJK request; typing Chinese adds `NotoSansSC-Regular` only. The one-preload plan was too optimistic — 500 is used above the fold (active tab, file names), so it loads on first paint too.
 
 ```css
 @font-face {
@@ -58,7 +62,7 @@ Rules:
 
 1. **Preload exactly one file** — Plex Sans 400 — because it paints the shell. `<link rel="preload" as="font" type="font/woff2" crossorigin>` in `index.html`.
 2. **`font-display: swap`** everywhere, with a metric-similar fallback (`Segoe UI`, `system-ui`) so the swap does not shift layout more than one line.
-3. **Noto Sans SC loads on demand.** It sits after Plex in every stack, so an English-only screen never requests 2 MB.
+3. **Noto Sans SC loads on demand.** It sits after Plex *and* after the symbol faces (`Segoe UI Symbol`, `Apple Symbols`) in the stack, so an English-only screen requests nothing from it — symbol glyphs such as `⌘` or `▦` would otherwise pull 1 MB of hanzi for four characters.
 4. **No `font-weight: 450/550` anywhere.** Only 400, 500, 600 exist; anything else resolves to the nearest and the design stops being reproducible.
 5. **No synthetic bold or oblique** (`font-synthesis: none` on `html`).
 

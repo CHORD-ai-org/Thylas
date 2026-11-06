@@ -11,9 +11,7 @@
 
 .title {
   margin-top: 10px;
-  font: var(--t-display);
-  font-size: 26px;
-  line-height: 34px;
+  font: var(--t-page);
 }
 
 .hint {

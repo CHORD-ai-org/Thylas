@@ -22,7 +22,7 @@
 
 | ID | Sub-plan | Sprint | Est | Gate | Blocked by | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| 01 | [Typography foundations](01-typography.md) | S1 | 2.5d | G1 | — | not started |
+| 01 | [Typography foundations](01-typography.md) | S1 | 2.5d | G1 | — | **done 11-07** |
 | 02 | [Shell](02-shell.md) | S1 | 2.5d | G1 | 01 | not started |
 | 03 | [Overview](03-overview.md) | S2 | 1.5d | G2 | 02 | not started |
 | 04 | [Files](04-files.md) | S2 | 1.5d | G2 | 02 | not started |

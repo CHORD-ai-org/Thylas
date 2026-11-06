@@ -224,7 +224,7 @@
 }
 
 .glyphNote {
-  font-family: var(--serif);
+  font-family: var(--ui);
   font-size: 11px;
   color: var(--ink);
 }

@@ -3,9 +3,7 @@
 }
 
 .title {
-  font: var(--t-display);
-  font-size: 26px;
-  line-height: 32px;
+  font: var(--t-page);
 }
 
 .sub {
@@ -40,7 +38,7 @@
   background: var(--bg-surface);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .filterCount {

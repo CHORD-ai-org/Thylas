@@ -12,6 +12,12 @@ body,
   height: 100%;
 }
 
+html {
+  /* 400/500/600 are the only weights that exist; never synthesise others */
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg-app);
@@ -66,6 +72,12 @@ a {
 svg {
   display: block;
   flex: 0 0 auto;
+}
+
+/* Chinese reading text needs a hair more air than Latin at the same size.
+   Only prose, not chrome: labels and numbers keep Latin tracking. */
+:lang(zh) :is(p, blockquote, li) {
+  letter-spacing: 0.01em;
 }
 
 ::selection {

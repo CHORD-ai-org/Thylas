@@ -3,9 +3,7 @@
 }
 
 .title {
-  font: var(--t-display);
-  font-size: 26px;
-  line-height: 32px;
+  font: var(--t-page);
 }
 
 .sub {
@@ -209,7 +207,7 @@
 .segmentOn {
   background: var(--accent-weak);
   color: var(--ink);
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .segment + .segment {
