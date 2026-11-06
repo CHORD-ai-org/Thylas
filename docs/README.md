@@ -23,6 +23,7 @@
 | 11 | [`design/interaction-contract.md`](design/interaction-contract.md) | 12 min | Navigation, tabs, panels, states, honesty rules |
 | 12 | [`design/motion-guidelines.md`](design/motion-guidelines.md) | 6 min | The four allowed motions and the banned ones |
 | 13 | [`design/ui-redesign-roadmap.md`](design/ui-redesign-roadmap.md) | 12 min | Six phases, exact files, acceptance, 19–26 days |
+| 13.5 | [`planning/ui-mvp-plan.md`](planning/ui-mvp-plan.md) | 10 min | **The plan in force for the next four weeks**: four sprints, task IDs, gates, stop rules |
 | 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
@@ -39,6 +40,7 @@ If you read only one: `product/definition.md` §8 (responsibility matrix). If yo
 | `planning/roadmap.md` | Milestones, scope in and out, acceptance tests, risks, what invalidates the plan | File-level detail |
 | `design/*.md` | The visual system, spatial rules, component inventory and interaction contract **as built** | Product boundaries, milestones, anything about WAM |
 | `design/{visual-audit,typography,interaction-contract,motion-guidelines,ui-redesign-roadmap}.md` | The audit of that build, and the contracts + phased plan for redesigning it | Implementation itself |
+| `planning/ui-mvp-plan.md` | The 20-day UI MVP: four sprints, per-sprint files and gates, stop rules, definition of done | Product milestones, WAM integration |
 | `brand/branding-desk.md` | The identity: philosophy, type voice, colour semantics, geometry, voice, applications, tokens, anti-patterns | Screen-by-screen implementation detail |
 | `design/` (existing) | Visual system, IA, tabs, rooms, canvas, notes, settings, journeys, wireframes, prototype | Why the product exists; anything technical |
 | `AGENT.md` (existing) | The reasoning protocol and the classification framework used above | Any conclusion; it deliberately refuses to decide |

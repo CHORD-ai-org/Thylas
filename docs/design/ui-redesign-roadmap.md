@@ -3,6 +3,8 @@
 **Status:** plan, not started. No source file changed by this document.
 **Date:** 2026-11-07
 **Inputs:** `visual-audit.md` (what is wrong), `typography.md` (the type contract), `interaction-contract.md` (behaviour), `motion-guidelines.md` (timing), `spatial-language.md` (zones).
+**Sequencing in force:** the next four weeks are scheduled sprint-by-sprint in [`../planning/ui-mvp-plan.md`](../planning/ui-mvp-plan.md) (P0+P1 → S1, P2 → S2, P3 → S2–S3, P4 → S3–S4, P5 → S4). This document remains the full-scope estimate; that one is the executable slice.
+
 **Premise:** the zone geometry, tab semantics and tone system stay. What is rebuilt is the **type layer**, the **state layer** and the **style ownership layer** — the three things the audit found unregulated. This is a re-skin of a correct skeleton, not a new skeleton.
 
 ---
