@@ -179,6 +179,22 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** keep `grammar.banner` for the reason. Rejected: a permanent terracotta strip on the most-used surface is neither quiet nor a state marker.
 **Consequence:** one more recipe in the grammar file; the three remaining page-local `.notice` recipes (account, boards, processes) still use accent and are owned by SP-06/07/08.
 
+## D-023 · SP-06a ships the store, not the wiring
+
+**Status:** accepted in force (SP-06a).
+**Context:** the unit asks for a versioned board schema and a local adapter. It also promises "no user-visible change". Wiring `BoardStore` into `BoardDetailPage` would mean the board suddenly saves (or fails to save) with no editing UI — a claim the interface cannot yet make.
+**Decision:** `store.ts` is complete and unit-tested, but `BoardDetailPage` still reads the sample boards. SP-06b/c connect load/save alongside the gestures they justify.
+**Alternative:** wire it now and show a "saved" indicator. Rejected: no write action exists yet, so the indicator would be a fake success state.
+**Consequence:** "persistence works" is true only of the module, not of the product. This line exists so nobody reads the unit as delivered persistence.
+
+## D-024 · One numeric source for scene size, including the coincidental ones
+
+**Status:** accepted in force (SP-06a).
+**Context:** four page stylesheets each declared `max-width: 560px`, a value that happens to equal the board scene height. Acceptance §4 requires no `1032|560` outside `scene.ts`; changing four unrelated layouts by eye would have been worse than leaving the grep dirty.
+**Decision:** inject scene size as CSS variables on the canvas container and collapse those four widths into `--w-sheet: 35rem` (still 560px computed, and now reader-font-relative).
+**Alternative:** narrow the acceptance grep to the boards scope and leave four duplicates. Rejected: the duplicates were a real inconsistency, and a literal gate is cheaper to keep honest.
+**Consequence:** custom properties only inherit downwards, so the variables must be injected on the container that owns the dot grid. Injecting on `.scene` removed the grid; the before/after screenshot md5 caught it.
+
 ---
 
 ## Open questions (need a human, not a default)

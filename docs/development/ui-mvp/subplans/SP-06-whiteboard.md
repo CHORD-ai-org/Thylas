@@ -1,6 +1,6 @@
 # SP-06 · Whiteboard
 
-**Status:** Not Started · **Depends:** SP-04 · **Blocks:** SP-09
+**Status:** In Progress (1 of 4 units done) · **Depends:** SP-04 · **Blocks:** SP-09
 **Absorbs:** plan/08, and every measured finding in `HeptaBase RE/Plan/06-画布交互改造.md` §0.
 
 **Units:** [SP-06a](SP-06a-scene-model.md) — scene model, geometry, persistence (0.75d) · [SP-06b](SP-06b-viewport.md) — viewport, zoom, pointer machine (1.25d) · [SP-06c](SP-06c-cards.md) — create, drag, snap, undo (1.5d) · [SP-06d](SP-06d-edges.md) — edges, anchors, labels (1.5d).
@@ -81,3 +81,8 @@ Unit tests for geometry/history; e2e: create-drag-connect-undo-reload; performan
 - **Frame budget** is the project's largest single risk; if 150 cards fail, options are: `<canvas>` renderer (same model), or a documented 100-card ceiling with a warning at 80.
 - Undo of selection is not worth modelling (HeptaBase's own note: undo left stale selections) — selection clears on undo, documented.
 - Storage: one board per workspace in `localStorage` is an MVP constraint (Q-4); a 2 MB board would hit the quota.
+
+## Progress
+
+- **SP-06a complete (2026-11-07, `3ce2f5b`)** — pure `scene.ts`, versioned `store.ts`, 23 unit tests, no visual change (screenshot md5 identical). The store is not yet wired into rendering.
+- SP-06b / 06c / 06d remain. The three avoidable engine bugs in §F are still the acceptance target for 06b; nothing in 06a touched the pointer layer.

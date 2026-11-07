@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 12:35 (SP-04 complete).
+Last updated: 2026-11-07 16:20 (SP-06a complete).
 
 ---
 
@@ -22,7 +22,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-05a Note model | SP-05 | **Blocked** (Q-1) | 1.0 | SP-04a | store, link parser, backlinks |
 | SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
-| SP-06a Scene model | SP-06 | Not Started | 0.75 | SP-04a | geometry + schema |
+| SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | Not Started | 1.25 | SP-06a | pointer-anchored zoom, one pointer session |
 | SP-06c Cards | SP-06 | Not Started | 1.5 | SP-06b | create, drag, snap, undo |
 | SP-06d Edges | SP-06 | Not Started | 1.5 | SP-06c | anchors, labels, hit areas |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
+Remaining: **13.25 days**. Critical path: SP-06b → SP-06c/d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
 
 ---
 
@@ -49,8 +49,9 @@ Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a 
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
-| Unit tests | Vitest 5, 25 assertions over routes/selectors/lede/tabs | `src/lib/{routes,tabs}.test.ts`, `src/data/selectors.test.ts` |
-| E2E | 81 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Unit tests | Vitest 5, 48 assertions incl. scene geometry and board store | `src/pages/boards/{scene,store}.test.ts` |
+| E2E | 86 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Board scene | pure constants + versioned store, not yet wired to rendering | `src/pages/boards/`, `3ce2f5b` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
 | Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
@@ -60,13 +61,11 @@ Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a 
 | # | Defect | Where | Owner SP |
 | --- | --- | --- | --- |
 | K1 | Other surfaces still accept a click then apologise (Overview and Files are clean) | Boards, Processes, Notes, Account | SP-06 / SP-07 / SP-08 |
-
 | K3 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
 | K4 | Board is read-only and its labels are ~8px at fit | `src/pages/Boards.tsx` | SP-06 |
 | K5 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
 | K6 | Three page-local `.notice` recipes remain (down from six) | `account/boards/processes.module.css` | SP-06 / SP-07 / SP-08 |
 | K7 | Roaming tabindex in the rail not implemented (arrows only) | `src/shell/Rail.tsx` | SP-09 |
-| K8 | Scene dimensions hardcoded in TSX and CSS | `Boards.tsx`, `boards.module.css` | SP-06 |
 | K9 | No loading state language anywhere | all surfaces | SP-07 |
 
 ## Validation log
@@ -98,11 +97,16 @@ Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a 
 | 11-07 | `npm run e2e` (SP-04b) | 81/81; disclosure, 5 keys, disabled actions, tombstone lifecycle |
 | 11-07 | Static honesty checks | `<span onClick>` 0 · apology state 0 · page-local `.notice` 3 |
 | 11-07 | `npm run build` (SP-04b) | CSS 55.0 KB / JS 131.0 KB gzip |
+| 11-07 | `npm test` (SP-06a) | 48/48; 23 new scene/store cases |
+| 11-07 | `npm run e2e` (SP-06a) | 86/86; geometry identical, no numeric scene size outside `scene.ts` |
+| 11-07 | Board screenshot diff | before/after md5 identical (`0a1cc6b8…`) |
+| 11-07 | `grep 1032\|560 src` | 0 outside `boards/scene.ts` |
+| 11-07 | 200-card serialisation | < 20ms |
 
 ## Next concrete action
 
-1. **SP-06a Scene model** (0.75 day): extract the whiteboard's geometry and schema constants before touching the pointer layer. Exit when the scene still renders identically (screenshot diff) and the dimensions live in one file.
-2. Alternatively **SP-07a AI endpoint** (1 day), which is independently unblocked and delivers the secure DeepSeek path. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.**
+1. **SP-06b Viewport** (1.25 days): viewport in a ref, pointer-anchored `⌘`+wheel, one window-level pointer session. Exit when 30 consecutive zoom gestures produce 30 steps and the scene still renders identically at rest.
+2. Alternatively **SP-07a AI endpoint** (1 day), independently unblocked. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (one board viewport persisted in localStorage) is also still unapproved.
 
 ## Resolved
 
@@ -122,3 +126,4 @@ Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a 
 | R12 | Upload / New folder apologised after being clicked | SP-04b | disabled with `title` + persistent reason line |
 | R13 | At 1180 `1.2 GB` wrapped and names ellipsised | SP-04a | 430px container step, 11px mono, names fully readable |
 | R14 | Table-head, label and banner recipes were copied per page | SP-04a/04b | `grammar.tableHead` / `label` / `banner` / `limit` consumed |
+| R15 | Scene dimensions were hardcoded in TSX and CSS | SP-06a | one source in `boards/scene.ts`; injected as CSS variables |

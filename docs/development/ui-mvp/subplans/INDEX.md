@@ -21,7 +21,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-05a](SP-05a-note-model.md) | Note model, local store, link parser, backlinks | SP-05 | 1.0 | SP-04a | Blocked (Q-1) |
 | [SP-05b](SP-05b-editor-and-save.md) | Editor, save loop, conflict, dirty guard | SP-05 | 1.75 | SP-05a | Blocked (Q-1) |
 | [SP-05c](SP-05c-note-library.md) | Library list, search, panel | SP-05 | 1.25 | SP-05b | Not Started |
-| [SP-06a](SP-06a-scene-model.md) | Scene model, geometry, persistence schema | SP-06 | 0.75 | SP-04a | Not Started |
+| [SP-06a](SP-06a-scene-model.md) | Scene model, geometry, persistence schema | SP-06 | 0.75 | SP-04a | **Completed 11-07** |
 | [SP-06b](SP-06b-viewport.md) | Viewport: zoom, pan, pointer machine | SP-06 | 1.25 | SP-06a | Not Started |
 | [SP-06c](SP-06c-cards.md) | Cards: create, drag, snap, marquee, undo | SP-06 | 1.5 | SP-06b | Not Started |
 | [SP-06d](SP-06d-edges.md) | Edges, anchors, labels | SP-06 | 1.5 | SP-06c | Not Started |
