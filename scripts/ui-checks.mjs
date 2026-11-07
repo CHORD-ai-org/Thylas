@@ -96,8 +96,17 @@ async function main() {
   await new Promise((r) => ws.addEventListener('open', r));
   let id = 0;
   const pending = new Map();
+  // Anything the page throws is collected, so a render crash reads as the bug
+  // it is instead of "the canvas suddenly has no cards".
+  const pageErrors = [];
   ws.addEventListener('message', (ev) => {
     const m = JSON.parse(ev.data);
+    if (m.method === 'Runtime.exceptionThrown') {
+      pageErrors.push(m.params?.exceptionDetails?.exception?.description ?? m.params?.exceptionDetails?.text ?? 'exception');
+    }
+    if (m.method === 'Runtime.consoleAPICalled' && m.params?.type === 'error') {
+      pageErrors.push((m.params.args ?? []).map((a) => a.description ?? a.value ?? '').join(' '));
+    }
     const p = m.id && pending.get(m.id);
     if (p) {
       pending.delete(m.id);
@@ -138,6 +147,9 @@ async function main() {
     results.push({ name, pass, actual });
   };
 
+  // A thrown assertion must not hide the ones that already ran: report what was
+  // measured, then fail on the step that stopped the run.
+  try {
   await goto('/overview');
   check('overview: greeting renders', await js(`return document.querySelector('h1')?.textContent.trim();`), (v) => v?.startsWith('Welcome back'));
 
@@ -479,14 +491,14 @@ async function main() {
   // ---- SP-06a: one source for scene constants, rendering unchanged ----
   const boardsDir = new URL('../src/pages/boards/', import.meta.url);
   const boardUnits = readdirSync(boardsDir).filter(
-    (f) => f !== 'scene.ts' && /\.(ts|tsx|css)$/.test(f),
+    (f) => f !== 'scene.ts' && /\.(ts|tsx|css)$/.test(f) && !/\.test\.ts$/.test(f),
   );
   const boardText = [
     readFileSync(new URL('../src/pages/Boards.tsx', import.meta.url), 'utf8'),
     readFileSync(new URL('../src/pages/boards.module.css', import.meta.url), 'utf8'),
     ...boardUnits.map((f) => readFileSync(new URL(f, boardsDir), 'utf8')),
   ].join('\n');
-  check('scene: no hardcoded 1032/560 outside scene.ts', /1032|560/.test(boardText), false);
+  check('scene: the old 1032x560 canvas is gone from the code', /1032|560/.test(boardText), false);
   const allCss = readdirSync(new URL('../src/pages/', import.meta.url))
     .filter((f) => f.endsWith('.css'))
     .map((f) => readFileSync(new URL(`../src/pages/${f}`, import.meta.url), 'utf8'))
@@ -502,22 +514,27 @@ async function main() {
   `), '560px');
 
   await goto('/w/ws-research/boards/b-lit');
-  check('scene: geometry is identical after extracting the constants', await js(`
+  check('scene: the canvas is a 2400x1600 workspace', await js(`
     const svg = document.querySelector('svg[class*="edgeLayer"]');
     const scene = svg?.parentElement;
     if (!scene) return null;
     const cs = getComputedStyle(scene);
-    const m = new DOMMatrix(cs.transform);
     return {
       w: Math.round(parseFloat(cs.width)),
       h: Math.round(parseFloat(cs.height)),
       svgW: svg.getAttribute('width'),
       svgH: svg.getAttribute('height'),
-      scale: Number(m.a.toFixed(3)),
-      cards: document.querySelectorAll('[class*="bcard"]').length,
+      cards: document.querySelectorAll('[data-card-id]').length,
     };
-  `), (v) => !!v && v.w === 1032 && v.h === 560 && v.svgW === '1032' && v.svgH === '560'
-    && v.scale > 0.1 && v.scale <= 1 && v.cards > 0);
+  `), (v) => !!v && v.w === 2400 && v.h === 1600 && v.svgW === '2400' && v.svgH === '1600'
+    && v.cards === 15);
+
+  check('scene: the first view fits the content instead of the 2400x1600 frame', await js(`
+    const label = document.querySelector('[class*="zoomValue"]').textContent.trim();
+    const scene = document.querySelector('[data-scene="board"]');
+    const m = new DOMMatrix(getComputedStyle(scene).transform);
+    return { label, zoom: Number(m.a.toFixed(3)) };
+  `), (v) => v.zoom > 0.2 && v.zoom < 1 && v.label === Math.round(v.zoom * 100) + '%');
 
   await goto('/w/ws-onda/boards/b-onda');
   check('scene: empty board invites the first card instead of blocking the canvas', await js(`
@@ -526,15 +543,17 @@ async function main() {
 
   // ---- SP-06b: viewport ref, pointer-anchored zoom, pan, clamps ----
   const BOARD = '/w/ws-research/boards/b-lit';
+  // The scene element's own box already includes the viewport transform, so
+  // screen -> scene is one division by the scale. Measuring it this way keeps
+  // the probe honest when the chrome around the canvas moves.
   const probe = () => js(`
     const area = document.querySelector('[class*="canvasArea"]');
-    const stage = document.querySelector('[class*="stage"]');
-    const scene = document.querySelector('svg[class*="edgeLayer"]').parentElement;
+    const scene = document.querySelector('[data-scene="board"]');
     const m = new DOMMatrix(getComputedStyle(scene).transform);
     const ar = area.getBoundingClientRect();
-    const sr = stage.getBoundingClientRect();
+    const sr = scene.getBoundingClientRect();
     const label = document.querySelector('[class*="zoomValue"]');
-    return { a: m.a, e: m.e, f: m.f, stageX: sr.left - ar.left, stageY: sr.top - ar.top,
+    return { a: m.a, e: m.e, f: m.f, sceneX: sr.left - ar.left, sceneY: sr.top - ar.top,
              areaX: ar.left, areaY: ar.top, areaW: ar.width, areaH: ar.height,
              label: label?.textContent ?? '' };
   `);
@@ -545,7 +564,8 @@ async function main() {
 
   await goto(BOARD);
   let p = await probe();
-  check('viewport: dock starts at 100%', p.label, '100%');
+  check('viewport: the first view is a fit, not a fixed 100%', p.label,
+    (v) => v !== '100%' && Math.round(p.a * 100) + '%' === v);
   const cx = p.areaX + p.areaW / 2;
   const cy = p.areaY + p.areaH / 2;
 
@@ -563,10 +583,10 @@ async function main() {
   await goto(BOARD);
   p = await probe();
   const pointer = { x: p.areaX + p.areaW * 0.45, y: p.areaY + p.areaH * 0.45 };
-  const stagePointer = (v) => ({ x: pointer.x - v.areaX - v.stageX, y: pointer.y - v.areaY - v.stageY });
+  const stagePointer = (v) => ({ x: pointer.x - v.areaX - v.sceneX, y: pointer.y - v.areaY - v.sceneY });
   const scenePoint = (v) => {
     const q = stagePointer(v);
-    return { x: (q.x - v.e) / v.a, y: (q.y - v.f) / v.a };
+    return { x: q.x / v.a, y: q.y / v.a };
   };
   const before = scenePoint(p);
   await wheel(pointer.x, pointer.y, -120, 2);
@@ -628,9 +648,25 @@ async function main() {
   check('viewport: zoom clamps at 400%', (await probe()).label, '400%');
   await keyEvent('keyDown', '0', 'Digit0', 48, 4);
   await keyEvent('keyUp', '0', 'Digit0', 48, 4);
-  await sleep(90);
-  const fitted = await probe();
-  check('viewport: Cmd+0 fits the scene', [fitted.label, Math.round(fitted.e), Math.round(fitted.f)], ['100%', 0, 0]);
+  await sleep(120);
+  // Fit centres the content it measured, not the 2400x1600 frame. The content
+  // box reserves one capsule band above the first section, so the top margin is
+  // larger than the bottom one by exactly that band.
+  const fitted = await js(`
+    const area = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+    const rects = [...document.querySelectorAll('[data-card-id],[data-section-id]')].map(e => e.getBoundingClientRect());
+    const m = new DOMMatrix(getComputedStyle(document.querySelector('[data-scene="board"]')).transform);
+    return {
+      l: Math.round(Math.min(...rects.map(r => r.left)) - area.left),
+      r: Math.round(area.right - Math.max(...rects.map(r => r.right))),
+      t: Math.round(Math.min(...rects.map(r => r.top)) - area.top),
+      b: Math.round(area.bottom - Math.max(...rects.map(r => r.bottom))),
+      band: Math.round(30 * m.a),
+      label: document.querySelector('[class*="zoomValue"]').textContent.trim(),
+    };
+  `);
+  check('viewport: Cmd+0 fits and centres the content', fitted,
+    (v) => Math.abs(v.l - v.r) <= 2 && Math.abs(v.t - v.b - v.band) <= 3 && v.label !== '100%');
 
   // 150-card frame budget. Cards are plain DOM nodes appended to the scene;
   // a pan must cost one O(1) transform write per frame, never a React render.
@@ -661,36 +697,30 @@ async function main() {
   const p95 = sorted.length ? Number(sorted[Math.floor(sorted.length * 0.95)].toFixed(2)) : 999;
   check('viewport: 150-card pan holds P95 <= 20ms', p95, (v) => v > 0 && v <= 20);
 
-  // ---- SP-06c: cards that can be created, moved, aligned, selected, undone ----
-  const sceneOf = () => js(`
-    const r = document.querySelector('[data-scene="board"]').getBoundingClientRect();
-    return { left: r.left, top: r.top, k: r.width / 1032 };
-  `);
-  const cardCount = () => js(`return document.querySelectorAll('[data-card-id]').length;`);
-  const cardStyle = (id) => js(`
-    const el = document.querySelector('[data-card-id="${id}"]');
-    if (!el) return null;
-    return {
-      left: Math.round(parseFloat(el.style.left) || 0),
-      top: Math.round(parseFloat(el.style.top) || 0),
-      w: Math.round(el.getBoundingClientRect().width),
-    };
-  `);
-  const press = (x, y, clickCount = 1) =>
-    send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount });
-  const release = (x, y, clickCount = 1) =>
-    send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount });
+  // ---- SP-06c: a workspace you can arrange — sections, fills, edges, chrome ----
+  const press = (x, y, clickCount = 1, modifiers = 0) =>
+    send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount, modifiers });
+  const release = (x, y, clickCount = 1, modifiers = 0) =>
+    send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount, modifiers });
+  const rightClick = async (x, y) => {
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'right', buttons: 2, clickCount: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'right', buttons: 0, clickCount: 1 });
+    await sleep(180);
+  };
+  const moveTo = async (x, y, buttons = 0) => {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: buttons ? 'left' : 'none', buttons });
+    await sleep(30);
+  };
   const dblclick = async (x, y) => {
     await press(x, y, 1);
     await release(x, y, 1);
     await press(x, y, 2);
     await release(x, y, 2);
+    await sleep(250);
   };
-  const hold = async (b, from, to, steps = 5) => {
-    const a = { x: b.left + from.x * b.k, y: b.top + from.y * b.k };
-    const z = { x: b.left + to.x * b.k, y: b.top + to.y * b.k };
+  const dragTo = async (a, z, { steps = 6, mid } = {}) => {
     await press(a.x, a.y);
-    for (let i = 1; i <= steps; i++) {
+    for (let i = 1; i <= steps; i += 1) {
       await send('Input.dispatchMouseEvent', {
         type: 'mouseMoved',
         x: a.x + ((z.x - a.x) * i) / steps,
@@ -700,14 +730,93 @@ async function main() {
       });
       await sleep(16);
     }
-    return { a, z };
+    if (mid) await mid();
+    await release(z.x, z.y);
+    await sleep(250);
   };
-  const undoKey = async () => {
-    await keyEvent('keyDown', 'z', 'KeyZ', 90, 4);
-    await keyEvent('keyUp', 'z', 'KeyZ', 90, 4);
+  const keyPress = async (key, code, vk, modifiers = 0) => {
+    await keyEvent('keyDown', key, code, vk, modifiers);
+    await keyEvent('keyUp', key, code, vk, modifiers);
+    await sleep(230);
+  };
+  const undoKey = () => keyPress('z', 'KeyZ', 90, 4);
+  const redoKey = () => keyPress('z', 'KeyZ', 90, 12);
+
+  const counts = () => js(`
+    return {
+      cards: document.querySelectorAll('[data-card-id]').length,
+      sections: document.querySelectorAll('[data-section-id]').length,
+      edges: document.querySelectorAll('svg[class*="edgeLayer"] [class*="edgeHit"]').length,
+    };
+  `);
+  const badges = () => js(`
+    return [...document.querySelectorAll('header span')].map(e => e.textContent.trim())
+      .filter(t => /^[0-9]+ (CARDS|SECTIONS|EDGES)$/.test(t));
+  `);
+  const capsules = () => js(`
+    return [...document.querySelectorAll('[data-section-id]')].map(s => {
+      const name = s.querySelector('[class*="sectionName"]');
+      const n = s.querySelector('[class*="sectionCount"]');
+      return (name ? name.textContent.trim() : '?') + ':' + (n ? n.textContent.trim() : '?');
+    });
+  `);
+  const cardState = (id) => js(`
+    const el = document.querySelector('[data-card-id="${id}"]');
+    if (!el) return null;
+    const x = parseFloat(el.style.left) || 0;
+    const y = parseFloat(el.style.top) || 0;
+    return {
+      x: Math.round(x),
+      y: Math.round(y),
+      right: Math.round(x + el.offsetWidth),
+      w: el.offsetWidth,
+      h: el.offsetHeight,
+      color: el.dataset.color || '',
+      folded: el.hasAttribute('data-folded'),
+      text: el.innerText.split(String.fromCharCode(10)).join(' '),
+    };
+  `);
+  const centerOf = (id) => js(`
+    const el = document.querySelector('[data-card-id="${id}"]');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + Math.min(14, r.height / 2), left: r.left, right: r.right,
+             top: r.top, bottom: r.bottom };
+  `);
+  const statusMain = () => js(`return document.querySelector('[class*="statusMain"]')?.textContent.trim() || '';`);
+  const statusHint = () => js(`return document.querySelector('[class*="statusHint"]')?.textContent.trim() || '';`);
+  const zoom100 = async () => {
+    await js(`document.querySelector('[title="Reset to 100%"]')?.click(); await new Promise(r => setTimeout(r, 180));`);
+  };
+  // Wheel-pan the board until an object sits in the middle of the canvas, so a
+  // gesture near its edge cannot fall outside the canvas and belong to the rail.
+  const centreInCanvas = async (id) => {
+    const d = await js(`
+      const area = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+      const r = document.querySelector('[data-card-id="${id}"]').getBoundingClientRect();
+      return {
+        x: area.left + area.width / 2,
+        y: area.top + area.height / 2,
+        dx: Math.round(area.left + area.width / 2 - (r.left + r.width / 2)),
+        dy: Math.round(area.top + area.height / 2 - (r.top + r.height / 2)),
+      };
+    `);
+    await wheel(d.x, d.y, -d.dy, 0, -d.dx);
     await sleep(220);
   };
-  const near1 = (expected) => (v) => typeof v === 'number' && Math.abs(v - expected) <= 1;
+  // A point over the canvas that no card, section capsule or dock covers.
+  const findBlank = () => js(`
+    const area = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+    const chrome = '[data-card-id],[class*="toolbar"],[class*="minimap"],[class*="zoomDock"],[class*="statusDock"],[class*="hud"],[class*="menu"],aside,header';
+    for (let y = Math.round(area.bottom - 90); y > area.top + 90; y -= 9) {
+      for (let x = Math.round(area.left + 90); x < area.right - 90; x += 9) {
+        const el = document.elementFromPoint(x, y);
+        if (!el || el.closest(chrome)) continue;
+        return { x, y };
+      }
+    }
+    return null;
+  `);
 
   await goto('/w/ws-research/boards');
   check('boards: New board is disabled with its reason visible before any click', await js(`
@@ -720,177 +829,518 @@ async function main() {
     };
   `), { disabled: true, described: 'boards-limit', visible: true });
   check('boards: the index states the real card counts', await js(`
-    return document.body.innerText.includes('6 cards');
+    return document.body.innerText.includes('15 cards');
   `), true);
 
   await goto(BOARD);
-  await js(`localStorage.removeItem('thylas:board:v1:b-lit'); return true;`);
+  await js(`localStorage.removeItem('thylas:board:v2:b-lit'); localStorage.removeItem('thylas:board:v1:b-lit'); return true;`);
   await goto(BOARD);
+  await sleep(320);
 
-  check('cards: the badge states the number the board really renders', [
-    await cardCount(),
-    await js(`return [...document.querySelectorAll('span')].map(e => e.textContent.trim()).find(t => /^[0-9]+ CARDS$/.test(t)) ?? '';`),
-    await js(`return document.body.innerText.includes('14 cards');`),
-  ], [6, '6 CARDS', false]);
-  check('cards: toolbar offers only tools that work', await js(`
-    const tools = [...document.querySelectorAll('[aria-label="Canvas tools"] button')];
-    return { count: tools.length, names: tools.map(b => b.title.split(' ')[0]).join(',') };
-  `), (v) => v.count === 3 && v.names === 'Select,Undo,Redo');
-  check('cards: no deferred-editing apology anywhere', await js(`
-    return /deferred|not wired/.test(document.body.innerText);
+  const base = await counts();
+  check('cards: the sample board renders 15 cards, 3 sections and 4 edges', base, { cards: 15, sections: 3, edges: 4 });
+  check('cards: the badges state what the canvas really renders', [await badges(), base.cards, base.sections, base.edges],
+    (v) => JSON.stringify(v[0]) === JSON.stringify([v[1] + ' CARDS', v[2] + ' SECTIONS', v[3] + ' EDGES']));
+  check('sections: each capsule counts its own cards', await capsules(), ['Question:5', 'Evidence:7', 'Counter-evidence:3']);
+  check('cards: five fills are in use', await js(`
+    return [...new Set([...document.querySelectorAll('[data-card-id]')].map(e => e.dataset.color))].sort();
+  `), ['amber', 'clay', 'plain', 'sage', 'stone']);
+  check('cards: a folded card is one row tall', [(await cardState('c-11')).h, (await cardState('c-11')).folded], [44, true]);
+  check('cards: a folded card shows its title and nothing else', await js(`
+    const el = document.querySelector('[data-card-id="c-11"]');
+    return { rows: el.querySelectorAll('[class*="cardLine"]').length, text: el.innerText.trim() };
+  `), (v) => v.rows === 0 && v.text.includes('Held-out set was never frozen'));
+  check('cards: refs and live bindings are rendered as rows', await js(`
+    const ref = document.querySelector('[data-card-id="c-4"] [class*="cardRef"]');
+    const live = document.querySelector('[data-card-id="c-8"] [class*="cardLive"]');
+    return { ref: ref?.textContent.trim() || '', live: live?.textContent.trim() || '' };
+  `), (v) => v.ref.includes('manifest-2024.json') && /LIVE/.test(v.live));
+  check('cards: the toolbar offers five tools that all work', await js(`
+    const tools = [...document.querySelectorAll('[role="toolbar"][aria-label="Canvas tools"] button')];
+    return { count: tools.length, names: tools.map(b => b.getAttribute('aria-label').split(' ')[0]).join(',') };
+  `), { count: 5, names: 'Select,Card,Section,Undo,Redo' });
+  check('cards: nothing on the canvas claims an action it did not take', await js(`
+    return /deferred|not wired|Nothing was sent/.test(document.body.innerText);
   `), false);
 
-  let bd = await sceneOf();
-  const blankAt = { x: bd.left + 520 * bd.k, y: bd.top + 505 * bd.k };
-  await dblclick(blankAt.x, blankAt.y);
-  await sleep(240);
-  check('cards: double-click on blank canvas creates a card in edit mode', [
-    await cardCount(),
+  await zoom100();
+  check('viewport: the dock reset puts the scene at 100%', await js(`
+    const m = new DOMMatrix(getComputedStyle(document.querySelector('[data-scene="board"]')).transform);
+    return { label: document.querySelector('[class*="zoomValue"]').textContent.trim(), k: Number(m.a.toFixed(3)) };
+  `), { label: '100%', k: 1 });
+
+  // ---- cards: create, type, move, snap, resize, nudge ----
+  const spot = await js(`
+    const s = document.querySelector('[data-section-id="s-e"]').getBoundingClientRect();
+    const free = (x, y) => {
+      const el = document.elementFromPoint(x, y);
+      return !!el && !el.closest('[data-card-id],[class*="minimap"],[class*="toolbar"],[class*="zoomDock"],[class*="statusDock"],[class*="hud"],aside,header');
+    };
+    for (let y = Math.round(s.bottom - 16); y > s.top + 60; y -= 12) {
+      for (let x = Math.round(s.left + 24); x < s.right - 24; x += 12) {
+        if (!free(x, y) || !free(x + 132, y + 14)) continue;
+        return { x, y };
+      }
+    }
+    return null;
+  `);
+  check('cards: an empty spot inside a section can be found', !!spot, true);
+  await dblclick(spot.x, spot.y);
+  check('cards: double-click on empty space creates a card in edit mode', [
+    (await counts()).cards,
     await js(`return document.activeElement?.getAttribute('aria-label');`),
-  ], [7, 'Card title']);
+  ], [16, 'Card title']);
 
   await send('Input.insertText', { text: 'Refutation needed' });
-  await keyEvent('keyDown', 'Enter', 'Enter', 13);
-  await keyEvent('keyUp', 'Enter', 'Enter', 13);
-  await sleep(240);
-  check('cards: the typed title is committed', await js(`
-    return document.body.innerText.includes('Refutation needed');
-  `), true);
-  check('cards: the status bar says what happened', await js(`
-    return document.body.innerText.includes('Title changed');
-  `), true);
-
-  const newId = await js(`return document.querySelectorAll('[data-card-id]')[6]?.dataset.cardId ?? null;`);
-  check('cards: a new card is clamped inside the scene', (await cardStyle(newId))?.top, 456);
-
-  // Drag 160 × 100 scene units up-left, far from every neighbour so no snap applies.
-  bd = await sceneOf();
-  const created = await js(`
-    const el = document.querySelector('[data-card-id="${newId}"]');
-    return { x: (parseFloat(el.style.left) || 0) + 40, y: (parseFloat(el.style.top) || 0) + 12 };
+  await keyPress('Enter', 'Enter', 13);
+  const newId = await js(`
+    const els = document.querySelectorAll('[data-card-id]');
+    return els[els.length - 1].dataset.cardId;
   `);
-  const moved = await hold(bd, created, { x: created.x - 160, y: created.y - 100 });
-  await release(moved.z.x, moved.z.y);
-  await sleep(240);
-  check('cards: drag moves the card 1:1 in scene units', (await cardStyle(newId))?.left, near1(360));
-  check('cards: the vertical delta lands too', (await cardStyle(newId))?.top, near1(356));
+  check('cards: the typed title is committed', (await cardState(newId)).text.includes('Refutation needed'), true);
+  check('cards: the status bar names the edit', await statusHint(), 'Renamed a card');
+  check('sections: a card placed inside a section joins it', (await capsules())[1], 'Evidence:8');
+  check('cards: a new card is grabbable anywhere in its body', await js(`
+    const r = document.querySelector('[data-card-id="${newId}"]').getBoundingClientRect();
+    const el = document.elementFromPoint(r.left + r.width / 2, r.top + 14);
+    return el ? (el.closest('[data-card-id]')?.dataset.cardId || 'nothing cards') : 'nothing';
+  `), newId);
 
+  const fresh = await cardState(newId);
+  const freshGrab = await centerOf(newId);
+  await dragTo(freshGrab, { x: freshGrab.x + 17, y: freshGrab.y - 13 });
+  check('cards: the card that was just created moves on the first drag', (await cardState(newId)).x - fresh.x,
+    (v) => Math.abs(v - 17) <= 6);
+
+  const born = await cardState('c-10');
+  const grab = await centerOf('c-10');
+  await dragTo(grab, { x: grab.x + 41, y: grab.y + 29 });
+  const afterDrag = await cardState('c-10');
+  // A snap may correct the drop by up to the 6-unit threshold; a manual drag is
+  // never allowed to drift further than that.
+  check('cards: a drag moves the card with the pointer', [afterDrag.x - born.x, afterDrag.y - born.y],
+    (v) => Math.abs(v[0] - 41) <= 6 && Math.abs(v[1] - 29) <= 6);
   await undoKey();
-  check('cards: undo restores the position in one step', (await cardStyle(newId))?.left, near1(520));
+  check('cards: one undo puts it back', [(await cardState('c-10')).x, (await cardState('c-10')).y], [born.x, born.y]);
+  await redoKey();
+  check('cards: one redo re-applies it', (await cardState('c-10')).x, afterDrag.x);
 
-  // Snap: 4 scene units off c-2's left edge must land on it exactly.
-  bd = await sceneOf();
-  const near = await hold(bd, { x: 80, y: 126 }, { x: 84, y: 126 });
-  const guideSeen = await js(`
-    const g = document.querySelector('[class*="guideX"]');
-    return g ? getComputedStyle(g).opacity : '0';
-  `);
-  await release(near.z.x, near.z.y);
-  await sleep(240);
-  check('cards: a guide appears while a drop would align', guideSeen, '1');
-  check('cards: release snaps exactly onto the neighbour axis', (await cardStyle('c-1'))?.left, 40);
-  check('cards: the guide is hidden again after release', await js(`
-    return getComputedStyle(document.querySelector('[class*="guideX"]')).opacity;
-  `), '0');
+  const snapBefore = await cardState('c-12');
+  const snapGrab = await centerOf('c-12');
+  let guideLines = 0;
+  await dragTo(snapGrab, { x: snapGrab.x + 5, y: snapGrab.y }, {
+    steps: 4,
+    mid: async () => {
+      guideLines = await js(`return document.querySelectorAll('[class*="guides"] line').length;`);
+    },
+  });
+  check('cards: a guide appears while a drop would align', guideLines, (v) => v > 0);
+  // The drop is pulled onto an axis — whichever neighbour is nearest — so the
+  // assertion is that one of the card's three axes now equals another object's,
+  // and that the raw 5px offset was corrected rather than kept.
+  check('cards: release lands on a neighbour axis, not 5px off it', await js(`
+    const el = document.querySelector('[data-card-id="c-12"]');
+    const x = parseFloat(el.style.left);
+    const w = el.offsetWidth;
+    const axes = [x, x + w / 2, x + w];
+    const others = [...document.querySelectorAll('[data-card-id]')]
+      .filter(o => o !== el)
+      .flatMap(o => { const ox = parseFloat(o.style.left); const ow = o.offsetWidth; return [ox, ox + ow / 2, ox + ow]; });
+    return { moved: Math.round(x - ${snapBefore.x}), aligned: axes.some(v => others.some(o => Math.abs(v - o) < 0.6)) };
+  `), (v) => v.moved !== 5 && v.aligned === true);
+  check('cards: the guide is cleared after release', await js(`
+    return document.querySelectorAll('[class*="guides"] line').length;
+  `), 0);
 
-  // Marquee over the Evidence section takes exactly its two cards.
-  bd = await sceneOf();
-  const box = await hold(bd, { x: 330, y: 90 }, { x: 660, y: 430 }, 6);
-  await release(box.z.x, box.z.y);
-  await sleep(240);
-  check('cards: marquee selects the cards it covers', await js(`
-    return document.body.innerText.includes('2 selected');
-  `), true);
-  await keyEvent('keyDown', 'Delete', 'Delete', 46);
-  await keyEvent('keyUp', 'Delete', 'Delete', 46);
-  await sleep(240);
-  check('cards: delete removes the whole selection at once', await cardCount(), 5);
-  await undoKey();
-  check('cards: one undo brings both cards back', await cardCount(), 7);
-  check('cards: undo restored z-order', await js(`
-    return [...document.querySelectorAll('[data-card-id]')].map(e => e.dataset.cardId).join(',');
-  `), (v) => v.startsWith('c-1,c-2,c-3,c-4,c-5'));
+  await centreInCanvas('c-6');
+  const c6 = await centerOf('c-6');
+  await press(c6.x, c6.y);
+  await release(c6.x, c6.y);
+  await sleep(220);
+  check('cards: a single selection shows eight resize handles', await js(`
+    const hs = [...document.querySelectorAll('[data-card-id="c-6"] [data-resize]')];
+    return { count: hs.length, dirs: hs.map(e => e.dataset.dir).sort().join(',') };
+  `), { count: 8, dirs: 'e,n,ne,nw,s,se,sw,w' });
 
-  // Resize through the handle that only exists on a single selection. c-1 is
-  // used because c-5 sits against the scene edge and could not grow 40px.
-  bd = await sceneOf();
-  const c1 = await js(`
-    const el = document.querySelector('[data-card-id="c-1"]');
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + 14 };
-  `);
-  await press(c1.x, c1.y);
-  await release(c1.x, c1.y);
-  await sleep(180);
-  const before1 = await cardStyle('c-1');
-  const handle = await js(`
-    const h = document.querySelector('[data-card-id="c-1"] [data-resize]');
-    if (!h) return null;
-    const r = h.getBoundingClientRect();
+  const sizeBefore = await cardState('c-6');
+  const seHandle = await js(`
+    const r = document.querySelector('[data-card-id="c-6"] [data-dir="se"]').getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   `);
-  check('cards: the resize handle appears only on a single selection', !!handle, true);
-  await press(handle.x, handle.y);
-  for (let i = 1; i <= 4; i++) {
-    await send('Input.dispatchMouseEvent', {
-      type: 'mouseMoved',
-      x: handle.x + (40 * i) / 4,
-      y: handle.y + (30 * i) / 4,
-      button: 'left',
-      buttons: 1,
-    });
-    await sleep(16);
-  }
-  await release(handle.x + 40, handle.y + 30);
-  await sleep(240);
-  // The rect is scaled, so 40 screen pixels of drag is the expected growth.
-  check('cards: resizing widens the card by the drag distance',
-    (await cardStyle('c-1')).w - before1.w, near1(40));
+  await dragTo(seHandle, { x: seHandle.x + 40, y: seHandle.y + 29 });
+  const grown = await cardState('c-6');
+  check('cards: the se handle grows width and height by the drag',
+    [grown.w - sizeBefore.w, grown.h - sizeBefore.h],
+    (v) => Math.abs(v[0] - 40) <= 2 && Math.abs(v[1] - 29) <= 2);
 
-  const c5 = await js(`
-    const el = document.querySelector('[data-card-id="c-5"]');
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + 14 };
+  const wHandle = await js(`
+    const card = document.querySelector('[data-card-id="c-6"]');
+    const h = card ? card.querySelector('[data-dir="w"]') : null;
+    if (!h) return { missing: true };
+    const r = h.getBoundingClientRect();
+    return { missing: false, x: r.left + r.width / 2, y: r.top + r.height / 2 };
   `);
-  await press(c5.x, c5.y);
-  await release(c5.x, c5.y);
-  await sleep(180);
+  check('cards: the west handle is still there after a southeast resize', wHandle, (v) => v.missing === false);
+  if (!wHandle.missing) {
+    const westBefore = await cardState('c-6');
+    await dragTo(wHandle, { x: wHandle.x - 30, y: wHandle.y });
+    const westAfter = await cardState('c-6');
+    check('cards: the west handle moves the left edge and leaves the right one alone',
+      [westAfter.x - westBefore.x, westAfter.right - westBefore.right],
+      (v) => Math.abs(v[0] + 30) <= 2 && v[1] === 0);
+  }
 
-  await keyEvent('keyDown', 'ArrowRight', 'ArrowRight', 39);
-  await keyEvent('keyUp', 'ArrowRight', 'ArrowRight', 39);
-  await sleep(240);
-  check('cards: arrow key nudges 1px', (await cardStyle('c-5'))?.left, 705);
-  await keyEvent('keyDown', 'ArrowLeft', 'ArrowLeft', 37, 8);
-  await keyEvent('keyUp', 'ArrowLeft', 'ArrowLeft', 37, 8);
-  await sleep(240);
-  check('cards: shift+arrow nudges 10px', (await cardStyle('c-5'))?.left, 695);
+  await keyPress('ArrowRight', 'ArrowRight', 39);
+  const nudgeBase = await cardState('c-6');
+  check('cards: an arrow key nudges 1px', (await cardState('c-6')).x, nudgeBase.x + 1);
+  await keyPress('ArrowLeft', 'ArrowLeft', 37, 8);
+  check('cards: shift+arrow nudges 10px', (await cardState('c-6')).x, nudgeBase.x - 9);
+
+  // ---- selection: marquee, the floating bar, folding, deleting ----
+  // Walking back to the original box also clears the strip of canvas the
+  // marquee needs: the resized card was hanging into it.
+  for (let i = 0; i < 6 && JSON.stringify(await cardState('c-6')) !== JSON.stringify(sizeBefore); i += 1) {
+    await undoKey();
+  }
+  check('cards: undo walks every resize back to the original box', await cardState('c-6'), sizeBefore);
+  await keyPress('Escape', 'Escape', 27);
+  const band = await js(`
+    const a = document.querySelector('[data-card-id="c-7"]').getBoundingClientRect();
+    const b = document.querySelector('[data-card-id="c-9"]').getBoundingClientRect();
+    return { from: { x: b.right + 10, y: b.bottom + 10 }, to: { x: a.left - 10, y: a.top - 10 } };
+  `);
+  await dragTo(band.from, band.to, { steps: 8 });
+  check('cards: a marquee selects every card it covers', [
+    await statusMain(),
+    await js(`return !!document.querySelector('[class*="selectionHud"]');`),
+  ], ['3 selected', true]);
+  check('cards: the floating bar carries the five fills', await js(`
+    return [...document.querySelectorAll('[class*="selectionHud"] [class*="swatch"]')].map(e => e.dataset.color).join(',');
+  `), 'plain,sage,amber,clay,stone');
 
   await js(`
-    document.querySelector('[aria-label="Canvas tools"] button[title^="Undo"]').click();
-    await new Promise(r => setTimeout(r, 220));
+    document.querySelector('[class*="selectionHud"] [aria-label="Colour amber"]')?.click();
+    await new Promise(r => setTimeout(r, 240));
   `);
-  check('cards: the toolbar undo button does what the shortcut does', (await cardStyle('c-5'))?.left, 705);
+  check('cards: the bar recolours the whole selection', await js(`
+    return ['c-7','c-8','c-9'].map(id => document.querySelector('[data-card-id="' + id + '"]').dataset.color).join(',');
+  `), 'amber,amber,amber');
+  await js(`
+    document.querySelector('[class*="selectionHud"] [title="Fold / unfold (F)"]')?.click();
+    await new Promise(r => setTimeout(r, 240));
+  `);
+  check('cards: the bar folds the selection to one row each', await js(`
+    return ['c-7','c-8','c-9'].map(id => document.querySelector('[data-card-id="' + id + '"]').offsetHeight).join(',');
+  `), '44,44,44');
+  await js(`
+    document.querySelector('[class*="selectionHud"] [title^="Delete"]')?.click();
+    await new Promise(r => setTimeout(r, 260));
+  `);
+  check('cards: deleting the selection takes the edges that hung off it', await counts(),
+    { cards: 13, sections: 3, edges: 3 });
+  await undoKey();
+  check('cards: one undo brings the cards and their edge back', await counts(),
+    { cards: 16, sections: 3, edges: 4 });
 
-  await sleep(400);
-  await goto(BOARD);
-  check('cards: edits survive a reload through the versioned store', [
-    await cardCount(),
-    (await cardStyle('c-5'))?.left,
-  ], [7, 705]);
-  check('cards: the store envelope is the versioned one', await js(`
-    const v = JSON.parse(localStorage.getItem('thylas:board:v1:b-lit'));
-    return !!v && v.version === 1 && Array.isArray(v.cards) && v.cards.length === 7;
-  `), true);
+  const p7 = await centerOf('c-7');
+  await press(p7.x, p7.y);
+  await release(p7.x, p7.y);
+  await sleep(200);
+  const p12 = await centerOf('c-12');
+  await press(p12.x, p12.y, 1, 8);
+  await release(p12.x, p12.y, 1, 8);
+  await sleep(220);
+  check('cards: shift-click extends the selection', await statusMain(), '2 selected');
+  await js(`
+    [...document.querySelectorAll('[aria-label="Align left"]')].filter(b => b.offsetParent !== null)[0]?.click();
+    await new Promise(r => setTimeout(r, 240));
+  `);
+  check('cards: align left gives both cards one x', await js(`
+    return [document.querySelector('[data-card-id="c-7"]').style.left, document.querySelector('[data-card-id="c-12"]').style.left];
+  `), (v) => v[0] === v[1]);
+
+  const p9 = await centerOf('c-9');
+  await press(p9.x, p9.y, 1, 8);
+  await release(p9.x, p9.y, 1, 8);
+  await sleep(200);
+  await js(`
+    [...document.querySelectorAll('[aria-label="Distribute vertically"]')].filter(b => b.offsetParent !== null)[0]?.click();
+    await new Promise(r => setTimeout(r, 240));
+  `);
+  check('cards: distribute vertically equalises the gaps', await js(`
+    const r = ['c-7','c-12','c-9']
+      .map(id => document.querySelector('[data-card-id="' + id + '"]'))
+      .map(el => ({ y: parseFloat(el.style.top), h: el.offsetHeight }))
+      .sort((a, b) => a.y - b.y);
+    return [Math.round(r[1].y - (r[0].y + r[0].h)), Math.round(r[2].y - (r[1].y + r[1].h))];
+  `), (v) => Math.abs(v[0] - v[1]) <= 2);
+  await undoKey();
+  await undoKey();
+
+  // ---- sections: the capsule is the handle, the frame is not the cards ----
+  const capsule = await js(`
+    const area = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+    const r = document.querySelector('[data-section-id="s-c"] [class*="sectionCapsule"]').getBoundingClientRect();
+    const left = Math.max(r.left, area.left + 6);
+    const right = Math.min(r.right, area.right - 6);
+    const top = Math.max(r.top, area.top + 4);
+    const bottom = Math.min(r.bottom, area.bottom - 4);
+    return { x: (left + right) / 2, y: (top + bottom) / 2 };
+  `);
+  await press(capsule.x, capsule.y);
+  await release(capsule.x, capsule.y);
+  await sleep(230);
+  check('sections: the capsule selects the frame', await statusMain(), 'Section · Counter-evidence');
+  await js(`
+    [...document.querySelectorAll('[class*="panelActions"] button')].filter(b => b.textContent.trim() === 'Delete')[0]?.click();
+    await new Promise(r => setTimeout(r, 260));
+  `);
+  check('sections: deleting a frame keeps the cards it held', await counts(),
+    { cards: 16, sections: 2, edges: 4 });
+  await undoKey();
+  check('sections: undo restores the frame', await counts(), { cards: 16, sections: 3, edges: 4 });
+
+  // ---- context menus: object and blank canvas ----
+  const c8 = await centerOf('c-8');
+  await rightClick(c8.x, c8.y);
+  check('menu: right-clicking a card offers object actions', await js(`
+    return [...document.querySelectorAll('[role="menuitem"]')].map(b => b.firstElementChild.textContent.trim());
+  `), ['Edit card', 'Rename section', 'Fold / unfold', 'Duplicate', 'Delete']);
+  await js(`
+    [...document.querySelectorAll('[role="menuitem"]')].find(b => b.textContent.includes('Duplicate'))?.click();
+    await new Promise(r => setTimeout(r, 260));
+  `);
+  check('menu: duplicate copies the card', (await counts()).cards, 17);
+
+  const blank = await findBlank();
+  await rightClick(blank.x, blank.y);
+  check('menu: right-clicking empty canvas offers creation', await js(`
+    return [...document.querySelectorAll('[role="menuitem"]')].map(b => b.firstElementChild.textContent.trim());
+  `), ['New card', 'New section', 'Fit the board', 'Undo']);
+  await js(`
+    [...document.querySelectorAll('[role="menuitem"]')].find(b => b.textContent.includes('New card'))?.click();
+    await new Promise(r => setTimeout(r, 260));
+  `);
+  check('menu: New card places a card and opens it', [
+    (await counts()).cards,
+    await js(`return document.activeElement?.getAttribute('aria-label');`),
+  ], [18, 'Card title']);
+  await keyPress('Escape', 'Escape', 27);
+  check('menu: an empty new card is discarded, not stored', (await counts()).cards, 17);
+
+  // ---- edges: select, bend, shape, arrows, label, delete ----
+  // A line is only clickable where nothing lies on top of it, so the probe
+  // samples several points along each edge and keeps the first one that really
+  // hit-tests as the edge's own stroke.
+  const edgeAt = () => js(`
+    const area = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+    const groups = [...document.querySelectorAll('svg[class*="edgeLayer"] > g[class*="edge"]')];
+    for (const g of groups) {
+      const hit = g.querySelector('[class*="edgeHit"]');
+      const total = hit.getTotalLength();
+      for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.25, 0.75]) {
+        const s = hit.getPointAtLength(total * t).matrixTransform(hit.getScreenCTM());
+        if (s.x < area.left + 40 || s.x > area.right - 40 || s.y < area.top + 60 || s.y > area.bottom - 80) continue;
+        const el = document.elementFromPoint(s.x, s.y);
+        if (el && (el.getAttribute('class') || '').includes('edgeHit')) return { x: s.x, y: s.y };
+      }
+    }
+    return null;
+  `);
+  const selectedEdgeD = () => js(`
+    const g = document.querySelector('svg[class*="edgeLayer"] > g[data-selected]');
+    return g ? g.querySelector('[class*="edgeLine"]').getAttribute('d') : null;
+  `);
+  const line = await edgeAt();
+  check('edges: one line is reachable in the viewport', !!line, true);
+  if (line) {
+    await press(line.x, line.y);
+    await release(line.x, line.y);
+    await sleep(240);
+    check('edges: clicking a line selects it and shows its bar', [
+      await statusMain(),
+      await js(`return !!document.querySelector('[class*="edgeHud"]');`),
+    ], (v) => v[0].startsWith('Edge · ') && v[1] === true);
+
+    const bendPoint = () => js(`
+      const c = document.querySelector('[class*="bendHandle"]');
+      if (!c) return null;
+      const r = c.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    `);
+    const dBefore = await selectedEdgeD();
+    const bendAt = await bendPoint();
+    check('edges: a selected curve offers a bend handle', !!bendAt, true);
+    if (bendAt) {
+      await dragTo(bendAt, { x: bendAt.x + 22, y: bendAt.y - 26 });
+      check('edges: dragging the handle bends the curve', (await selectedEdgeD()) !== dBefore, true);
+      const bendAt2 = await bendPoint();
+      await dblclick(bendAt2.x, bendAt2.y);
+      check('edges: double-clicking the handle straightens it again', await selectedEdgeD(), dBefore);
+    }
+
+  await js(`
+    [...document.querySelectorAll('[class*="edgeHud"] button')].find(b => b.textContent.trim() === 'Elbow')?.click();
+    await new Promise(r => setTimeout(r, 240));
+  `);
+  check('edges: Elbow replaces the curve with right angles', await selectedEdgeD(),
+    (v) => typeof v === 'string' && !v.includes('C') && v.includes('L'));
+  check('edges: an elbow edge has no bend handle', await js(`
+    return !!document.querySelector('[class*="bendHandle"]');
+  `), false);
+  await js(`
+    [...document.querySelectorAll('[class*="edgeHud"] button')].find(b => b.textContent.trim() === '↔')?.click();
+    await new Promise(r => setTimeout(r, 240));
+  `);
+  check('edges: both ends get an arrowhead', await js(`
+    const g = document.querySelector('svg[class*="edgeLayer"] > g[data-selected]');
+    return g ? g.querySelectorAll('[class*="edgeHead"]').length : 0;
+  `), 2);
+  await js(`
+    const input = document.querySelector('[class*="panelInput"]');
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, 'contradicts');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.blur();
+    await new Promise(r => setTimeout(r, 280));
+  `);
+  check('edges: the label is drawn on the line', await js(`
+    return [...document.querySelectorAll('svg[class*="labelLayer"] text')].map(t => t.textContent).join('|');
+  `), (v) => v.includes('contradicts'));
+  await js(`
+    document.querySelector('[class*="edgeHud"] [title="Delete the edge"]')?.click();
+    await new Promise(r => setTimeout(r, 280));
+  `);
+  check('edges: the bar deletes only that line', await counts(), { cards: 17, sections: 3, edges: 3 });
+  await undoKey();
+  check('edges: undo brings the labelled line back', (await counts()).edges, 4);
+
+  }
+
+  // ---- edges: draw them from a card's side dot ----
+  await keyPress('Escape', 'Escape', 27);
+  const hoverCard = async (id) => {
+    const c = await centerOf(id);
+    await moveTo(c.x, c.y);
+    await sleep(80);
+  };
+  const anchorOf = (id, side) => js(`
+    const r = document.querySelector('[data-card-id="${id}"] [data-anchor="${side}"]').getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  `);
+  await hoverCard('c-6');
+  const fromAnchor = await anchorOf('c-6', 'r');
+  await moveTo(fromAnchor.x, fromAnchor.y);
+  const onto = await centerOf('c-10');
+  await dragTo(fromAnchor, onto, { steps: 8 });
+  check('edges: dragging a side dot onto a card connects them', (await counts()).edges, 5);
+  check('edges: the new line is what the status bar names', await statusMain(), (v) => v.startsWith('Edge · '));
+
+  await keyPress('Escape', 'Escape', 27);
+  await hoverCard('c-10');
+  const downAnchor = await anchorOf('c-10', 'b');
+  await moveTo(downAnchor.x, downAnchor.y);
+  const emptySpot = await findBlank();
+  await dragTo(downAnchor, emptySpot, { steps: 8 });
+  check('edges: releasing on empty canvas grows a connected card', [
+    (await counts()).cards,
+    (await counts()).edges,
+    await js(`return document.activeElement?.getAttribute('aria-label');`),
+  ], [18, 6, 'Card title']);
+  await keyPress('Escape', 'Escape', 27);
+  check('edges: discarding that card takes its edge with it', await counts(),
+    { cards: 17, sections: 3, edges: 5 });
+
+  // ---- canvas: auto-pan, minimap, docks ----
+  const areaBox = await js(`
+    const r = document.querySelector('[class*="canvasArea"]').getBoundingClientRect();
+    return { right: r.right, top: r.top, bottom: r.bottom };
+  `);
+  const panGrab = await centerOf('c-8');
+  await press(panGrab.x, panGrab.y);
+  await moveTo(panGrab.x + 24, panGrab.y);
+  await moveTo(areaBox.right - 18, panGrab.y, 1);
+  await sleep(80);
+  const panA = await probe();
+  await sleep(420);
+  const panB = await probe();
+  check('canvas: holding a drag at the edge pans the board', Math.round(panB.e - panA.e), (v) => v < -10);
+  await release(areaBox.right - 18, panGrab.y);
+  await sleep(260);
+
+  const beforeMap = await probe();
+  const stage = await js(`
+    const r = document.querySelector('[class*="minimapStage"]').getBoundingClientRect();
+    return { x: r.left + r.width * 0.8, y: r.top + r.height * 0.3 };
+  `);
+  await press(stage.x, stage.y);
+  await release(stage.x, stage.y);
+  await sleep(280);
+  const afterMap = await probe();
+  check('canvas: a click on the minimap recentres the board',
+    Math.abs(afterMap.e - beforeMap.e) + Math.abs(afterMap.f - beforeMap.f), (v) => v > 5);
+  check('canvas: the minimap draws the view window', await js(`
+    const r = document.querySelector('[class*="minimapView"]').getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height) };
+  `), (v) => v.w > 4 && v.h > 4);
+
+  // ---- store: v2 envelope, reload, reset, v1 migration ----
+  await sleep(420);
+  const live = await counts();
+  check('store: the saved envelope is v2 and matches the canvas', await js(`
+    const raw = localStorage.getItem('thylas:board:v2:b-lit');
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    return { version: v.version, cards: v.cards.length, sections: v.sections.length, edges: v.edges.length };
+  `), (v) => !!v && v.version === 2 && v.cards === live.cards && v.sections === live.sections && v.edges === live.edges);
 
   await goto(BOARD);
+  check('store: the board comes back after a reload', await counts(), live);
+  check('store: a fill, a fold and a label survive the reload', [
+    await js(`return [...document.querySelectorAll('[data-card-id]')].some(e => e.dataset.color === 'amber' && e.hasAttribute('data-folded'));`),
+    await js(`return [...document.querySelectorAll('svg[class*="labelLayer"] text')].some(t => t.textContent.includes('contradicts'));`),
+  ], [true, true]);
+
+  await keyPress('Escape', 'Escape', 27);
   await js(`
     [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Reset to sample')?.click();
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 340));
   `);
-  check('cards: reset returns to the sample and forgets the saved copy', [
-    (await cardStyle('c-5'))?.left,
-    await js(`return localStorage.getItem('thylas:board:v1:b-lit');`),
-  ], [704, null]);
+  check('store: Reset returns to the sample and forgets the copy', [
+    await counts(),
+    await js(`return localStorage.getItem('thylas:board:v2:b-lit');`),
+    (await cardState('c-11')).h,
+  ], [{ cards: 15, sections: 3, edges: 4 }, null, 44]);
+
+  await js(`
+    localStorage.removeItem('thylas:board:v2:b-lit');
+    localStorage.setItem('thylas:board:v1:b-lit', JSON.stringify({
+      version: 1, id: 'b-lit', name: 'lit-review', updated: 'now',
+      sections: [{ id: 's-old', title: 'Legacy', x: 80, y: 120, w: 400, h: 400, tint: 'rgba(94, 107, 80, 1)' }],
+      cards: [{ id: 'c-old', sectionId: 's-old', x: 96, y: 160, w: 264, eyebrow: 'OLD', title: 'From v1', lines: ['kept'] }],
+      edges: [],
+    }));
+    return true;
+  `);
+  await goto(BOARD);
+  check('store: a v1 board is read without losing work', [
+    (await counts()).cards,
+    (await cardState('c-old')).text.includes('From v1'),
+  ], [1, true]);
+  const legacyCard = await centerOf('c-old');
+  await dragTo(legacyCard, { x: legacyCard.x + 12, y: legacyCard.y });
+  await sleep(440);
+  check('store: the next edit rewrites it as v2', await js(`
+    const raw = localStorage.getItem('thylas:board:v2:b-lit');
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    return { version: v.version, color: v.cards[0].color, section: v.sections[0].color };
+  `), { version: 2, color: 'plain', section: 'sage' });
+  await js(`localStorage.removeItem('thylas:board:v1:b-lit'); localStorage.removeItem('thylas:board:v2:b-lit'); return true;`);
+
+  } catch (err) {
+    results.push({ name: 'the run stopped before the last check', pass: false, actual: String(err?.message ?? err).slice(0, 400) });
+  }
 
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {

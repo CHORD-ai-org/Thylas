@@ -1,4 +1,1013 @@
-/* ---------------- board index ---------------- */
+/* Board surface.
+
+   The canvas is one scene element scaled by the viewport hook; everything
+   inside it is in scene units, so a card is 264 units wide at every zoom. The
+   chrome around it (toolbar, docks, HUDs) stays in screen pixels.
+
+   Five fills, no more. Each one is a tint of a hue already in the palette, so a
+   coloured card still reads as paper rather than a sticky note. */
+
+.boardShell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ---------- header ---------- */
+
+.boardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s3) var(--s4) 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-surface);
+}
+
+.headMain {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.boardName {
+  font: var(--t-section);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.headBadges {
+  display: inline-flex;
+  gap: var(--s1);
+  flex-wrap: wrap;
+}
+
+.headMeta {
+  margin: 2px 0 0;
+  font: var(--t-caption);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- canvas ---------- */
+
+.canvasArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--bg-paper);
+  background-image: radial-gradient(circle, rgba(146, 123, 101, 0.34) 1px, transparent 1px);
+  background-size: var(--scene-grid) var(--scene-grid);
+  background-position: -1px -1px;
+  touch-action: none;
+}
+
+.canvasArea[data-space] {
+  cursor: grab;
+}
+
+.canvasArea[data-panning] {
+  cursor: grabbing;
+}
+
+.canvasArea[data-tool='card'],
+.canvasArea[data-tool='section'] {
+  cursor: crosshair;
+}
+
+.scene {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--scene-w);
+  height: var(--scene-h);
+  transform-origin: 0 0;
+  /* Pointer handling relies on real mouse events for double-click, so the
+     canvas suppresses text selection instead of cancelling pointerdown. */
+  user-select: none;
+}
+
+/* ---------- fills ---------- */
+
+[data-color='plain'] {
+  --fill: var(--bg-surface);
+  --spine: var(--line-strong);
+}
+
+[data-color='sage'] {
+  --fill: #eef1e7;
+  --spine: #5e6b50;
+}
+
+[data-color='amber'] {
+  --fill: #f7f0e0;
+  --spine: #a8792c;
+}
+
+[data-color='clay'] {
+  --fill: #f7ebe3;
+  --spine: #b56f50;
+}
+
+[data-color='stone'] {
+  --fill: #ece8e1;
+  --spine: #927b65;
+}
+
+/* ---------- sections ---------- */
+
+.section {
+  position: absolute;
+  z-index: 1;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--spine) 8%, var(--bg-paper));
+  /* The body is scenery: a click inside a section belongs to the canvas, so a
+     marquee can start there. The capsule and the handles take the pointer. */
+  pointer-events: none;
+}
+
+.section[data-selected] {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.sectionCapsule {
+  position: absolute;
+  top: -26px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 11px;
+  background: var(--spine);
+  color: #fdfbf6;
+  font: 500 11.5px/1 var(--ui);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.sectionCapsule:active {
+  cursor: grabbing;
+}
+
+.sectionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.26);
+  font: var(--t-mono-s);
+  font-variant-numeric: tabular-nums;
+}
+
+.sectionInput {
+  width: 132px;
+  border: 0;
+  outline: none;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  color: #fdfbf6;
+  font: inherit;
+  padding: 1px 3px;
+}
+
+.sectionFolded {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+/* ---------- edges ---------- */
+
+.edgeLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.edgeLine {
+  fill: none;
+  stroke: color-mix(in oklab, var(--ink-2) 62%, var(--bg-paper));
+  stroke-width: 1.2;
+}
+
+.edgeHead {
+  fill: none;
+  stroke: color-mix(in oklab, var(--ink-2) 62%, var(--bg-paper));
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.edge[data-selected] .edgeLine,
+.edge[data-selected] .edgeHead {
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+.edgeHit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.linkPreview {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+}
+
+.bendHandle {
+  fill: var(--bg-surface);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.guides line {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.labelLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.edgeLabel rect {
+  fill: var(--bg-paper);
+  stroke: var(--line-strong);
+  stroke-width: 0.6;
+}
+
+.edgeLabel text {
+  fill: var(--ink-2);
+  font: 500 10px/1 var(--ui);
+  letter-spacing: 0.01em;
+}
+
+.edgeLabel[data-selected] rect {
+  stroke: var(--accent);
+}
+
+.edgeLabel[data-selected] text {
+  fill: var(--accent);
+}
+
+/* ---------- cards ---------- */
+
+.boardCard {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 11px;
+  background: var(--fill);
+  border: 1px solid color-mix(in oklab, var(--spine) 34%, var(--bg-paper));
+  border-top: 3px solid var(--spine);
+  border-radius: 2px;
+  text-align: left;
+  cursor: grab;
+  box-shadow: var(--e1);
+  transition: box-shadow 90ms var(--ease), border-color 90ms var(--ease);
+}
+
+.boardCard[data-color='plain'] {
+  border-top-width: 1px;
+  padding-top: 12px;
+}
+
+.boardCard:hover {
+  box-shadow: var(--e2);
+}
+
+.boardCard[data-selected] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--e2);
+  /* Lifted so its handles are never covered by the neighbour underneath. */
+  z-index: 6;
+}
+
+.boardCard[data-folded] {
+  justify-content: center;
+  gap: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  overflow: hidden;
+}
+
+.boardCard[data-editing] {
+  cursor: text;
+  z-index: 8;
+}
+
+.cardEyebrow {
+  font: var(--t-mono-s);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--spine) 78%, var(--ink));
+}
+
+.boardCard[data-color='plain'] .cardEyebrow {
+  color: var(--ink-3);
+}
+
+.cardTitle {
+  font: 500 13.5px/17px var(--ui);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cardLine {
+  font: 400 12px/16.5px var(--ui);
+  color: color-mix(in oklab, var(--ink) 76%, var(--bg-paper));
+  overflow-wrap: anywhere;
+}
+
+.cardRef {
+  margin-top: 3px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.cardRef::before {
+  content: '▤';
+  margin-right: 4px;
+  font-size: 9px;
+}
+
+.cardLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font: var(--t-mono-s);
+  color: var(--accent);
+}
+
+.boardCard[data-color='plain'] .cardLive {
+  color: var(--ink-2);
+}
+
+.liveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2px rgba(181, 111, 80, 0.16);
+}
+
+.foldMark {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 11px;
+  height: 11px;
+  background: linear-gradient(
+    135deg,
+    transparent 0 50%,
+    color-mix(in oklab, var(--spine) 46%, var(--bg-paper)) 50% 100%
+  );
+}
+
+/* ---------- anchors and resize handles ---------- */
+
+.anchors,
+.handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.anchors {
+  visibility: hidden;
+}
+
+.boardCard:hover .anchors {
+  visibility: visible;
+}
+
+/* A selected card shows eight resize handles instead of four link dots; two
+   sets of grips on the same edges would be a guessing game. */
+.boardCard[data-selected] .anchors {
+  visibility: hidden;
+}
+
+.anchors i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  pointer-events: auto;
+  cursor: crosshair;
+  transition: transform 90ms var(--ease), background 90ms var(--ease);
+}
+
+.anchors i:hover {
+  transform: scale(1.35);
+  background: var(--accent);
+}
+
+.anchors i[data-side='t'] { left: 50%; top: -5px; margin-left: -4.5px; }
+.anchors i[data-side='r'] { right: -5px; top: 50%; margin-top: -4.5px; }
+.anchors i[data-side='b'] { left: 50%; bottom: -5px; margin-left: -4.5px; }
+.anchors i[data-side='l'] { left: -5px; top: 50%; margin-top: -4.5px; }
+
+.handles i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  pointer-events: auto;
+}
+
+.handles i[data-dir='nw'] { left: -5px; top: -5px; cursor: nwse-resize; }
+.handles i[data-dir='n'] { left: 50%; top: -5px; margin-left: -4px; cursor: ns-resize; }
+.handles i[data-dir='ne'] { right: -5px; top: -5px; cursor: nesw-resize; }
+.handles i[data-dir='e'] { right: -5px; top: 50%; margin-top: -4px; cursor: ew-resize; }
+.handles i[data-dir='se'] { right: -5px; bottom: -5px; cursor: nwse-resize; }
+.handles i[data-dir='s'] { left: 50%; bottom: -5px; margin-left: -4px; cursor: ns-resize; }
+.handles i[data-dir='sw'] { left: -5px; bottom: -5px; cursor: nesw-resize; }
+.handles i[data-dir='w'] { left: -5px; top: 50%; margin-top: -4px; cursor: ew-resize; }
+
+/* ---------- inline card editor ---------- */
+
+.editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0 0;
+}
+
+.editorTitle {
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font: 500 14px/19px var(--ui);
+  color: var(--ink);
+}
+
+.editorBody {
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  padding: 0;
+  min-height: 72px;
+  font: 400 12.5px/18px var(--ui);
+  color: var(--ink);
+}
+
+.editorFoot {
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+/* ---------- marquee ---------- */
+
+.marquee {
+  position: absolute;
+  z-index: 5;
+  border: 1px dashed var(--accent);
+  background: var(--tint-sel);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- toolbar ---------- */
+
+.toolbar {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  box-shadow: var(--e2);
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 2px;
+  color: var(--ink-2);
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.tool[aria-pressed='true'] {
+  background: var(--bg-app);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.tool:disabled {
+  color: var(--ink-3);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toolDivider {
+  height: 1px;
+  margin: 3px 2px;
+  background: var(--line);
+}
+
+/* ---------- docks ---------- */
+
+.minimap {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 12;
+  width: 164px;
+  padding: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  box-shadow: var(--e2);
+}
+
+.minimapLabel {
+  display: block;
+  margin-bottom: 4px;
+  font: var(--t-mono-s);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.minimapStage {
+  position: relative;
+  height: 92px;
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.minimapSection {
+  position: absolute;
+  background: color-mix(in oklab, var(--spine) 18%, transparent);
+}
+
+.minimapCard {
+  position: absolute;
+  background: color-mix(in oklab, var(--spine) 62%, transparent);
+  border-radius: 0.5px;
+}
+
+.minimapView {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgba(181, 111, 80, 0.06);
+  pointer-events: none;
+}
+
+.zoomDock {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  box-shadow: var(--e2);
+}
+
+.zoomDock button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 2px;
+  color: var(--ink-2);
+  font: var(--t-mono-s);
+}
+
+.zoomDock button:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.zoomValue {
+  min-width: 36px;
+  text-align: center;
+  font: var(--t-mono-s);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.dockDivider {
+  width: 1px;
+  height: 14px;
+  margin: 0 3px;
+  background: var(--line);
+}
+
+.statusDock {
+  position: absolute;
+  left: 190px;
+  right: 168px;
+  bottom: 14px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  height: 30px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  box-shadow: var(--e2);
+  font: var(--t-caption);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.statusMain {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusHint {
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusCount {
+  margin-left: auto;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+/* ---------- floating HUDs ---------- */
+
+.selectionHud,
+.edgeHud {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  padding: 0 5px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  box-shadow: var(--e2);
+  transform: translateX(-50%);
+}
+
+.hudCount {
+  min-width: 18px;
+  padding: 0 4px;
+  text-align: center;
+  font: var(--t-mono-s);
+  color: var(--ink-2);
+}
+
+.hudLabel {
+  padding: 0 4px;
+  font: var(--t-mono-s);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.hudDivider {
+  width: 1px;
+  height: 14px;
+  margin: 0 3px;
+  background: var(--line);
+}
+
+.hudBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  color: var(--ink-2);
+}
+
+.hudBtn:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.hudBtn[data-danger]:hover {
+  color: var(--error);
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 1px;
+  padding: 1px;
+  background: var(--bg-app);
+  border-radius: 2px;
+}
+
+.segmented button {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 2px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.segmented button[data-on] {
+  background: var(--bg-surface);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* ---------- swatches ---------- */
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spine) 60%, transparent);
+}
+
+.swatch:hover {
+  box-shadow: inset 0 0 0 1px var(--spine), 0 0 0 2px var(--tint-sel);
+}
+
+.swatch[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--spine), 0 0 0 2px var(--bg-surface);
+}
+
+/* ---------- context menu ---------- */
+
+.menu {
+  position: fixed;
+  z-index: var(--z-overlay);
+  min-width: 186px;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-overlay);
+  box-shadow: var(--e2);
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 2px;
+  font: var(--t-ui);
+  color: var(--ink);
+  text-align: left;
+}
+
+.menu button:hover:not(:disabled) {
+  background: var(--tint-hover);
+}
+
+.menu button:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.menu button[data-danger] {
+  color: var(--error);
+}
+
+.menu kbd {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.menuDivider {
+  display: block;
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+
+/* ---------- right panel ---------- */
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4) var(--s6);
+}
+
+.panelCardTitle {
+  font: 500 15px/21px var(--ui);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.panelArrow {
+  color: var(--ink-3);
+}
+
+.panelFields {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.monoValue {
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.liveNote {
+  display: block;
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent);
+  background: var(--tint-live);
+  font: var(--t-caption);
+  line-height: 16px;
+  color: var(--ink-2);
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.panelHint {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font: var(--t-caption);
+  line-height: 16px;
+  color: var(--ink-3);
+}
+
+.panelLabel {
+  display: block;
+  font: var(--t-mono-s);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.panelInputRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panelInput {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.panelInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.colorRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.colorButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.alignGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+
+.alignBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink-2);
+}
+
+.alignBtn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: var(--tint-hover);
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.keys kbd {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--bg-app);
+  font: var(--t-mono-s);
+  color: var(--ink);
+  text-align: center;
+}
+
+/* ---------- empty canvas ---------- */
+
+.canvasHint {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  max-width: 34ch;
+  text-align: center;
+  font: var(--t-caption);
+  line-height: 17px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* ---------- board index ---------- */
 
 .indexPage {
   padding: var(--s8) var(--s8) var(--s12);
@@ -16,527 +1025,71 @@
 
 .indexTitle {
   font: var(--t-page);
+  margin: 0 0 4px;
 }
 
 .indexSub {
-  margin-top: 6px;
-  max-width: 56ch;
+  margin: 0;
+  max-width: 62ch;
   font: var(--t-ui);
+  line-height: 19px;
   color: var(--ink-2);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--s3);
   margin-top: var(--s4);
 }
 
-.card {
+.boardIndexCard {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
   border: 1px solid var(--line);
   border-radius: var(--r-surface);
   background: var(--bg-surface);
   text-align: left;
-  overflow: hidden;
 }
 
-.card:hover {
+.boardIndexCard:hover {
   border-color: var(--line-strong);
 }
 
 .cardPreview {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  padding: 12px;
-  height: 92px;
+  grid-template-columns: repeat(3, 14px);
+  grid-auto-rows: 10px;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--line);
   background: var(--bg-paper);
-  border-bottom: 1px solid var(--line);
 }
 
 .cardTile {
-  border: 1px solid var(--line);
-  border-radius: 1px;
-  background: var(--bg-surface);
+  background: color-mix(in oklab, var(--spine, var(--line-strong)) 40%, var(--bg-paper));
 }
 
-.cardTile[data-live] {
-  border-color: rgba(181, 111, 80, 0.55);
-  background: var(--accent-weak);
+.cardTile[data-empty] {
+  border: 1px dashed var(--line-strong);
+  background: none;
 }
 
 .cardBody {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px 12px;
-  flex: 1;
+  gap: 2px;
+  min-width: 0;
 }
 
 .cardName {
   font: var(--t-ui-strong);
+  color: var(--ink);
 }
 
 .cardMeta {
   font: var(--t-caption);
   color: var(--ink-3);
-}
-
-.card > svg {
-  display: none;
-}
-
-/* ---------------- canvas ---------------- */
-
-.canvasShell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.canvasHead {
-  padding: var(--s3) var(--s5, 20px) var(--s3);
-  border-bottom: 1px solid var(--line);
-  flex: 0 0 auto;
-}
-
-.canvasTitleRow {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-}
-
-.canvasTitle {
-  font: var(--t-section);
-  font-size: 17px;
-}
-
-.canvasMeta {
-  margin-top: 3px;
-  font: var(--t-caption);
-  color: var(--ink-3);
-}
-
-.canvasArea {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  touch-action: none;
-  background-color: var(--bg-paper);
-  background-image: radial-gradient(circle, rgba(73, 54, 38, 0.13) 1px, transparent 1px);
-  background-size: var(--scene-grid) var(--scene-grid);
-  background-position: -1px -1px;
-}
-
-.canvasArea[data-space] {
-  cursor: grab;
-}
-
-.canvasArea[data-panning] {
-  cursor: grabbing;
-}
-
-.stage {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.scene {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: var(--scene-w);
-  height: var(--scene-h);
-  transform-origin: 0 0;
-  /* Pointer handling relies on real mouse events for double-click, so the
-     canvas suppresses text selection instead of cancelling pointerdown. */
-  user-select: none;
-}
-
-.section {
-  position: absolute;
-  border-top: 1px solid var(--line-strong);
-  border-radius: 1px;
-}
-
-.sectionTitle {
-  position: absolute;
-  left: 0;
-  top: -19px;
-  font: 400 11px/16px var(--mono);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.edgeLayer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.edgeLabel {
-  font: 400 9px var(--mono);
-  fill: var(--ink-3);
-  letter-spacing: 0.04em;
-}
-
-.bcard {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 8px 10px 9px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line-strong);
-  border-radius: 2px;
-  text-align: left;
-  box-shadow: var(--e1);
-  cursor: default;
-  user-select: none;
-}
-
-.bcard:hover {
-  border-color: var(--ink-3);
-}
-
-.bcardSelected,
-.bcard[data-picked] {
-  /* The selected card is lifted so its resize handle is never covered by a
-     neighbour that happens to sit under the same corner. */
-  z-index: 1;
-  box-shadow: 0 0 0 1px var(--accent), var(--e1);
-  border-color: var(--accent);
-}
-
-.cardInput {
-  width: 100%;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid var(--accent);
-  background: transparent;
-  font: 400 13px/18px var(--ui);
-  font-weight: 500;
-  color: var(--ink);
-  outline: none;
-  user-select: text;
-}
-
-.resizeHandle {
-  position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 8px;
-  height: 8px;
-  background: var(--bg-surface);
-  border: 1px solid var(--accent);
-  cursor: nwse-resize;
-}
-
-/* Guides and marquee live inside the scene, so they scale with it and need no
-   coordinate conversion. JS toggles opacity to 0/1; nothing here animates. */
-.guideX {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: var(--scene-h);
-  background: color-mix(in srgb, var(--accent) 42%, transparent);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.guideY {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: var(--scene-w);
-  height: 1px;
-  background: color-mix(in srgb, var(--accent) 42%, transparent);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.marquee {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.bcardLive {
-  border-left: 2px solid var(--accent);
-}
-
-.cardEyebrow {
-  font: 400 10.5px/14px var(--mono);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.cardTitle {
-  font: 400 13px/18px var(--ui);
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.cardLine {
-  font: 400 12px/16px var(--ui);
-  color: var(--ink-2);
-}
-
-.cardRef {
-  margin-top: 2px;
-  font: var(--t-mono-s);
-  color: var(--ink-2);
-}
-
-.cardLiveRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  font: var(--t-mono-s);
-  color: var(--accent);
-}
-
-.liveDot {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex: 0 0 auto;
-}
-
-/* floating chrome */
-
-.toolbar {
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 3px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-surface);
-  box-shadow: var(--e1);
-  z-index: var(--z-sticky);
-}
-
-.tool {
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-chip);
-  color: var(--ink-2);
-  font-size: 12px;
-}
-
-.tool:hover {
-  background: var(--tint-hover);
-  color: var(--ink);
-}
-
-.toolOn {
-  background: var(--bg-app);
-  color: var(--ink);
-}
-
-.tool:disabled,
-.tool:disabled:hover {
-  color: var(--ink-3);
-  background: none;
-  opacity: 0.4;
-  cursor: default;
-}
-
-.minimap {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  width: 128px;
-  padding: 6px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-surface);
-  box-shadow: var(--e1);
-}
-
-.minimapLabel {
-  display: block;
-  font: var(--t-mono-s);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 4px;
-}
-
-.minimapStage {
-  position: relative;
-  height: 56px;
-  background: var(--bg-paper);
-  border: 1px solid var(--line);
-}
-
-.minimapSection {
-  position: absolute;
-  background: rgba(146, 123, 101, 0.22);
-}
-
-.minimapCard {
-  position: absolute;
-  background: rgba(73, 54, 38, 0.3);
-  border-radius: 1px;
-}
-
-.zoomDock {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-surface);
-  box-shadow: var(--e1);
-}
-
-.zoomDock button {
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-chip);
-  color: var(--ink-2);
-  font: 13px var(--mono);
-}
-
-.zoomDock button:hover {
-  background: var(--tint-hover);
-  color: var(--ink);
-}
-
-.zoomValue {
-  min-width: 34px;
-  text-align: center;
-  font: var(--t-mono-s);
-  color: var(--ink-2);
-}
-
-.statusBar {
-  position: absolute;
-  left: 152px;
-  right: 152px;
-  bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s3);
-  pointer-events: none;
-  font: var(--t-caption);
-  color: var(--ink-2);
-}
-
-.statusHint {
-  color: var(--ink-3);
-}
-
-.statusCount {
-  font: var(--t-mono-s);
-  color: var(--ink-3);
-}
-
-/* ---------------- panel ---------------- */
-
-.panelInner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-}
-
-.panelCardTitle {
-  font: var(--t-section);
-  font-size: 15px;
-  line-height: 21px;
-}
-
-.panelFields {
-  display: flex;
-  flex-direction: column;
-  padding: var(--s2) 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.panelActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.liveNote {
-  display: flex;
-  gap: 6px;
-  font: var(--t-caption);
-  line-height: 16px;
-  color: var(--ink-2);
-  padding: 6px 8px;
-  background: var(--tint-live);
-  border-left: 2px solid var(--accent);
-}
-
-.panelNotice {
-  font: var(--t-caption);
-  color: var(--ink-2);
-  border-top: 1px solid var(--line);
-  padding-top: 6px;
-}
-
-.canvasHint {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 32ch;
-  text-align: center;
-  font: var(--t-caption);
-  line-height: 17px;
-  color: var(--ink-3);
-  pointer-events: none;
-}
-
-.panelHint {
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
-  font: var(--t-caption);
-  line-height: 16px;
-  color: var(--ink-3);
-}
-
-.monoValue {
-  font: var(--t-mono-s);
-  color: var(--ink-2);
 }
