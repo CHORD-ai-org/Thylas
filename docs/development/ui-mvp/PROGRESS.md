@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 (program start).
+Last updated: 2026-11-07 11:45 (SP-03 complete).
 
 ---
 
@@ -15,8 +15,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-00 Foundation | — | **Completed** 11-07 | 1.5 | — | lint zones, Vitest 8, e2e 25, grammar recipes |
 | SP-01 Application shell | — | **Completed** 11-07 | 2.0 | SP-00 | typed tabs, measured overflow, rail keys, states |
 | SP-02 Overview | — | **Completed** 11-07 | 1.0 | SP-01 | computed lede + zero state, honest disabled Start, no new-workspace card, shared section tick |
-| SP-03a Tab model | SP-03 | Not Started | 1.0 | SP-01 | pure `lib/tabs.ts` + 8 tests |
-| SP-03b Panel and restore | SP-03 | Not Started | 0.5 | SP-03a | widths per context, scroll, settings route |
+| SP-03a Tab model | SP-03 | **Completed** 11-07 | 1.0 | SP-01 | pure `lib/tabs.ts` 12 tests, v2 persistence, tombstones, cross-scope isolation |
+| SP-03b Panel and restore | SP-03 | **Completed** 11-07 | 0.5 | SP-03a | per-context widths, named-region scroll restore, room-preserving switch, settings deleted |
 | SP-04a Table grammar | SP-04 | Not Started | 0.75 | SP-03b | grammar adoption + column budgets |
 | SP-04b File interactions | SP-04 | Not Started | 0.75 | SP-04a | disclosure, keyboard, tombstone, disabled actions |
 | SP-05a Note model | SP-05 | **Blocked** (Q-1) | 1.0 | SP-04a | store, link parser, backlinks |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **17 days**. Critical path: SP-03a → SP-03b → SP-04a → SP-06a → SP-06b/c/d → SP-09a. SP-05 stays blocked on Q-1.
+Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP-09a. SP-05 stays blocked on Q-1.
 
 ---
 
@@ -49,8 +49,10 @@ Remaining: **17 days**. Critical path: SP-03a → SP-03b → SP-04a → SP-06a �
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
-| Unit tests | Vitest 5, 11 assertions over routes/selectors/lede | `src/lib/routes.test.ts`, `src/data/selectors.test.ts` |
-| E2E | 37 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Unit tests | Vitest 5, 25 assertions over routes/selectors/lede/tabs | `src/lib/{routes,tabs}.test.ts`, `src/data/selectors.test.ts` |
+| E2E | 55 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
+| Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
 
 ## Known defects (carried into the subplans)
 
@@ -84,11 +86,17 @@ Remaining: **17 days**. Critical path: SP-03a → SP-03b → SP-04a → SP-06a �
 | 11-07 | `npm run build` (SP-02) | CSS 54.5 KB / JS 128.8 KB gzip |
 | 11-07 | Zero-needs-input DOM | lede + empty copy both changed; mock restored byte-for-byte |
 | 11-07 | `grep accent overview.module.css` | 0 hits; hover is a tint only |
+| 11-07 | `npm test` (SP-03a) | 23/23; 12 pure tab-model cases |
+| 11-07 | `npm run e2e` (SP-03a) | 44/44; deep link, back/forward, tombstone, two scopes |
+| 11-07 | Broken storage payload | app renders normally, malformed tabs dropped |
+| 11-07 | `npm test` (SP-03b) | 25/25; room detection and scope switching |
+| 11-07 | `npm run e2e` (SP-03b) | 55/55; real drag, width persistence, scroll ±2px, room switch |
+| 11-07 | `npm run build` (SP-03b) | CSS 54.7 KB / JS 130.4 KB gzip |
 
 ## Next concrete action
 
-1. **SP-03a Tab model** (1 day): extract `lib/tabs.ts`, write the reconciliation tests, keep the strip behaviour identical. Exit when the pure model reproduces every current tab case.
-2. Then **SP-03b** (panel widths / scroll restore / workspace semantics). SP-04a, SP-06a and SP-07a are still blocked behind it. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.**
+1. **SP-04a Table grammar** (0.75 day): adopt `grammar.module.css` in Files, measure column budgets at 1280/1440, kill the remaining page-local notice copies. Exit when the grammar file has real consumers and the table still fits.
+2. Then **SP-04b** (disclosure as a real button, keyboard, tombstone row, honest disabled actions). **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.**
 
 ## Resolved
 
@@ -101,3 +109,6 @@ Remaining: **17 days**. Critical path: SP-03a → SP-03b → SP-04a → SP-06a �
 | R5 | Intent Start clicked, then apologised | SP-02 | Start disabled with a persistent reason; no post-click banner |
 | R6 | A parquet file was shown with a `PDF` glyph | SP-02 | glyph derives from `getFile(id).kind` |
 | R7 | Accent-coloured hover text on Overview rows | SP-02 | hover is a tint; zero local accent declarations |
+| R8 | Notes panel opened at 340 though the spec said 300 | SP-03b | per-context defaults: notes 300, workspace 340 |
+| R9 | An already-expanded workspace row collapsed instead of switching | SP-03b | the row always navigates when it is not active |
+| R10 | Dead `/w/:id/settings` route builder | SP-03b | deleted; router and route module both checked |

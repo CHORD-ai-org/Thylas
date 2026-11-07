@@ -147,6 +147,22 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** per-page tick (rejected: nine copies), or adding a `tick` prop to `SectionLabel` (rejected: a brand constant is not a per-call option).
 **Consequence:** one CSS Modules `composes` dependency from `components/` to `styles/`; verified by build and by Files/Notes/Overview screenshots. The grammar file's header now says which recipes remain for SP-04.
 
+## D-019 · The settings route is deleted, not stubbed
+
+**Status:** accepted in force (SP-03b).
+**Context:** `routes.workspaceSettings` and the `'settings'` tab type existed, but no router element, no link and no surface ever produced one. SP-03b T4 allowed "ship a minimal surface or delete the route".
+**Decision:** delete the builder and the tab type. `workspaceRoom` has no settings case; a path to it falls back to Files.
+**Alternative:** ship a placeholder settings page. Rejected: it would be a control with no behaviour and would need a sidebar row nobody asked for.
+**Consequence:** acceptance §4 of SP-03b is verified by two static checks (router children and route module contain no `settings`). If a real settings surface is needed, it is a later decision with its own scope.
+
+## D-020 · Scroll restoration is one shell component with named regions
+
+**Status:** accepted in force (SP-03b).
+**Context:** SP-03b §F proposed a `useScrollRestore` hook called by each list surface in `useLayoutEffect`. Five surfaces would repeat the same save/restore lifecycle, and index-based keys would drift when the panel opens or closes.
+**Decision:** `shell/ScrollRestoration.tsx` owns a capture-phase scroll listener and one layout effect; surfaces only add `data-scroll-region="name"`. Offsets live in `lib/scroll.ts` (memory + sessionStorage v2).
+**Alternative:** a hook per page. Rejected: duplicated lifecycle, five places to get the timing wrong.
+**Consequence:** adding a scrollable list is one attribute, and no page imports a scroll hook. The board canvas is not yet a region — SP-06 owns its viewport.
+
 ---
 
 ## Open questions (need a human, not a default)

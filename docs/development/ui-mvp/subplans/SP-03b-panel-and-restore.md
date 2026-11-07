@@ -1,6 +1,6 @@
 # SP-03b · Panel widths, scroll restore, workspace semantics
 
-**Parent:** [SP-03](SP-03-workspace-core.md) · **Days:** 0.5 · **Status:** Not Started · **Depends:** SP-03a
+**Parent:** [SP-03](SP-03-workspace-core.md) · **Days:** 0.5 · **Status:** Completed 2026-11-07 · **Depends:** SP-03a
 
 ## Objective
 
@@ -50,3 +50,18 @@ Manual pass at 1280/1440; `npm run e2e` adds a width-persistence assertion; scre
 
 - Scroll restore before layout completes lands at 0. Use `useLayoutEffect` and restore after data render.
 - Two widths in `localStorage` invite a third; keep the shape keyed by context name, not by route.
+
+## Result (2026-11-07, done)
+
+`thylas:ui:v2` now holds `panelWidth` keyed by context (workspace 340 / notes 300, clamped 280–480); v1's single scalar migrates into the workspace slot. `ContextPanel` takes an explicit `ctx` prop, and `AppShell` no longer writes an unused `--panel-w` variable. `lib/scroll.ts` + `shell/ScrollRestoration.tsx` restore scroll before paint for every element that names itself with `data-scroll-region`. `switchWorkspace` keeps the room; the dead settings route is gone.
+
+**Deviations, with reasons**
+
+1. **The settings route is deleted, not shipped** (D-019). No element, no link and no data ever existed for it; a stub would be a fake control, and a dead route is a dead sidebar row waiting to happen.
+2. **Scroll restoration is one global component with named regions, not a per-page `useScrollRestore` hook** (D-020). Five surfaces had the same lifecycle; one `useLayoutEffect` in the shell is less code and cannot drift. Names (`files-table`, `notes-reader`, `page`, …) avoid the index drift that opening a panel would cause.
+3. **`panelMeta` needed `text-transform: none`.** The shared header uppercases its label, so the count rendered as "5 ITEMS"; a screenshot caught it.
+4. **A real bug was fixed while implementing T3:** clicking an already-expanded workspace row used to collapse it instead of switching scope. The row now always navigates when it is not the active workspace.
+
+**Evidence:** `npm test` 25/25 · `npm run e2e` 55/55 (11 new, including a real CDP pointer drag that changes only the notes width to 360, a workspace width that survives a reload at 420, scroll offset restored within 2px after two navigations, both workspace-switch cases, and two static checks that no settings route exists) · build CSS 54.7 KB / JS 130.4 KB gzip · screenshots `sp03-notes`, `sp03-files-v2`.
+
+**Left:** the board canvas has no named scroll region yet (SP-06 owns its viewport); scroll keys are per-path, so two routes never share an offset.

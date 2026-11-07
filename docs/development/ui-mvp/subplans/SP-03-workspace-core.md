@@ -1,6 +1,6 @@
 # SP-03 · Workspace core
 
-**Status:** Not Started · **Depends:** SP-01 · **Blocks:** SP-04, SP-05, SP-06, SP-07
+**Status:** Completed 2026-11-07 (both units) · **Depends:** SP-01 · **Blocks:** SP-04, SP-05, SP-06, SP-07
 **Absorbs:** the restoration half of plan/02 and the state model in `tech-stack.md` §6.
 
 **Units:** [SP-03a](SP-03a-tab-model.md) — tab model and reconciliation (1d) · [SP-03b](SP-03b-panel-and-restore.md) — panel widths, scroll restore, workspace semantics (0.5d). Execute in that order; the parent's §G tasks are the union of both.
@@ -63,3 +63,9 @@ Tombstone tabs: 60% ink, 2px dashed left edge, close still available. Panel widt
 
 - `sessionStorage` caps at ~5 MB; a board payload could hit it (SP-06 decides storage).
 - Scroll restoration fights the router's focus handling; restore before paint, not after.
+
+## Result (2026-11-07, done)
+
+Both units shipped in separate commits: `e39d117` (SP-03a pure tab model, v2 persistence, tombstones, cross-scope isolation) and `f2ec062` (SP-03b per-context panel widths, scroll restoration, room-preserving workspace switch, settings route deleted). Parent §H is satisfied: 12 tabs across two workspaces stay isolated; reload restores the set, active tab and scroll offset before paint; a deep link adds exactly one tab; a deleted object keeps a dismissible tombstone, and `roomPath` returns Files for a closed active object tab (unit-tested).
+
+Verification totals: 25 unit tests, 55 real-browser assertions, `tsc`/`lint`/`build` clean. The `unsaved` dirty guard remains SP-05b; the board's own scroll region remains SP-06.
