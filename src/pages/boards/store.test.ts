@@ -5,6 +5,7 @@ import {
   BOARD_KEY_PREFIX,
   boardKey,
   createLocalBoardStore,
+  legacyBoardKey,
   type StorageLike,
 } from './store';
 
@@ -53,10 +54,10 @@ describe('board store round trip', () => {
 
   it('refuses a future schema version with a message, not silence', () => {
     const storage = memoryStorage();
-    storage.setItem(boardKey('b-lit'), JSON.stringify({ version: 2, id: 'b-lit' }));
+    storage.setItem(boardKey('b-lit'), JSON.stringify({ version: 9, id: 'b-lit' }));
     const result = createLocalBoardStore(storage, 0).load('b-lit');
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain('Unsupported board schema version 2');
+    if (!result.ok) expect(result.error).toContain('Unsupported board schema version 9');
   });
 
   it('reports malformed JSON and shape mismatches separately', () => {
@@ -64,16 +65,37 @@ describe('board store round trip', () => {
     const store = createLocalBoardStore(storage, 0);
     storage.setItem(boardKey('broken'), '{not json');
     expect(store.load('broken').ok).toBe(false);
-    storage.setItem(boardKey('shape'), JSON.stringify({ version: 1, id: 'shape' }));
+    storage.setItem(boardKey('shape'), JSON.stringify({ version: 2, id: 'shape' }));
     const bad = store.load('shape');
     expect(bad.ok).toBe(false);
-    if (!bad.ok) expect(bad.error).toContain('does not match schema v1');
+    if (!bad.ok) expect(bad.error).toContain('does not match schema v2');
   });
 
   it('refuses to save a scene whose version it does not own', () => {
     const store = createLocalBoardStore(memoryStorage(), 0);
-    const wrong = { ...scene(), version: 2 } as unknown as BoardScene;
-    expect(() => store.save(wrong)).toThrow(/Refusing to save board schema version 2/);
+    const wrong = { ...scene(), version: 1 } as unknown as BoardScene;
+    expect(() => store.save(wrong)).toThrow(/Refusing to save board schema version 1/);
+  });
+
+  it('reads a v1 board once and hands back a v2 scene', () => {
+    const storage = memoryStorage();
+    const legacy = {
+      version: 1,
+      id: 'b-lit',
+      name: 'lit-review',
+      updated: '2h ago',
+      sections: [{ id: 's-q', title: 'Question', x: 0, y: 0, w: 300, h: 300, tint: 'rgba(94, 107, 80, .05)' }],
+      cards: [{ id: 'c-1', sectionId: 's-q', x: 8, y: 8, w: 200, h: 0, title: 't', eyebrow: 'CARD', lines: [] }],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 },
+    };
+    storage.setItem(legacyBoardKey('b-lit'), JSON.stringify(legacy));
+    const result = createLocalBoardStore(storage, 0).load('b-lit');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.scene.version).toBe(2);
+      expect(result.scene.sections[0]?.color).toBe('sage');
+    }
   });
 
   it('degrades without throwing when storage is full', () => {

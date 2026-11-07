@@ -1,11 +1,15 @@
-/* Versioned board persistence. An interface plus a localStorage adapter, so
-   SP-06c can swap in a service-backed store without touching the scene model.
-   Writes are debounced; `flush` exists for tests and for page unload. */
+/* Versioned board persistence. An interface plus a localStorage adapter, so a
+   service-backed store can replace it without touching the scene model.
+   Writes are debounced; `flush` exists for tests and for page unload.
 
-import type { BoardScene } from './scene';
+   v1 boards are read through `readSceneV1` and rewritten as v2 on the next
+   edit: the schema moved (colours, folds, edge sides), nobody's work is lost. */
 
-export const BOARD_VERSION = 1;
-export const BOARD_KEY_PREFIX = 'thylas:board:v1:';
+import { readScene, readSceneV1, type BoardScene } from './scene';
+
+export const BOARD_VERSION = 2;
+export const BOARD_KEY_PREFIX = 'thylas:board:v2:';
+export const LEGACY_KEY_PREFIX = 'thylas:board:v1:';
 export const WRITE_DELAY = 300;
 
 export type StorageLike = {
@@ -30,19 +34,8 @@ export function boardKey(id: string): string {
   return `${BOARD_KEY_PREFIX}${id}`;
 }
 
-function isScene(value: unknown): value is BoardScene {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Partial<BoardScene>;
-  return (
-    v.version === BOARD_VERSION &&
-    typeof v.id === 'string' &&
-    typeof v.name === 'string' &&
-    Array.isArray(v.sections) &&
-    Array.isArray(v.cards) &&
-    Array.isArray(v.edges) &&
-    !!v.viewport &&
-    Number.isFinite(v.viewport.zoom)
-  );
+export function legacyBoardKey(id: string): string {
+  return `${LEGACY_KEY_PREFIX}${id}`;
 }
 
 export function createLocalBoardStore(
@@ -74,14 +67,27 @@ export function createLocalBoardStore(
   return {
     load(id) {
       const raw = storage.getItem(boardKey(id));
-      if (raw === null) return { ok: false, error: `No saved board for "${id}"` };
+      if (raw === null) {
+        const legacy = storage.getItem(legacyBoardKey(id));
+        if (legacy === null) return { ok: false, error: `No saved board for "${id}"` };
+        try {
+          const migrated = readSceneV1(JSON.parse(legacy));
+          if (migrated) {
+            return { ok: true, scene: { ...migrated, id } };
+          }
+        } catch {
+          /* fall through to the error below */
+        }
+        return { ok: false, error: `Saved board "${id}" is not valid JSON` };
+      }
       let parsed: unknown;
       try {
         parsed = JSON.parse(raw);
       } catch {
         return { ok: false, error: `Saved board "${id}" is not valid JSON` };
       }
-      if (!isScene(parsed)) {
+      const scene = readScene(parsed);
+      if (!scene) {
         const version = (parsed as { version?: unknown } | null)?.version;
         if (typeof version === 'number' && version !== BOARD_VERSION) {
           return {
@@ -91,7 +97,8 @@ export function createLocalBoardStore(
         }
         return { ok: false, error: `Saved board "${id}" does not match schema v${BOARD_VERSION}` };
       }
-      return { ok: true, scene: parsed };
+      // The key and the payload must agree; a renamed board is not this board.
+      return { ok: true, scene: { ...scene, id } };
     },
 
     save(scene) {
@@ -112,6 +119,7 @@ export function createLocalBoardStore(
         timer = null;
       }
       storage.removeItem?.(boardKey(id));
+      storage.removeItem?.(legacyBoardKey(id));
     },
   };
 }
