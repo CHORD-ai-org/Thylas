@@ -66,13 +66,6 @@
   padding: 0 16px;
 }
 
-.startBtn:disabled {
-  background: var(--bg-paper);
-  border-color: var(--line-strong);
-  color: var(--ink-3);
-  cursor: not-allowed;
-}
-
 .intentFoot {
   display: flex;
   align-items: baseline;

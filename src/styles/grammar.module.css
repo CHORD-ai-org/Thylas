@@ -59,6 +59,27 @@
   color: var(--ink-2);
 }
 
+/* Persistent capability limit. The reason is visible before any click, so it
+   carries no accent: a missing service is not a live state. */
+.limit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 6px var(--s4);
+  border-bottom: 1px solid var(--line);
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.limit::before {
+  content: '';
+  width: 6px;
+  height: 1px;
+  background: var(--line-strong);
+  flex: 0 0 auto;
+}
+
 /* Filter chips: one implementation for files, processes, recently, notes. */
 .filters {
   display: flex;

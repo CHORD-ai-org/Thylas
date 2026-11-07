@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
+import type { Tab } from '../lib/tabs';
 import { filesInFolder, foldersIn, getFile, getWorkspace, filesIn } from '../data/selectors';
 import type { FileItem } from '../data/types';
 import { useApp, useRegisterTab } from '../state/app';
@@ -9,6 +10,10 @@ import { IconChevron, IconFolder, IconUpload } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import s from './files.module.css';
+
+type RowItem =
+  | { key: string; kind: 'file'; file: FileItem }
+  | { key: string; kind: 'tombstone'; tab: Tab };
 
 function sourceLabel(file: FileItem): string {
   if (file.source.kind === 'produced') return `produced · ${file.source.runLabel}`;
@@ -60,72 +65,126 @@ function FilePanel({ file, onOpen }: { file: FileItem; onOpen: () => void }) {
   );
 }
 
+/** One owner for a deleted object: closing its tab removes both the tab and the
+    row. There is no second dismissal state that could leave an orphan. */
+function TombstonePanel({ tab, onDismiss }: { tab: Tab; onDismiss: () => void }) {
+  return (
+    <div className={s.panelInner}>
+      <h3 className={s.panelName}>{tab.label}</h3>
+      <p className={s.panelQuiet}>
+        This file was deleted. Its tab stayed open so you can see where it was.
+      </p>
+      <div className={s.panelActions}>
+        <Button size="sm" onClick={onDismiss}>
+          Dismiss
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function FilesPage() {
   const { wsId = '' } = useParams();
   const navigate = useNavigate();
-  const { panelOpen, togglePanel } = useApp();
+  const { panelOpen, togglePanel, tabs, closeObjectTab } = useApp();
   const ws = getWorkspace(wsId);
   const folders = foldersIn(wsId);
   const [folderId, setFolderId] = useState<string | null>(folders[0]?.id ?? null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string[]>(folders.map((f) => f.id));
+
+  const rows = useMemo(() => filesInFolder(wsId, folderId), [wsId, folderId]);
+  const tombstones = useMemo(
+    () =>
+      (tabs[`ws:${wsId}`] ?? []).filter(
+        (t) => t.type === 'file' && t.missing && t.path.startsWith(`/w/${wsId}/files/`),
+      ),
+    [tabs, wsId],
+  );
+  const items = useMemo<RowItem[]>(
+    () => [
+      ...rows.map((file) => ({ key: file.id, kind: 'file' as const, file })),
+      ...tombstones.map((tab) => ({ key: tab.id, kind: 'tombstone' as const, tab })),
+    ],
+    [rows, tombstones],
+  );
 
   useEffect(() => {
     setFolderId(folders[0]?.id ?? null);
-    setSelectedId(null);
     setExpanded(folders.map((f) => f.id));
     // folder set changes only when the workspace changes
   }, [wsId]);
 
-  const rows = useMemo(() => filesInFolder(wsId, folderId), [wsId, folderId]);
-  const selected = rows.find((r) => r.id === selectedId) ?? rows[0] ?? null;
+  useEffect(() => {
+    setSelectedKey(rows[0]?.id ?? null);
+  }, [rows]);
 
+  const selected = items.find((it) => it.key === selectedKey) ?? null;
   const open = (file: FileItem) => navigate(routes.file(wsId, file.id));
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (!rows.length) return;
-    const i = rows.findIndex((r) => r.id === selectedId);
+    if (!items.length) return;
+    const i = Math.max(0, items.findIndex((it) => it.key === selectedKey));
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      const next = rows[Math.min(rows.length - 1, i + 1)] ?? rows[0];
-      if (next) setSelectedId(next.id);
+      setSelectedKey(items[Math.min(items.length - 1, i + 1)]?.key ?? null);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const prev = rows[Math.max(0, i - 1)] ?? rows[0];
-      if (prev) setSelectedId(prev.id);
-    } else if (e.key === 'Enter' && selected) {
+      setSelectedKey(items[Math.max(0, i - 1)]?.key ?? null);
+    } else if (e.key === 'Home') {
       e.preventDefault();
-      open(selected);
+      setSelectedKey(items[0]?.key ?? null);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setSelectedKey(items[items.length - 1]?.key ?? null);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setSelectedKey(null);
+    } else if (e.key === 'Enter' && selected?.kind === 'file') {
+      e.preventDefault();
+      open(selected.file);
     }
   };
 
   if (!ws) return <EmptyState title="Workspace not found" hint="It may have been archived. Recently lists what you can still reach." />;
 
+  const ctx = `ws:${wsId}`;
+  const panel = !selected ? (
+    <EmptyState title="Nothing selected" hint="Choose a file in the list to see its details." />
+  ) : selected.kind === 'file' ? (
+    <FilePanel file={selected.file} onOpen={() => open(selected.file)} />
+  ) : (
+    <TombstonePanel tab={selected.tab} onDismiss={() => closeObjectTab(ctx, selected.tab.id)} />
+  );
+
   return (
     <WorkspaceLayout
       wsId={wsId}
       panelTitle="Details"
-      panelMeta={`${rows.length} items`}
-      panel={selected ? <FilePanel file={selected} onOpen={() => open(selected)} /> : undefined}
+      panelMeta={`${items.length} items`}
+      panel={panel}
     >
       <div className={s.crumbs}>
         <span className={s.crumbRoot}>{ws.name}</span>
         <IconChevron size={11} />
         <span>{folders.find((f) => f.id === folderId)?.name ?? 'All files'}</span>
-        <span className={s.crumbTail}>· {rows.length} items</span>
+        <span className={s.crumbTail}>· {items.length} items</span>
         <div className={s.crumbsActions}>
           <Button
             size="sm"
             icon={<IconUpload size={13} />}
-            onClick={() => setNotice('Upload needs the files service, which is not connected in this build. No file was sent.')}
+            disabled
+            title="Needs the files service — not connected in this build"
+            aria-describedby="files-limit"
           >
             Upload
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setNotice('Folder creation needs the files service, which is not connected in this build.')}
+            disabled
+            title="Needs the files service — not connected in this build"
+            aria-describedby="files-limit"
           >
             New folder
           </Button>
@@ -137,14 +196,9 @@ export function FilesPage() {
         </div>
       </div>
 
-      {notice ? (
-        <div className={g.banner} role="status">
-          {notice}
-          <button type="button" className={s.noticeClose} onClick={() => setNotice(null)} aria-label="Dismiss">
-            ×
-          </button>
-        </div>
-      ) : null}
+      <p className={g.limit} id="files-limit">
+        Uploading and creating folders need the files service — not connected in this build.
+      </p>
 
       <div className={s.body}>
         <nav className={s.tree} aria-label="Folders" data-scroll-region="files-tree">
@@ -154,31 +208,36 @@ export function FilesPage() {
             const active = folder.id === folderId;
             return (
               <div key={folder.id}>
-                <button
-                  type="button"
-                  className={[s.treeRow, active ? s.treeActive : ''].join(' ')}
-                  onClick={() => {
-                    setFolderId(folder.id);
-                    setSelectedId(null);
-                    setExpanded((v) => (v.includes(folder.id) ? v : [...v, folder.id]));
-                  }}
-                  aria-expanded={isOpen}
-                  aria-current={active ? 'true' : undefined}
-                >
-                  <span
-                    className={s.treeChevron}
-                    data-open={isOpen || undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpanded((v) => (v.includes(folder.id) ? v.filter((x) => x !== folder.id) : [...v, folder.id]));
-                    }}
+                <div className={[s.treeRow, active ? s.treeActive : ''].join(' ')}>
+                  <button
+                    type="button"
+                    className={s.treeToggle}
+                    aria-expanded={isOpen}
+                    aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${folder.name}`}
+                    onClick={() =>
+                      setExpanded((v) =>
+                        v.includes(folder.id) ? v.filter((x) => x !== folder.id) : [...v, folder.id],
+                      )
+                    }
                   >
-                    <IconChevron size={11} />
-                  </span>
-                  <IconFolder size={13} />
-                  <span className={s.treeName}>{folder.name}</span>
-                  <span className={s.treeCount}>{count}</span>
-                </button>
+                    <span className={s.treeChevron} data-open={isOpen || undefined}>
+                      <IconChevron size={11} />
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={s.treeSelect}
+                    onClick={() => {
+                      setFolderId(folder.id);
+                      setExpanded((v) => (v.includes(folder.id) ? v : [...v, folder.id]));
+                    }}
+                    aria-current={active ? 'true' : undefined}
+                  >
+                    <IconFolder size={13} />
+                    <span className={s.treeName}>{folder.name}</span>
+                    <span className={s.treeCount}>{count}</span>
+                  </button>
+                </div>
                 {isOpen ? (
                   <div className={s.treeChildren}>
                     {filesInFolder(wsId, folder.id)
@@ -187,10 +246,10 @@ export function FilesPage() {
                         <button
                           key={file.id}
                           type="button"
-                          className={[s.treeChild, file.id === selectedId ? s.treeChildActive : ''].join(' ')}
+                          className={[s.treeChild, file.id === selectedKey ? s.treeChildActive : ''].join(' ')}
                           onClick={() => {
                             setFolderId(folder.id);
-                            setSelectedId(file.id);
+                            setSelectedKey(file.id);
                           }}
                           onDoubleClick={() => open(file)}
                         >
@@ -217,59 +276,70 @@ export function FilesPage() {
           data-scroll-region="files-table"
         >
           <div className={s.thead} role="row">
-            <span className={s.colName} role="columnheader">
-              Name
-            </span>
-            <span className={s.colSize} role="columnheader">
-              Size
-            </span>
-            <span className={s.colUpdated} role="columnheader">
-              Updated
-            </span>
-            <span className={s.colSource} role="columnheader">
-              Source
-            </span>
-            <span className={s.colUsed} role="columnheader">
-              Used by
-            </span>
+            <span className={s.colName} role="columnheader">Name</span>
+            <span className={s.colSize} role="columnheader">Size</span>
+            <span className={s.colUpdated} role="columnheader">Updated</span>
+            <span className={s.colSource} role="columnheader">Source</span>
+            <span className={s.colUsed} role="columnheader">Used by</span>
           </div>
 
-          {rows.length === 0 ? (
+          {items.length === 0 ? (
             <EmptyState
               title="This folder is empty"
               hint="Files arrive here by upload, by import, or as the output of a process."
             />
           ) : (
             <div className={s.tbody} role="rowgroup">
-              {rows.map((file) => (
-                <button
-                  key={file.id}
-                  type="button"
-                  role="row"
-                  aria-selected={file.id === selectedId}
-                  className={[s.trow, file.id === selectedId ? s.trowActive : ''].join(' ')}
-                  onClick={() => setSelectedId(file.id)}
-                  onDoubleClick={() => open(file)}
-                >
-                  <span className={s.colName} role="gridcell">
-                    <TypeGlyph kind={file.kind} />
-                    <span className={s.fileName}>{file.name}</span>
-                    {file.source.kind === 'produced' ? <Badge>{file.source.runLabel}</Badge> : null}
-                  </span>
-                  <span className={[s.colSize, s.mono].join(' ')} role="gridcell">
-                    {file.size}
-                  </span>
-                  <span className={[s.colUpdated, s.mono].join(' ')} role="gridcell">
-                    {file.updated}
-                  </span>
-                  <span className={[s.colSource, s.monoDim].join(' ')} role="gridcell">
-                    {sourceLabel(file)}
-                  </span>
-                  <span className={[s.colUsed, s.mono].join(' ')} role="gridcell">
-                    {file.usedBy.length}
-                  </span>
-                </button>
-              ))}
+              {items.map((item) =>
+                item.kind === 'file' ? (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="row"
+                    aria-selected={item.key === selectedKey}
+                    className={[s.trow, item.key === selectedKey ? s.trowActive : ''].join(' ')}
+                    onClick={() => setSelectedKey(item.key)}
+                    onDoubleClick={() => open(item.file)}
+                  >
+                    <span className={s.colName} role="gridcell">
+                      <TypeGlyph kind={item.file.kind} />
+                      <span className={s.fileName}>{item.file.name}</span>
+                      {item.file.source.kind === 'produced' ? <Badge>{item.file.source.runLabel}</Badge> : null}
+                    </span>
+                    <span className={[s.colSize, s.mono].join(' ')} role="gridcell">
+                      {item.file.size}
+                    </span>
+                    <span className={[s.colUpdated, s.mono].join(' ')} role="gridcell">
+                      {item.file.updated}
+                    </span>
+                    <span className={[s.colSource, s.monoDim].join(' ')} role="gridcell">
+                      {sourceLabel(item.file)}
+                    </span>
+                    <span className={[s.colUsed, s.mono].join(' ')} role="gridcell">
+                      {item.file.usedBy.length}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="row"
+                    aria-selected={item.key === selectedKey}
+                    data-tombstone="true"
+                    className={[s.trow, s.trowTombstone, item.key === selectedKey ? s.trowActive : ''].join(' ')}
+                    onClick={() => setSelectedKey(item.key)}
+                  >
+                    <span className={s.colName} role="gridcell">
+                      <TypeGlyph kind="txt" />
+                      <span className={s.fileName}>{item.tab.label}</span>
+                    </span>
+                    <span className={[s.colSize, s.mono].join(' ')} role="gridcell">—</span>
+                    <span className={[s.colUpdated, s.mono].join(' ')} role="gridcell">—</span>
+                    <span className={[s.colSource, s.monoDim].join(' ')} role="gridcell">—</span>
+                    <span className={[s.colUsed, s.mono].join(' ')} role="gridcell">deleted</span>
+                  </button>
+                ),
+              )}
             </div>
           )}
         </div>

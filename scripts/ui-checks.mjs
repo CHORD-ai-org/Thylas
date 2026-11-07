@@ -10,7 +10,7 @@
  * Exit code: 0 = all assertions pass, 1 = assertion failure, 2 = harness error.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -398,6 +398,83 @@ async function main() {
   check('settings: no dead route in the router', /settings/.test(routerChildren), false);
   const routeFile = readFileSync(new URL('../src/lib/routes.ts', import.meta.url), 'utf8');
   check('settings: no dead route builder', /workspaceSettings/.test(routeFile), false);
+
+  // ---- SP-04b: valid controls, keyboard table, honest actions, tombstones ----
+  const filesTsx = readFileSync(new URL('../src/pages/Files.tsx', import.meta.url), 'utf8');
+  check('files: no click handler on a span', /<span[^>]*onClick/s.test(filesTsx), false);
+  check('files: no post-click apology state', filesTsx.includes('setNotice') || filesTsx.includes('Nothing was sent'), false);
+  const pageCss = readdirSync(new URL('../src/pages/', import.meta.url)).filter((f) => f.endsWith('.css'));
+  const noticeBlocks = pageCss.reduce(
+    (n, f) => n + (readFileSync(new URL(`../src/pages/${f}`, import.meta.url), 'utf8').match(/^\.notice \{/gm) ?? []).length,
+    0,
+  );
+  check('grammar: page-local notice recipes <= 3', noticeBlocks, (v) => v <= 3);
+
+  await goto('/w/ws-research/files');
+  check('files: Upload is disabled with a stated reason', await js(`
+    const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Upload');
+    return !!b && b.disabled && /files service/.test(b.title) && b.getAttribute('aria-describedby') === 'files-limit';
+  `), true);
+  check('files: New folder is disabled with a stated reason', await js(`
+    const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'New folder');
+    return !!b && b.disabled && /files service/.test(b.title);
+  `), true);
+  check('files: the reason is visible before any click', await js(`
+    const el = document.getElementById('files-limit');
+    return !!el && el.offsetParent !== null && el.textContent.includes('not connected');
+  `), true);
+  await js(`document.querySelector('button[title*="files service"]').click(); await new Promise(r => setTimeout(r, 200));`);
+  check('files: clicking a disabled action adds no banner', await js(`return document.querySelectorAll('[class*="banner"]').length;`), 0);
+
+  check('files: folder disclosure is a real button with aria-expanded', await js(`
+    const b = document.querySelector('button[aria-label^="Collapse datasets"]');
+    return !!b && b.getAttribute('aria-expanded') === 'true';
+  `), true);
+  await js(`document.querySelector('button[aria-label^="Collapse datasets"]').click(); await new Promise(r => setTimeout(r, 250));`);
+  check('files: collapsing does not change selection', await js(`
+    return document.querySelector('[role="row"][aria-selected="true"] span[class*="fileName"]')?.textContent;
+  `), 'raw-runs.parquet');
+  check('files: collapsed folder hides its children', await js(`
+    return document.querySelector('button[aria-label^="Expand datasets"]')?.getAttribute('aria-expanded');
+  `), 'false');
+
+  await goto('/w/ws-research/files');
+  const key = (k) => js(`
+    const el = document.querySelector('[data-scroll-region="files-table"]');
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: '${k}', bubbles: true }));
+    await new Promise(r => setTimeout(r, 130));
+    return document.querySelector('[role="row"][aria-selected="true"] span[class*="fileName"]')?.textContent ?? null;
+  `);
+  const lastRow = await key('End');
+  check('files: End selects the last row', lastRow, (v) => typeof v === 'string' && v.length > 0);
+  check('files: Home selects the first row', await key('Home'), 'raw-runs.parquet');
+  check('files: ArrowDown moves one row', await key('ArrowDown'), 'eval-log.csv');
+  check('files: Escape clears selection', await key('Escape'), null);
+  check('files: cleared selection shows an empty panel', await js(`return document.body.innerText.includes('Nothing selected');`), true);
+  await key('Home');
+  await key('Enter');
+  check('files: Enter opens the selected file', await js(`return location.pathname;`), '/w/ws-research/files/f-raw-runs');
+  await js(`document.querySelector('[aria-label^="Close raw-runs"]')?.click(); await new Promise(r => setTimeout(r, 400));`);
+  check('files: closing the tab returns to the room', await js(`return location.pathname;`), '/w/ws-research/files');
+
+  await goto('/overview');
+  await js(`
+    sessionStorage.setItem('thylas:tabs:v2', JSON.stringify({version:2, contexts:{
+      'ws:ws-research': [{id:'/w/ws-research/files/f-gone',kind:'object',type:'file',label:'gone.parquet',path:'/w/ws-research/files/f-gone'}]
+    }}));
+  `);
+  await goto('/w/ws-research/files');
+  check('files: a deleted object survives as both row and tab', await js(`
+    return !!document.querySelector('[data-missing="true"]') && !!document.querySelector('[data-tombstone="true"]');
+  `), true);
+  await js(`document.querySelector('[data-tombstone="true"]').click(); await new Promise(r => setTimeout(r, 200));`);
+  check('files: tombstone panel offers Dismiss', await js(`
+    return !![...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Dismiss');
+  `), true);
+  await js(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Dismiss').click(); await new Promise(r => setTimeout(r, 250));`);
+  check('files: dismissing leaves no orphan row or tab', await js(`
+    return !document.querySelector('[data-missing="true"]') && !document.querySelector('[data-tombstone="true"]');
+  `), true);
 
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {
