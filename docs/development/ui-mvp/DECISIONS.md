@@ -97,6 +97,28 @@ Format: **status · context · decision · alternative · consequence**.
 **Decision:** the input is real (state, validation, keyboard), and until SP-07 it is `disabled` with a reason. In SP-07 it sends to `/api/ai` and renders a completion, labelled "DeepSeek · dev endpoint". It never claims to start a process.
 **Consequence:** no false affordance; the AI path is honest about being a completion, not a run.
 
+## D-013 · Browser-reserved shortcuts are not bound
+
+**Status:** accepted (found during SP-01).
+**Context:** the interaction contract proposed `⌘W` to close a tab and `⌘⇧[`/`]` to cycle. Chrome consumes all three before the page sees them.
+**Decision:** no binding. Tabs close through their control, cycling goes through the palette, and the contract's keyboard table is updated rather than silently ignored.
+**Alternative:** `⌥W`/`Ctrl+Alt+…` — invents a private protocol nobody guesses.
+**Consequence:** keyboard users need one extra stop per close; the contract no longer promises a shortcut the browser owns.
+
+## D-014 · Tab overflow count is measured, not fixed
+
+**Status:** accepted (SP-01).
+**Context:** "overflow after 8" was a guess from the prototype. At 1280 with the rail open, eight tabs did not fit, so the strip scrolled — the exact failure the rule was meant to prevent.
+**Decision:** `ResizeObserver` on the strip computes a limit between 3 and 8; hidden tabs go to `+N`; the active tab is rotated into view.
+**Consequence:** the strip never scrolls, the count changes with viewport and rail state, and two measurement bugs (content-width feedback, menu clipping) are documented in SP-01's result.
+
+## D-015 · Roving tabindex deferred
+
+**Status:** accepted, revisit in SP-09.
+**Context:** the contract proposes one Tab stop for the rail. Implementing roving across a dynamically expanded workspace list is easy to half-finish — a `tabIndex` that changes without focus following makes Tab look broken.
+**Decision:** ship arrow-key traversal (`↑↓ Home End → ←`) with native tab order; revisit in the a11y sweep with a test.
+**Consequence:** Tab through the rail takes up to a dozen presses until SP-09.
+
 ---
 
 ## Open questions (need a human, not a default)

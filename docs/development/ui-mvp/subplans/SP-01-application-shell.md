@@ -23,7 +23,9 @@ SP-00 (lint zones must exist before shell edits so an accidental `shell/ → pag
 
 **Keyboard.** Tab enters the rail once. `↑↓` move between siblings, `→` expands a workspace, `←` collapses it, `↵` opens, `Home/End` jump to first/last. Focus is always visible.
 
-**Tabs.** Rooms pinned, no close affordance. Object tabs show a 12px type glyph, label, and (when live) a dot. Hover shows only a tint. Focus ring sits inside the tab so the row does not shift. After 8 object tabs, the strip shows the first 7 plus `+N`; the menu lists the rest with their glyphs, closes on `esc`, and always keeps the active tab visible.
+**Tabs.** Rooms pinned, no close affordance. Object tabs show a 12px type glyph, label, and (when live) a dot. Hover shows only a tint. Focus ring sits inside the tab so the row does not shift. The number of visible tabs is **measured** (3–8, by available width); the rest collapse into `+N`, whose menu lists them with their glyphs, closes on `esc`, and always keeps the active tab visible.
+
+**Shortcuts.** `⌘K` palette, `⌘\` panel, `Esc` closes the topmost overlay, arrows/`Home`/`End` traverse the rail. `⌘W` and `⌘⇧[`/`]` are **not** bound: Chrome consumes them before the page sees them, so binding them would either do nothing or close the browser tab. See D-013.
 
 **Empty strip.** A workspace with no object tabs shows rooms only — never a placeholder tab.
 
@@ -61,7 +63,7 @@ From `branding-desk.md` §3 and `typography.md` §3; not restated. Values that m
 | T2 | Rail roving keyboard | Keyboard-only: Tab once, `→`, `↓`, `↵` reaches Files |
 | T3 | Typed tabs (glyph by `tab.type`) | Four kinds distinguishable at a glance |
 | T4 | Overflow after 8 + rotation for the active tab | Opening a 9th tab shows `+1`; the active tab is never hidden |
-| T5 | `⌘W` closes active object tab, never a room; `⌘⇧[`/`]` cycle | Keyboard-only tab switching works |
+| T5 | Tab close via its control; no binding for browser-reserved shortcuts | Closing a tab returns to the room index, keyboard included |
 | T6 | State matrix for `.railItem .wsRow .tab .tabClose .stripTools button` | `grep` shows ≥ 4 states per class; no accent on hover |
 | T7 | Panel header: label + count, drop page-specific overrides | Files/Notes panel headers match |
 
@@ -70,7 +72,7 @@ From `branding-desk.md` §3 and `typography.md` §3; not restated. Values that m
 1. Rail: every interactive class has hover, active, focus-visible, disabled; no rule sets text colour to accent on hover (`grep`).
 2. Object tabs show a glyph; the strip at 9 tabs shows `+N`; the menu lists the hidden tabs and navigates.
 3. Closing the active tab lands on the room index; closing a room tab is impossible (no affordance, no handler).
-4. Keyboard-only: reach every rail row, open a file, close it with `⌘W`, cycle tabs with `⌘⇧[`/`]`, with a visible focus ring at every step.
+4. Keyboard-only: reach every rail row with Tab and `↑↓` (`Home`/`End` jump), expand a workspace with `→`, open a file, close it from the tab control; a 1px accent focus ring is visible at every step (verified through real Tab key events, not `element.focus()`).
 5. At 1280 and 1440 the strip never wraps, never scrolls horizontally, and does not shift when the panel toggles.
 6. No page file is edited in this subplan (`git diff --stat` proves it).
 
@@ -89,3 +91,15 @@ Screenshots: rail expanded/collapsed; tab default/hover/active/focus/live; strip
 - **`⌘W` shadows the browser's close-tab.** If it fires while a modal/palette is open, the user loses a tab instead of closing the overlay — guard on "no overlay open", and document the override.
 - **Roving tabindex is easy to half-finish:** if `tabIndex` changes without focus following, Tab appears broken. Test keyboard-only.
 - **Q:** should the overflow menu be a popover or a scrollable tab row? Default: popover (a scrolling strip hides the fact that tabs exist).
+
+## Result (2026-11-07, done)
+
+Shipped: typed object tabs (12px glyph, `--ink-3`); measured overflow with `+N` menu (keyboard `esc`, outside-click close, active tab always visible); rail `↑↓`/`Home`/`End` plus `→`/`←` expand-collapse; four states on `.railItem`, `.wsRow`, `.tab`, `.tabClose`, overflow items; panel header gained a count slot (`meta` prop).
+
+**Deviations, with reasons**
+
+1. **`⌘W`, `⌘⇧[`, `⌘⇧]` are not bound.** Chrome (Windows and macOS) reserves them for tab switching/closing; a page handler either never fires or fights the browser. Implementation: close via the tab control; cycle via the palette. Recorded as D-013.
+2. **Overflow is measured, not fixed at 8.** Labels differ and the rail collapses, so a fixed count overflowed at 1280. A `ResizeObserver` on the strip computes the limit (3–8). Two bugs found while building it: the first measurement divided the *content* width of the strip row (a feedback loop that pinned the limit at 4), and the menu was clipped by `overflow: hidden` on that row. Fixed by `flex: 1 1 auto` on the row and `overflow: visible`. Recorded as D-014.
+3. **Roving tabindex is not implemented.** Every rail row stays in the tab order; arrows make traversal fast. Deferred to SP-09's a11y sweep (D-015) rather than half-built.
+
+**Evidence:** `npm run lint` clean; `npm test` 8/8; `npm run e2e` 25/25 including four new tab assertions; focus ring measured as `inset 0 0 0 1px rgb(181,111,80)` after three real Tab presses; screenshots `shell-overflow-1440` (5 tabs + `+4`), `shell-overflow-menu`, `shell-overflow-1280` (5 tabs + `+5`), `shell-rail-focus`.

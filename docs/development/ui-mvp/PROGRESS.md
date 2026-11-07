@@ -10,8 +10,8 @@ Last updated: 2026-11-07 (program start).
 
 | SP | Name | Status | Done | Remaining | Blocking |
 | --- | --- | --- | --- | --- | --- |
-| SP-00 | Foundation | **In Progress** | Fonts + 7-step scale shipped (`cf01df0`); type specimen; palette/geometry tokens | ESLint zone rules, Vitest, committed E2E harness, `grammar.module.css` | — |
-| SP-01 | Application shell | **In Progress** | Four-zone grid, rail, strip, panel, palette, collapse persistence | Typed tabs, `+N` overflow, shell state matrix, rail keyboard | SP-00 lint zones |
+| SP-00 | Foundation | **Completed** 11-07 | Zone lint, Vitest + 8 tests, committed E2E harness (25), `grammar.module.css`, `lib/types.ts` split | — | — |
+| SP-01 | Application shell | **Completed** 11-07 | Typed tabs, measured `+N` overflow, rail arrows/Home/End, four states, panel meta slot | Roving tabindex → SP-09 (D-015) | — |
 | SP-02 | Overview | Not Started | Read-only page exists with intent input, Continue, Needs you, workspaces, recently | Display step, computed copy, honest disabled intent, accent/hover pass | SP-01 |
 | SP-03 | Workspace core | Not Started | Routes, restoration of tabs per context, workspace switching | Selection ownership, panel width per context, restoration edge cases | SP-01 |
 | SP-04 | Files and resources | Not Started | Tree + table + preview + panel (mock) | Table grammar, disclosure as a real button, 1280 column budget, tombstone rows | SP-03 |
@@ -36,23 +36,23 @@ Legend: Not Started · Planning · In Progress · Blocked · Review Required · 
 | Typography | Plex/Noto self-hosted, 7 steps, no serif | `cf01df0`, specimen page |
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | CDP script outside the repo (`.workbuddy/tmp/cdp.mjs`), 16 assertions | run 2026-11-07 |
-| Lint | **none** — no ESLint config | `package.json` |
-| Unit tests | **none** | — |
+| Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
+| Unit tests | Vitest 5, 8 assertions over routes/selectors | `src/lib/routes.test.ts`, `src/data/selectors.test.ts` |
+| E2E | 25 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
 
 ## Known defects (carried into the subplans)
 
 | # | Defect | Where | Owner SP |
 | --- | --- | --- | --- |
-| K1 | Object tabs carry no type glyph | `src/shell/TabStrip.tsx` | SP-01 |
-| K2 | No tab overflow; strip scrolls horizontally | same | SP-01 |
-| K3 | Nine controls accept a click then apologise | Overview, Files, Boards, Processes, Notes, Account | SP-04 / SP-07 |
-| K4 | Folder disclosure is a `span` with `onClick` | `src/pages/Files.tsx` | SP-04 |
-| K5 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
-| K6 | Board is read-only and its labels are ~8px at fit | `src/pages/Boards.tsx` | SP-06 |
-| K7 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
-| K8 | `.notice` is duplicated in six page stylesheets | `src/pages/*.css` | SP-00 (grammar) |
-| K9 | Scene dimensions hardcoded in TSX and CSS | `Boards.tsx`, `boards.module.css` | SP-06 |
-| K10 | No loading state language anywhere | all surfaces | SP-07 |
+| K1 | Nine controls accept a click then apologise | Overview, Files, Boards, Processes, Notes, Account | SP-04 / SP-07 |
+| K2 | Folder disclosure is a `span` with `onClick` | `src/pages/Files.tsx` | SP-04 |
+| K3 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
+| K4 | Board is read-only and its labels are ~8px at fit | `src/pages/Boards.tsx` | SP-06 |
+| K5 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
+| K6 | `.notice` is duplicated in six page stylesheets (grammar exists, pages not migrated) | `src/pages/*.css` | SP-04 |
+| K7 | Roaming tabindex in the rail not implemented (arrows only) | `src/shell/Rail.tsx` | SP-09 |
+| K8 | Scene dimensions hardcoded in TSX and CSS | `Boards.tsx`, `boards.module.css` | SP-06 |
+| K9 | No loading state language anywhere | all surfaces | SP-07 |
 
 ## Validation log
 
@@ -62,10 +62,19 @@ Legend: Not Started · Planning · In Progress · Blocked · Review Required · 
 | 11-07 | `npm run build` | 127.9 KB gzip JS / 10.0 KB CSS |
 | 11-07 | CDP suite (16) | 16/16 |
 | 11-07 | Font trace | 4 woff2, 0 CJK on English routes |
-| — | `npm run lint` | not configured |
-| — | `npm test` | not configured |
+| 11-07 | `npm run lint` | 0 problems; a deliberate `shell → pages` import fails as designed |
+| 11-07 | `npm test` | 8/8 |
+| 11-07 | `npm run e2e` | 25/25 (typed tabs, overflow, active-tab visibility, rail arrows) |
+| 11-07 | Focus ring (real Tab) | `inset 0 0 0 1px rgb(181,111,80)` on the rail item |
 
 ## Next concrete action
 
-1. SP-00: add ESLint zones + Vitest, commit the E2E harness, add `grammar.module.css` skeletons. Exit when `npm run lint` fails on a deliberate cross-layer import and `npm test` runs one pure test.
-2. SP-01: typed tabs, `+N`, shell states, rail keyboard. Exit when the tab sheet and keyboard-only path pass at 1280/1440.
+1. **SP-02 Overview**: display step, computed lede, remove "New workspace", disable the intent input with a visible reason (until SP-07). Exit when the count changes with the mock and no accent appears on hover.
+2. Then SP-03 (restoration + `lib/tabs.ts` tests), which unblocks Files, Notes, Board and AI.
+
+## Resolved
+
+| # | Defect | Resolved in | Evidence |
+| --- | --- | --- | --- |
+| K1 | Object tabs carried no type | SP-01 | every object tab has an svg glyph; e2e assertion |
+| K2 | Strip scrolled horizontally / no overflow | SP-01 | measured limit 3–8; e2e "strip does not scroll" passes |
