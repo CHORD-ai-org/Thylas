@@ -195,6 +195,14 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** narrow the acceptance grep to the boards scope and leave four duplicates. Rejected: the duplicates were a real inconsistency, and a literal gate is cheaper to keep honest.
 **Consequence:** custom properties only inherit downwards, so the variables must be injected on the container that owns the dot grid. Injecting on `.scene` removed the grid; the before/after screenshot md5 caught it.
 
+## D-025 · The viewport commits imperatively, never through React state
+
+**Status:** accepted in force (SP-06b).
+**Context:** the plan allowed the viewport to be committed to React state once per animation frame. Even one render per frame re-renders every card, which is the second measured engine bug in the reference (150 cards: P95 43ms).
+**Decision:** `view` is a ref; wheel and pointer handlers mutate it synchronously and schedule one `requestAnimationFrame`. The frame writes four DOM properties (`scene.transform`, `stage` size, grid size/position, dock label). A no-dependency `useLayoutEffect` re-applies the same ref after any unrelated render.
+**Alternative:** one `setState` per frame. Rejected: it satisfies "at most once per frame" but still re-renders the whole scene, and acceptance #3 explicitly forbids it.
+**Consequence:** viewport state is not visible to React DevTools and cannot drive JSX. Anything that needs the zoom value must read the dock label or the scene transform. Measured: 0 card mutations during wheel pan, 150-card P95 16.7ms.
+
 ---
 
 ## Open questions (need a human, not a default)

@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 16:20 (SP-06a complete).
+Last updated: 2026-11-07 16:50 (SP-06b complete).
 
 ---
 
@@ -23,7 +23,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
-| SP-06b Viewport | SP-06 | Not Started | 1.25 | SP-06a | pointer-anchored zoom, one pointer session |
+| SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
 | SP-06c Cards | SP-06 | Not Started | 1.5 | SP-06b | create, drag, snap, undo |
 | SP-06d Edges | SP-06 | Not Started | 1.5 | SP-06c | anchors, labels, hit areas |
 | SP-07a AI endpoint | SP-07 | Not Started | 1.0 | SP-03b | middleware + error taxonomy |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **13.25 days**. Critical path: SP-06b → SP-06c/d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
+Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
 
 ---
 
@@ -49,9 +49,9 @@ Remaining: **13.25 days**. Critical path: SP-06b → SP-06c/d → SP-09a; SP-07a
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
-| Unit tests | Vitest 5, 48 assertions incl. scene geometry and board store | `src/pages/boards/{scene,store}.test.ts` |
-| E2E | 86 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
-| Board scene | pure constants + versioned store, not yet wired to rendering | `src/pages/boards/`, `3ce2f5b` |
+| Unit tests | Vitest 5, 53 assertions incl. viewport maths | `src/pages/boards/{scene,store}.test.ts` |
+| E2E | 100 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Board scene | pure constants + versioned store (not wired) · ref-driven viewport | `src/pages/boards/`, `22342da` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
 | Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
@@ -102,11 +102,16 @@ Remaining: **13.25 days**. Critical path: SP-06b → SP-06c/d → SP-09a; SP-07a
 | 11-07 | Board screenshot diff | before/after md5 identical (`0a1cc6b8…`) |
 | 11-07 | `grep 1032\|560 src` | 0 outside `boards/scene.ts` |
 | 11-07 | 200-card serialisation | < 20ms |
+| 11-07 | `npm test` (SP-06b) | 53/53; 5 viewport-maths cases |
+| 11-07 | `npm run e2e` (SP-06b) | 100/100; 30 zoom steps, +-2px anchor, 0 card mutations, 1:1 pan, clamps |
+| 11-07 | 150-card pan trace | 148 frames · P50 16.7ms · P95 16.7ms · max 16.8ms · 0 >20ms |
+| 11-07 | Zoom screenshots | 10% / 51% / 100% / 400%, grid legible at every step |
+| 11-07 | `npm run build` (SP-06b) | CSS 55.2 KB / JS 132.3 KB gzip |
 
 ## Next concrete action
 
-1. **SP-06b Viewport** (1.25 days): viewport in a ref, pointer-anchored `⌘`+wheel, one window-level pointer session. Exit when 30 consecutive zoom gestures produce 30 steps and the scene still renders identically at rest.
-2. Alternatively **SP-07a AI endpoint** (1 day), independently unblocked. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (one board viewport persisted in localStorage) is also still unapproved.
+1. **SP-06c Cards** (1.5 days): create by double-click, 1:1 drag with one 6px snap, selection, delete, undo/redo (50 ops). Exit when a 150-card **drag** holds P95 ≤ 20ms and one undo restores a deleted card.
+2. Alternatively **SP-07a AI endpoint** (1 day), independently unblocked. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so do not wire `BoardScene.viewport` yet.
 
 ## Resolved
 
