@@ -5,7 +5,15 @@ import { IconClose } from '../components/icons';
 import { IconButton } from '../components/ui';
 import s from './shell.module.css';
 
-export function ContextPanel({ title, children }: { title: string; children: ReactNode }) {
+export function ContextPanel({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta?: string;
+  children: ReactNode;
+}) {
   const { panelWidth, setPanelWidth, togglePanel } = useApp();
   const drag = useRef<{ startX: number; startW: number } | null>(null);
 
@@ -38,7 +46,10 @@ export function ContextPanel({ title, children }: { title: string; children: Rea
         onPointerCancel={stop}
       />
       <header className={s.panelHead}>
-        <h2 className={s.panelTitle}>{title}</h2>
+        <h2 className={s.panelTitle}>
+          {title}
+          {meta ? <span className={s.panelMeta}>{meta}</span> : null}
+        </h2>
         <IconButton label="Hide panel" onClick={togglePanel}>
           <IconClose size={13} />
         </IconButton>

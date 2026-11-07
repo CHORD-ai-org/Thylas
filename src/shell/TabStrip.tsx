@@ -1,12 +1,27 @@
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { useApp } from '../state/app';
 import type { Tab } from '../data/types';
-import { IconClose, IconFiles, IconBoards, IconNotes, IconPanel, IconProcesses } from '../components/icons';
+import {
+  IconBoards,
+  IconChevron,
+  IconClose,
+  IconFiles,
+  IconNotes,
+  IconPanel,
+  IconProcesses,
+} from '../components/icons';
 import { IconButton } from '../components/ui';
 import s from './shell.module.css';
 
 type Props = { ctx: string; wsId?: string; variant: 'workspace' | 'notes' };
+
+/* How many object tabs fit is measured, not guessed: labels differ and the
+   rail collapses. Five is the floor because four tabs plus a room row is the
+   minimum a workspace needs to stay usable. */
+const TAB_FLOOR = 3;
+const TAB_CEILING = 8;
 
 function fallback(tab: Tab, wsId?: string): string {
   if (tab.type === 'file' && wsId) return routes.files(wsId);
@@ -17,12 +32,68 @@ function fallback(tab: Tab, wsId?: string): string {
   return wsId ? routes.files(wsId) : routes.notes();
 }
 
+/** The type glyph is what makes four kinds of object distinguishable in a strip
+ *  that only has room for labels. 12px, --ink-3, no fill. */
+function TabGlyph({ type }: { type: Tab['type'] }) {
+  const size = 12;
+  if (type === 'board') return <IconBoards size={size} />;
+  if (type === 'run') return <IconProcesses size={size} />;
+  if (type === 'note') return <IconNotes size={size} />;
+  return <IconFiles size={size} />;
+}
+
 export function TabStrip({ ctx, wsId, variant }: Props) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { tabs, closeObjectTab, panelOpen, togglePanel, openPalette } = useApp();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [limit, setLimit] = useState(TAB_CEILING);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
 
   const objectTabs = tabs[ctx] ?? [];
+
+  // Keep the active tab inside the visible slice: a hidden active tab is the
+  // classic overflow bug, and rotation is cheaper than making the strip scroll.
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const measure = () => {
+      // 250 for three room tabs, 75 for the overflow control, ~145 per object tab.
+      const next = Math.max(TAB_FLOOR, Math.min(TAB_CEILING, Math.floor((el.clientWidth - 325) / 145)));
+      setLimit(next);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const activeTab = objectTabs.find((t) => t.path === pathname);
+  const needsOverflow = objectTabs.length > limit;
+  const head = objectTabs.slice(0, Math.max(1, limit - 1));
+  const visible = !needsOverflow
+    ? objectTabs
+    : activeTab && !head.includes(activeTab)
+      ? [...head, activeTab]
+      : head;
+  const hidden = objectTabs.filter((t) => !visible.includes(t));
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   const rooms =
     variant === 'workspace' && wsId
@@ -41,7 +112,7 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
 
   return (
     <div className={s.strip}>
-      <div className={s.stripTabs} role="tablist" aria-label="Open tabs">
+      <div className={s.stripTabs} role="tablist" aria-label="Open tabs" ref={stripRef}>
         {rooms.map((room) => {
           const active = pathname === room.path;
           return (
@@ -59,11 +130,11 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
           );
         })}
 
-        {rooms.length > 0 && objectTabs.length > 0 ? <span className={s.stripDivider} aria-hidden /> : null}
-
         {variant === 'notes' ? (
           <button
             type="button"
+            role="tab"
+            aria-selected={pathname === routes.notes()}
             className={[s.tab, s.roomTab, pathname === routes.notes() ? s.tabActive : ''].join(' ')}
             onClick={() => navigate(routes.notes())}
           >
@@ -74,10 +145,9 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
           </button>
         ) : null}
 
-        {rooms.length > 0 && objectTabs.length > 0 ? <span className={s.stripDivider} aria-hidden /> : null}
-        {variant === 'notes' && objectTabs.length > 0 ? <span className={s.stripDivider} aria-hidden /> : null}
+        {objectTabs.length > 0 ? <span className={s.stripDivider} aria-hidden /> : null}
 
-        {objectTabs.map((tab) => {
+        {visible.map((tab) => {
           const active = pathname === tab.path;
           return (
             <div
@@ -93,8 +163,11 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
                 onClick={() => navigate(tab.path)}
                 title={tab.label}
               >
-                {tab.live ? <span className={s.tabLive} aria-label="live" /> : null}
+                <span className={s.tabType} aria-hidden>
+                  <TabGlyph type={tab.type} />
+                </span>
                 <span className={s.tabText}>{tab.label}</span>
+                {tab.live ? <span className={s.tabLive} aria-label="running" /> : null}
               </button>
               <button
                 type="button"
@@ -107,13 +180,54 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
             </div>
           );
         })}
+
+        {hidden.length > 0 ? (
+          <div className={s.overflow} ref={menuRef}>
+            <button
+              type="button"
+              className={[s.tab, s.overflowBtn].join(' ')}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              +{hidden.length}
+              <IconChevron dir="down" size={10} />
+            </button>
+            {menuOpen ? (
+              <div className={s.overflowMenu} role="menu">
+                {hidden.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="menuitem"
+                    className={s.overflowItem}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate(tab.path);
+                    }}
+                  >
+                    <span className={s.tabType}>
+                      <TabGlyph type={tab.type} />
+                    </span>
+                    <span className={s.overflowLabel}>{tab.label}</span>
+                    {tab.live ? <span className={s.tabLive} /> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className={s.stripTools}>
         <IconButton label="Search or jump to (Ctrl K)" onClick={openPalette}>
           <span className={s.stripKbd}>⌘K</span>
         </IconButton>
-        <IconButton label={panelOpen ? 'Hide panel (Ctrl \\)' : 'Show panel (Ctrl \\)'} active={panelOpen} onClick={togglePanel}>
+        <IconButton
+          label={panelOpen ? 'Hide panel (Ctrl \\)' : 'Show panel (Ctrl \\)'}
+          active={panelOpen}
+          onClick={togglePanel}
+        >
           <IconPanel />
         </IconButton>
       </div>

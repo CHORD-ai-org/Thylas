@@ -38,6 +38,7 @@ function RailItem({
     <button
       type="button"
       className={[s.railItem, active ? s.railActive : ''].join(' ')}
+      data-rail-item={path}
       onClick={() => navigate(path)}
       title={collapsed ? label : undefined}
       aria-current={active ? 'page' : undefined}
@@ -63,8 +64,33 @@ export function Rail() {
 
   const isOpen = (id: string) => id === activeWs || open.includes(id);
 
+  /* One arrow-key model for the whole rail: ↓↑ between siblings, → expands a
+     workspace, ← collapses it, Home/End jump. Buttons keep their native
+     Enter/Space activation, so nothing here invents a keyboard protocol. */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[data-rail-item]'));
+    const here = items.indexOf(document.activeElement as HTMLElement);
+    if (here === -1) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = e.key === 'ArrowDown' ? Math.min(items.length - 1, here + 1) : Math.max(0, here - 1);
+      items[next]?.focus();
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      (e.key === 'Home' ? items[0] : items[items.length - 1])?.focus();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const row = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('[data-ws-row]');
+      if (!row) return;
+      const expanded = row.getAttribute('aria-expanded') === 'true';
+      if ((e.key === 'ArrowRight' && !expanded) || (e.key === 'ArrowLeft' && expanded)) {
+        e.preventDefault();
+        row.click();
+      }
+    }
+  };
+
   return (
-    <aside className={s.rail} data-collapsed={railCollapsed || undefined}>
+    <aside className={s.rail} data-collapsed={railCollapsed || undefined} onKeyDown={onKeyDown}>
       <div className={s.brand}>
         <span className={s.brandMark} aria-hidden>
           τ
@@ -117,6 +143,8 @@ export function Rail() {
               <button
                 type="button"
                 className={[s.wsRow, ws.id === activeWs ? s.wsActive : ''].join(' ')}
+                data-ws-row={ws.id}
+                data-rail-item={routes.files(ws.id)}
                 onClick={() => {
                   setOpen((v) => (v.includes(ws.id) ? v.filter((x) => x !== ws.id) : [...v, ws.id]));
                   if (!expanded) navigate(routes.files(ws.id));
