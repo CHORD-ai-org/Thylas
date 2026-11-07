@@ -7,7 +7,21 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Tab, TabType } from '../data/types';
+import {
+  MAX_TABS_BYTES,
+  TABS_KEY,
+  TABS_KEY_V1,
+  TABS_VERSION,
+  closeTab,
+  makeObjectTab,
+  openTab,
+  pruneForQuota,
+  reconcileTabs,
+  type Tab,
+  type TabType,
+  type TabsState,
+} from '../lib/tabs';
+import { getBoard, getFile, getNote, getProcess, workspaces } from '../data/selectors';
 
 type ObjectTabSeed = {
   type: TabType;
@@ -21,7 +35,7 @@ type AppState = {
   panelOpen: boolean;
   panelWidth: number;
   paletteOpen: boolean;
-  tabs: Record<string, Tab[]>;
+  tabs: TabsState;
   toggleRail: () => void;
   togglePanel: () => void;
   setPanelWidth: (w: number) => void;
@@ -33,8 +47,14 @@ type AppState = {
 
 const AppCtx = createContext<AppState | null>(null);
 
-const TABS_KEY = 'thylas:tabs:v1';
 const UI_KEY = 'thylas:ui:v1';
+
+const warned = new Set<string>();
+function warnOnce(key: string, message: string): void {
+  if (warned.has(key)) return;
+  warned.add(key);
+  console.warn(`[thylas] ${message}`);
+}
 
 function readJson<T>(store: Storage, key: string, fallback: T): T {
   try {
@@ -49,8 +69,58 @@ function writeJson(store: Storage, key: string, value: unknown): void {
   try {
     store.setItem(key, JSON.stringify(value));
   } catch {
-    /* storage full or blocked: the UI degrades to in-memory state */
+    // Quota, private mode, or a blocked Storage: the app keeps working in memory.
+    warnOnce('storage', 'Storage is full or blocked; UI state is in-memory only for this tab.');
   }
+}
+
+function isTabArray(value: unknown): value is Tab[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (t) =>
+        t &&
+        typeof t === 'object' &&
+        typeof (t as Tab).id === 'string' &&
+        typeof (t as Tab).path === 'string' &&
+        typeof (t as Tab).label === 'string' &&
+        typeof (t as Tab).type === 'string',
+    )
+  );
+}
+
+function isTabsState(value: unknown): value is TabsState {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return Object.values(value).every(isTabArray);
+}
+
+/** v2 is a versioned envelope; v1 was a bare context→tabs map. Malformed or
+    half-written entries are dropped rather than resurrected as broken tabs. */
+function loadTabs(): TabsState {
+  const v2 = readJson<unknown>(sessionStorage, TABS_KEY, null);
+  if (v2 && typeof v2 === 'object') {
+    const envelope = v2 as { version?: unknown; contexts?: unknown };
+    if (envelope.version === TABS_VERSION && isTabsState(envelope.contexts)) {
+      return envelope.contexts;
+    }
+  }
+  const v1 = readJson<unknown>(sessionStorage, TABS_KEY_V1, null);
+  return isTabsState(v1) ? v1 : {};
+}
+
+/** Until a resource service exists, resolution comes from the sample model.
+    reconcileTabs stays pure because the resolver is injected. */
+function objectExists(tab: Tab): boolean {
+  const id = tab.path.split('/').pop() ?? '';
+  if (tab.type === 'file') return Boolean(getFile(id));
+  if (tab.type === 'note') return Boolean(getNote(id));
+  if (tab.type === 'board') return Boolean(getBoard(id));
+  if (tab.type === 'run') return Boolean(getProcess(id));
+  return true;
+}
+
+function knownContexts(): string[] {
+  return ['notes', ...workspaces().map((w) => `ws:${w.id}`)];
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -59,12 +129,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [panelOpen, setPanelOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [tabs, setTabs] = useState<Record<string, Tab[]>>(() =>
-    readJson<Record<string, Tab[]>>(sessionStorage, TABS_KEY, {}),
-  );
+  const [tabs, setTabs] = useState<TabsState>(loadTabs);
+
+  // One reconciliation on mount: mark deleted objects, drop dead contexts.
+  useEffect(() => {
+    setTabs((prev) => reconcileTabs(prev, knownContexts(), objectExists));
+  }, []);
 
   useEffect(() => writeJson(localStorage, UI_KEY, ui), [ui]);
-  useEffect(() => writeJson(sessionStorage, TABS_KEY, tabs), [tabs]);
+
+  useEffect(() => {
+    let contexts = tabs;
+    if (JSON.stringify({ version: TABS_VERSION, contexts }).length > MAX_TABS_BYTES) {
+      contexts = pruneForQuota(tabs);
+      warnOnce('quota', 'Tab set exceeded its storage budget; the oldest tabs were not persisted.');
+    }
+    writeJson(sessionStorage, TABS_KEY, { version: TABS_VERSION, contexts });
+  }, [tabs]);
 
   const toggleRail = useCallback(
     () => setUi((v: typeof ui) => ({ ...v, railCollapsed: !v.railCollapsed })),
@@ -77,23 +158,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const openObjectTab = useCallback((ctx: string, seed: ObjectTabSeed) => {
-    setTabs((prev) => {
-      const list = prev[ctx] ?? [];
-      if (list.some((t) => t.path === seed.path)) return prev;
-      const tab: Tab = {
-        id: seed.path,
-        kind: 'object',
-        type: seed.type,
-        label: seed.label,
-        path: seed.path,
-        live: seed.live,
-      };
-      return { ...prev, [ctx]: [...list, tab] };
-    });
+    setTabs((prev) => openTab(prev, ctx, makeObjectTab(seed)));
   }, []);
 
   const closeObjectTab = useCallback((ctx: string, id: string) => {
-    setTabs((prev) => ({ ...prev, [ctx]: (prev[ctx] ?? []).filter((t) => t.id !== id) }));
+    setTabs((prev) => closeTab(prev, ctx, id));
   }, []);
 
   useEffect(() => {

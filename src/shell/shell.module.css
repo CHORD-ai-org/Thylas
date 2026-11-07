@@ -475,6 +475,20 @@
   flex: 0 0 auto;
 }
 
+/* Tombstone: the object is gone but the user never closed the tab, so the
+   strip keeps it. Dimmed, dashed left edge, close still available. */
+.tabMissing {
+  border-left: 2px dashed var(--line-strong);
+  padding-left: 6px;
+  opacity: 0.6;
+}
+
+.tabGone {
+  font: var(--t-mono-s);
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+
 /* ---- tab overflow: the strip never scrolls sideways ---- */
 
 .overflow {

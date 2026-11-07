@@ -3,6 +3,7 @@
    services/wam/types.ts once a contract exists — nothing here is that. */
 
 import type { FileKind, Id } from '../lib/types';
+import type { Tab, TabKind, TabType } from '../lib/tabs';
 
 export type { FileKind, Id };
 
@@ -170,16 +171,8 @@ export type RecentItem = {
   route: string;
 };
 
-export type TabKind = 'room' | 'object';
-
-export type TabType = 'files' | 'boards' | 'processes' | 'file' | 'board' | 'run' | 'note' | 'settings';
-
-export type Tab = {
-  id: string;
-  kind: TabKind;
-  type: TabType;
-  label: string;
-  path: string;
-  live?: boolean;
-  unsaved?: boolean;
-};
+/* Tab shapes are pure and now live in lib/tabs.ts alongside the functions
+   that operate on them. Re-exported here so the domain module stays the single
+   entry point for screens that only need types. The dead 'settings' tab type
+   was removed in SP-03b: no route, no surface, no link ever created one. */
+export type { Tab, TabKind, TabType };

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { useApp } from '../state/app';
-import type { Tab } from '../data/types';
+import { roomPath, rotateIntoView, type Tab } from '../lib/tabs';
 import {
   IconBoards,
   IconChevron,
@@ -22,15 +22,6 @@ type Props = { ctx: string; wsId?: string; variant: 'workspace' | 'notes' };
    minimum a workspace needs to stay usable. */
 const TAB_FLOOR = 3;
 const TAB_CEILING = 8;
-
-function fallback(tab: Tab, wsId?: string): string {
-  if (tab.type === 'file' && wsId) return routes.files(wsId);
-  if (tab.type === 'run' && wsId) return routes.processes(wsId);
-  if (tab.type === 'board' && wsId) return routes.boards(wsId);
-  if (tab.type === 'note') return routes.notes();
-  if (tab.type === 'settings' && wsId) return routes.files(wsId);
-  return wsId ? routes.files(wsId) : routes.notes();
-}
 
 /** The type glyph is what makes four kinds of object distinguishable in a strip
  *  that only has room for labels. 12px, --ink-3, no fill. */
@@ -69,15 +60,7 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  const activeTab = objectTabs.find((t) => t.path === pathname);
-  const needsOverflow = objectTabs.length > limit;
-  const head = objectTabs.slice(0, Math.max(1, limit - 1));
-  const visible = !needsOverflow
-    ? objectTabs
-    : activeTab && !head.includes(activeTab)
-      ? [...head, activeTab]
-      : head;
-  const hidden = objectTabs.filter((t) => !visible.includes(t));
+  const { visible, hidden } = rotateIntoView(objectTabs, pathname, limit);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -107,7 +90,7 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
   const close = (tab: Tab) => {
     const wasActive = pathname === tab.path;
     closeObjectTab(ctx, tab.id);
-    if (wasActive) navigate(fallback(tab, wsId));
+    if (wasActive) navigate(roomPath(tab));
   };
 
   return (
@@ -152,8 +135,9 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
           return (
             <div
               key={tab.id}
-              className={[s.tab, s.objectTab, active ? s.tabActive : ''].join(' ')}
+              className={[s.tab, s.objectTab, active ? s.tabActive : '', tab.missing ? s.tabMissing : ''].join(' ')}
               data-active={active || undefined}
+              data-missing={tab.missing || undefined}
             >
               <button
                 type="button"
@@ -161,12 +145,13 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
                 aria-selected={active}
                 className={s.tabMain}
                 onClick={() => navigate(tab.path)}
-                title={tab.label}
+                title={tab.missing ? `${tab.label} — this object was deleted. Close the tab to dismiss.` : tab.label}
               >
                 <span className={s.tabType} aria-hidden>
                   <TabGlyph type={tab.type} />
                 </span>
                 <span className={s.tabText}>{tab.label}</span>
+                {tab.missing ? <span className={s.tabGone} aria-label="deleted">×</span> : null}
                 {tab.live ? <span className={s.tabLive} aria-label="running" /> : null}
               </button>
               <button
@@ -210,6 +195,7 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
                       <TabGlyph type={tab.type} />
                     </span>
                     <span className={s.overflowLabel}>{tab.label}</span>
+                    {tab.missing ? <span className={s.tabGone} aria-label="deleted">×</span> : null}
                     {tab.live ? <span className={s.tabLive} /> : null}
                   </button>
                 ))}

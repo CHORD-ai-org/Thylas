@@ -281,6 +281,45 @@ async function main() {
   check('overview: workspace card opens that workspace', await js(`return location.pathname;`), '/w/ws-onda/files');
   await goto('/overview');
 
+  // ---- SP-03a: the tab model survives deep links, deletion and two scopes ----
+  await js(`sessionStorage.removeItem('thylas:tabs:v2'); sessionStorage.removeItem('thylas:tabs:v1');`);
+  await goto('/w/ws-research/files/f-raw-runs');
+  check('tabs: deep link inserts exactly one object tab',
+    await js(`return document.querySelectorAll('[role="tab"][title]').length;`), 1);
+  // History traversal replaces the CDP execution context, so schedule it after
+  // the evaluate returns instead of awaiting inside the page.
+  await js(`setTimeout(() => history.back(), 0); return true;`);
+  await sleep(900);
+  check('tabs: back returns to the previous page without a new tab', await js(`return location.pathname;`), '/overview');
+  await js(`setTimeout(() => history.forward(), 0); return true;`);
+  await sleep(900);
+  check('tabs: forward still shows one object tab',
+    await js(`return document.querySelectorAll('[role="tab"][title]').length;`), 1);
+  check('tabs: persistence uses the versioned envelope', await js(`
+    const v = JSON.parse(sessionStorage.getItem('thylas:tabs:v2'));
+    return v.version === 2 && Object.keys(v.contexts).includes('ws:ws-research');
+  `), true);
+
+  await js(`
+    sessionStorage.setItem('thylas:tabs:v2', JSON.stringify({version:2, contexts:{
+      'ws:ws-research': [{id:'/w/ws-research/files/f-gone',kind:'object',type:'file',label:'gone.parquet',path:'/w/ws-research/files/f-gone'}]
+    }}));
+  `);
+  await goto('/w/ws-research/files');
+  check('tabs: a deleted object survives reconcile as a tombstone', await js(`
+    const t = document.querySelector('[data-missing="true"]');
+    return !!t && t.textContent.includes('gone.parquet') && !!t.querySelector('[aria-label^="Close"]');
+  `), true);
+  await js(`document.querySelector('[data-missing="true"] [aria-label^="Close"]').click(); await new Promise(r => setTimeout(r, 250));`);
+  check('tabs: a tombstone can be dismissed', await js(`return document.querySelectorAll('[data-missing="true"]').length;`), 0);
+
+  await goto('/w/ws-onda/files/f-onda-spec');
+  check('tabs: two workspace contexts never mix', await js(`
+    const c = JSON.parse(sessionStorage.getItem('thylas:tabs:v2')).contexts;
+    return (c['ws:ws-onda'] || []).some(t => t.path.includes('f-onda-spec'))
+      && !(c['ws:ws-research'] || []).some(t => t.path.includes('f-onda-spec'));
+  `), true);
+
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {
     console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.pass ? '' : `  → ${JSON.stringify(r.actual)}`}`);
