@@ -1,21 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import {
   GRID,
-  SCENE_H,
-  SCENE_W,
   ZOOM_STEP,
-  fitScale,
   fitViewport,
   panBy,
   wheelZoom,
   zoomAt,
   type Point,
+  type Rect,
   type Viewport,
 } from './scene';
 
 export type ViewportRefs = {
   area: RefObject<HTMLDivElement | null>;
-  stage: RefObject<HTMLDivElement | null>;
   scene: RefObject<HTMLDivElement | null>;
   zoomLabel: RefObject<HTMLSpanElement | null>;
 };
@@ -24,7 +21,13 @@ type PanSession = { startX: number; startY: number; x: number; y: number };
 
 function isTyping(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
-  return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+  return (
+    !!el &&
+    (el.tagName === 'INPUT' ||
+      el.tagName === 'TEXTAREA' ||
+      el.tagName === 'SELECT' ||
+      el.isContentEditable)
+  );
 }
 
 /**
@@ -33,28 +36,48 @@ function isTyping(target: EventTarget | null): boolean {
  * one frame accumulate into 30 zoom steps instead of all reading the same
  * render closure. The commit writes DOM properties only — no React state, no
  * card re-render. Listeners are bound once per pointer session, never per move.
+ *
+ * `x`/`y` are screen pixels and `zoom` is the full scene transform, so the
+ * scene's bounding box alone converts pointer coordinates to scene units.
  */
-export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
+export function useCanvasViewport(
+  refs: ViewportRefs,
+  options: {
+    getBounds: () => Rect;
+    enabled?: boolean;
+    /** Called once a pan or zoom gesture has stopped moving, so the caller can
+        reposition screen-space chrome without listening to every frame. */
+    onSettle?: () => void;
+  } = { getBounds: () => ({ x: 0, y: 0, w: 2400, h: 1600 }) },
+) {
   const refsRef = useRef(refs);
   refsRef.current = refs;
+  const boundsRef = useRef(options.getBounds);
+  boundsRef.current = options.getBounds;
+  const settleRef = useRef(options.onSettle);
+  settleRef.current = options.onSettle;
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enabled = options.enabled ?? true;
 
-  const view = useRef<Viewport>(fitViewport());
-  const fitRatio = useRef(1);
+  const settle = useCallback(() => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      settleTimer.current = null;
+      settleRef.current?.();
+    }, 140);
+  }, []);
+
+  const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
   const frame = useRef<number | null>(null);
   const session = useRef<PanSession | null>(null);
   const space = useRef(false);
+  const fitted = useRef(false);
 
   const apply = useCallback(() => {
     const r = refsRef.current;
     const v = view.current;
-    const scale = fitRatio.current * v.zoom;
-
     if (r.scene.current) {
-      r.scene.current.style.transform = `translate(${v.x}px, ${v.y}px) scale(${scale})`;
-    }
-    if (r.stage.current) {
-      r.stage.current.style.width = `${SCENE_W * fitRatio.current}px`;
-      r.stage.current.style.height = `${SCENE_H * fitRatio.current}px`;
+      r.scene.current.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.zoom})`;
     }
     if (r.area.current) {
       // The grid follows pan and zoom, but the dot radius stays 1px because it
@@ -80,31 +103,60 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
     });
   }, [apply]);
 
-  const stagePointer = useCallback((clientX: number, clientY: number): Point => {
-    const stage = refsRef.current.stage.current;
-    if (!stage) return { x: 0, y: 0 };
-    const rect = stage.getBoundingClientRect();
+  const areaSize = useCallback(() => {
+    const area = refsRef.current.area.current;
+    return { w: area?.clientWidth ?? 1200, h: area?.clientHeight ?? 800 };
+  }, []);
+
+  /** Zoom is always relative to the canvas origin, which is where `view.x`
+      is measured from. */
+  const pointerOf = useCallback((clientX: number, clientY: number): Point => {
+    const area = refsRef.current.area.current;
+    if (!area) return { x: 0, y: 0 };
+    const rect = area.getBoundingClientRect();
     return { x: clientX - rect.left, y: clientY - rect.top };
   }, []);
 
-  const zoomAtCenter = useCallback(
-    (factor: number) => {
-      const area = refsRef.current.area.current;
-      if (!area) return;
-      const rect = area.getBoundingClientRect();
-      const pointer = stagePointer(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      view.current = zoomAt(view.current, view.current.zoom * factor, pointer);
+  const fit = useCallback(() => {
+    const { w, h } = areaSize();
+    view.current = fitViewport(boundsRef.current(), w, h);
+    schedule();
+  }, [areaSize, schedule]);
+
+  const zoomTo = useCallback(
+    (next: number) => {
+      const { w, h } = areaSize();
+      view.current = zoomAt(view.current, next, { x: w / 2, y: h / 2 });
       schedule();
     },
-    [schedule, stagePointer],
+    [areaSize, schedule],
   );
 
-  const zoomIn = useCallback(() => zoomAtCenter(ZOOM_STEP), [zoomAtCenter]);
-  const zoomOut = useCallback(() => zoomAtCenter(1 / ZOOM_STEP), [zoomAtCenter]);
-  const fit = useCallback(() => {
-    view.current = fitViewport();
-    schedule();
-  }, [schedule]);
+  /** Used by the drag session's auto-pan: the caller keeps its own compensation
+      so the dragged object still tracks the pointer. */
+  const panByScreen = useCallback(
+    (dx: number, dy: number) => {
+      view.current = panBy(view.current, dx, dy);
+      schedule();
+    },
+    [schedule],
+  );
+
+  const centerOn = useCallback(
+    (point: Point) => {
+      const { w, h } = areaSize();
+      view.current = {
+        ...view.current,
+        x: w / 2 - point.x * view.current.zoom,
+        y: h / 2 - point.y * view.current.zoom,
+      };
+      schedule();
+    },
+    [areaSize, schedule],
+  );
+
+  const zoomIn = useCallback(() => zoomTo(view.current.zoom * ZOOM_STEP), [zoomTo]);
+  const zoomOut = useCallback(() => zoomTo(view.current.zoom / ZOOM_STEP), [zoomTo]);
 
   useLayoutEffect(() => {
     apply();
@@ -116,7 +168,13 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
     if (!area) return;
 
     const measure = () => {
-      fitRatio.current = fitScale(area.clientWidth, area.clientHeight);
+      // Fit once, on the first measurement: after that the zoom belongs to the
+      // reader, and a window resize must not throw their framing away.
+      if (!fitted.current) {
+        fitted.current = true;
+        fit();
+        return;
+      }
       apply();
     };
     measure();
@@ -126,7 +184,7 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.metaKey || e.ctrlKey) {
-        view.current = wheelZoom(view.current, e.deltaY, stagePointer(e.clientX, e.clientY));
+        view.current = wheelZoom(view.current, e.deltaY, pointerOf(e.clientX, e.clientY));
       } else {
         const horizontal = e.shiftKey && e.deltaX === 0;
         view.current = panBy(
@@ -136,6 +194,7 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
         );
       }
       schedule();
+      settle();
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -150,8 +209,10 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
     };
 
     const endSession = () => {
+      const wasPanning = session.current !== null;
       session.current = null;
       refsRef.current.area.current?.toggleAttribute('data-panning', false);
+      if (wasPanning) settle();
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', endSession);
       window.removeEventListener('pointercancel', endSession);
@@ -217,8 +278,9 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
       endSession();
       if (frame.current !== null) cancelAnimationFrame(frame.current);
       frame.current = null;
+      if (settleTimer.current) clearTimeout(settleTimer.current);
     };
-  }, [enabled, apply, schedule, fit, zoomIn, zoomOut, stagePointer]);
+  }, [enabled, apply, schedule, fit, zoomIn, zoomOut, pointerOf, settle]);
 
-  return { zoomIn, zoomOut, fit, view, fitRatio };
+  return { zoomIn, zoomOut, zoomTo, fit, panByScreen, centerOn, view };
 }
