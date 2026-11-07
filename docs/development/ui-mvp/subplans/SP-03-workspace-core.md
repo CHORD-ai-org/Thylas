@@ -3,6 +3,8 @@
 **Status:** Not Started · **Depends:** SP-01 · **Blocks:** SP-04, SP-05, SP-06, SP-07
 **Absorbs:** the restoration half of plan/02 and the state model in `tech-stack.md` §6.
 
+**Units:** [SP-03a](SP-03a-tab-model.md) — tab model and reconciliation (1d) · [SP-03b](SP-03b-panel-and-restore.md) — panel widths, scroll restore, workspace semantics (0.5d). Execute in that order; the parent's §G tasks are the union of both.
+
 ## A. Objective
 
 Make "where am I" survive everything: a reload, a workspace switch, a deleted object, and a deep link. This is the subplan where the tab model is finished rather than demonstrated.

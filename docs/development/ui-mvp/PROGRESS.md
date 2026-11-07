@@ -8,20 +8,32 @@ Last updated: 2026-11-07 (program start).
 
 ## Status board
 
-| SP | Name | Status | Done | Remaining | Blocking |
-| --- | --- | --- | --- | --- | --- |
-| SP-00 | Foundation | **Completed** 11-07 | Zone lint, Vitest + 8 tests, committed E2E harness (25), `grammar.module.css`, `lib/types.ts` split | — | — |
-| SP-01 | Application shell | **Completed** 11-07 | Typed tabs, measured `+N` overflow, rail arrows/Home/End, four states, panel meta slot | Roving tabindex → SP-09 (D-015) | — |
-| SP-02 | Overview | Not Started | Read-only page exists with intent input, Continue, Needs you, workspaces, recently | Display step, computed copy, honest disabled intent, accent/hover pass | SP-01 |
-| SP-03 | Workspace core | Not Started | Routes, restoration of tabs per context, workspace switching | Selection ownership, panel width per context, restoration edge cases | SP-01 |
-| SP-04 | Files and resources | Not Started | Tree + table + preview + panel (mock) | Table grammar, disclosure as a real button, 1280 column budget, tombstone rows | SP-03 |
-| SP-05 | Notes and documents | Blocked | Reader with three-column layout (read-only, mock notes) | Markdown editor, wikilinks, backlinks, folders, autosave, conflict | Q-1 (D-002), SP-04 |
-| SP-06 | Whiteboard | Not Started | Read-only scene, fit-to-view, selection, zoom buttons | Drag, create, connect, anchors, snapping, undo, persistence | SP-04 |
-| SP-07 | AI and processes | Not Started | Process list + run detail (mock), five states | `/api/ai` middleware, AI panel, loading/error states, capability-gated controls | SP-03 |
-| SP-08 | Account and settings | Not Started | Five sections, density preference (session only) | Density persistence, type/geometry pass, zero-accent check | SP-01 |
-| SP-09 | Integration and polish | Not Started | — | Cross-surface audit, screenshots, identity test, perf pass | SP-01…SP-08 |
+Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canonical list with order and links is [`subplans/INDEX.md`](subplans/INDEX.md).
 
-Legend: Not Started · Planning · In Progress · Blocked · Review Required · Completed.
+| Unit | Parent | Status | Days | Depends | Note |
+| --- | --- | --- | --- | --- | --- |
+| SP-00 Foundation | — | **Completed** 11-07 | 1.5 | — | lint zones, Vitest 8, e2e 25, grammar recipes |
+| SP-01 Application shell | — | **Completed** 11-07 | 2.0 | SP-00 | typed tabs, measured overflow, rail keys, states |
+| SP-02 Overview | — | Not Started | 1.0 | SP-01 | next |
+| SP-03a Tab model | SP-03 | Not Started | 1.0 | SP-01 | pure `lib/tabs.ts` + 8 tests |
+| SP-03b Panel and restore | SP-03 | Not Started | 0.5 | SP-03a | widths per context, scroll, settings route |
+| SP-04a Table grammar | SP-04 | Not Started | 0.75 | SP-03b | grammar adoption + column budgets |
+| SP-04b File interactions | SP-04 | Not Started | 0.75 | SP-04a | disclosure, keyboard, tombstone, disabled actions |
+| SP-05a Note model | SP-05 | **Blocked** (Q-1) | 1.0 | SP-04a | store, link parser, backlinks |
+| SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
+| SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
+| SP-06a Scene model | SP-06 | Not Started | 0.75 | SP-04a | geometry + schema |
+| SP-06b Viewport | SP-06 | Not Started | 1.25 | SP-06a | pointer-anchored zoom, one pointer session |
+| SP-06c Cards | SP-06 | Not Started | 1.5 | SP-06b | create, drag, snap, undo |
+| SP-06d Edges | SP-06 | Not Started | 1.5 | SP-06c | anchors, labels, hit areas |
+| SP-07a AI endpoint | SP-07 | Not Started | 1.0 | SP-03b | middleware + error taxonomy |
+| SP-07b AI panel | SP-07 | Not Started | 0.75 | SP-07a, SP-02 | four states, footer meta |
+| SP-07c Process states | SP-07 | Not Started | 0.75 | SP-03b | filters, controls, labelled simulator |
+| SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
+| SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
+| SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
+
+Remaining: **18 days**. Critical path: SP-02 → SP-03a → SP-03b → SP-04a → SP-06a → SP-06b/c/d → SP-09a.
 
 ---
 
@@ -69,8 +81,8 @@ Legend: Not Started · Planning · In Progress · Blocked · Review Required · 
 
 ## Next concrete action
 
-1. **SP-02 Overview**: display step, computed lede, remove "New workspace", disable the intent input with a visible reason (until SP-07). Exit when the count changes with the mock and no accent appears on hover.
-2. Then SP-03 (restoration + `lib/tabs.ts` tests), which unblocks Files, Notes, Board and AI.
+1. **SP-02 Overview** (unit, 1 day): display step, computed lede, remove "New workspace", disable the intent input with a visible reason (until SP-07). Exit when the count changes with the mock and no accent appears on hover.
+2. Then **SP-03a** (`lib/tabs.ts` + tests) and **SP-03b** (panel/restore), which unblock Files, Notes, Board and AI. Do not start SP-05 until Q-1 is answered.
 
 ## Resolved
 

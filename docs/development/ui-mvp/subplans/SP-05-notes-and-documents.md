@@ -3,6 +3,8 @@
 **Status:** Blocked on Q-1 (D-002) · **Depends:** SP-04 · **Blocks:** SP-09
 **Absorbs:** plan/05 and the editor half of `tech-stack.md` ADR-008 (superseded).
 
+**Units:** [SP-05a](SP-05a-note-model.md) — note model, store, link parser, backlinks (1d) · [SP-05b](SP-05b-editor-and-save.md) — editor, save, conflict, dirty guard (1.75d) · [SP-05c](SP-05c-note-library.md) — library, search, panel (1.25d). SP-05a and SP-05b are blocked on Q-1.
+
 ## A. Objective
 
 A Markdown-first writing surface that can be lived in: type, save, link with `[[ ]]`, and find what links back. One engine; documents are a preset, not a second product.

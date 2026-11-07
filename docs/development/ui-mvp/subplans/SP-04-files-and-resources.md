@@ -3,6 +3,8 @@
 **Status:** Not Started · **Depends:** SP-03 · **Blocks:** SP-05, SP-06
 **Absorbs:** plan/04, the honesty sweep for file actions.
 
+**Units:** [SP-04a](SP-04a-table-grammar.md) — table grammar and column budgets (0.75d) · [SP-04b](SP-04b-file-interactions.md) — disclosure, keyboard, tombstone, honest actions (0.75d).
+
 ## A. Objective
 
 One table grammar for the most-used surface, a disclosure that is a real control, and no action that only apologises. Files is also the reference target for notes and board cards, so its identity and selection model must be settled here.

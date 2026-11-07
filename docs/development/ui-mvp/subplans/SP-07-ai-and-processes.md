@@ -3,6 +3,8 @@
 **Status:** Not Started · **Depends:** SP-03 · **Blocks:** SP-09
 **Absorbs:** plan/07, and the AI path required by the brief §1.G.
 
+**Units:** [SP-07a](SP-07a-ai-endpoint.md) — middleware, client, error taxonomy (1d) · [SP-07b](SP-07b-ai-panel.md) — Overview AI panel and states (0.75d) · [SP-07c](SP-07c-process-states.md) — process states, controls, simulator (0.75d).
+
 ## A. Objective
 
 Give the product one honest AI capability — a question answered by DeepSeek through a server-side endpoint — and finish the process interface so delegated work can be inspected. No agent orchestration, no fabricated runs.

@@ -177,6 +177,8 @@ SP-01 shell ─┬─ SP-02 overview ─┐
 | SP-08 | Account and settings | SP-01 | 0.5 d |
 | SP-09 | Integration and polish | all | 2 d |
 
+**Execution units.** Each parent is split into units of ≤ 1.5 days with their own acceptance; the canonical list, status and order is [`subplans/INDEX.md`](subplans/INDEX.md). Eighteen units sit under the eight remaining parents; parent documents keep the UX/visual specification, and each unit names the parent section it implements.
+
 Roughly 21 working days for one engineer; SP-05 and SP-06 are the two that can double.
 
 ---

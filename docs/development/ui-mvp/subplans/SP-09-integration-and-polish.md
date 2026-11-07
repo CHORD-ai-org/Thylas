@@ -2,6 +2,8 @@
 
 **Status:** Not Started · **Depends:** SP-01…SP-08 · **Blocks:** MVP sign-off
 
+**Units:** [SP-09a](SP-09a-gates.md) — gates script and e2e expansion (1d) · [SP-09b](SP-09b-visual-audit.md) — visual, a11y, perf, identity (1d).
+
 ## A. Objective
 
 Prove the application is one product: run everything together, measure it, look at it, and leave a gate that fails when the next change breaks a rule.

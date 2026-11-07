@@ -97,6 +97,14 @@ Format: **status · context · decision · alternative · consequence**.
 **Decision:** the input is real (state, validation, keyboard), and until SP-07 it is `disabled` with a reason. In SP-07 it sends to `/api/ai` and renders a completion, labelled "DeepSeek · dev endpoint". It never claims to start a process.
 **Consequence:** no false affordance; the AI path is honest about being a completion, not a run.
 
+## D-016 · Two-level planning: parents keep the spec, units do the work
+
+**Status:** accepted.
+**Context:** the first decomposition produced ten subplans, four of which were 1.5–5 days of work with a single acceptance list. That hides the work: "SP-06 Whiteboard, 5 days" cannot be started, finished or reviewed — it can only be attempted.
+**Decision:** split the remaining parents into 16 units of ≤ 1.5 days (`subplans/SP-0Xx-*.md`). Parents keep UX/visual/technical specification; units carry tasks, acceptance and validation, and name the parent section they implement. `subplans/INDEX.md` is the canonical list; `PROGRESS.md` tracks units.
+**Alternative:** keep ten subplans and use their §G task tables as the unit of work (rejected: the task tables have no acceptance of their own, so "done" stays a judgement).
+**Consequence:** more files, one more indirection when reading; in exchange every commit maps to a unit whose acceptance can be checked, and a unit that overruns is visible after a day rather than after a week.
+
 ## D-013 · Browser-reserved shortcuts are not bound
 
 **Status:** accepted (found during SP-01).

@@ -3,6 +3,8 @@
 **Status:** Not Started · **Depends:** SP-04 · **Blocks:** SP-09
 **Absorbs:** plan/08, and every measured finding in `HeptaBase RE/Plan/06-画布交互改造.md` §0.
 
+**Units:** [SP-06a](SP-06a-scene-model.md) — scene model, geometry, persistence (0.75d) · [SP-06b](SP-06b-viewport.md) — viewport, zoom, pointer machine (1.25d) · [SP-06c](SP-06c-cards.md) — create, drag, snap, undo (1.5d) · [SP-06d](SP-06d-edges.md) — edges, anchors, labels (1.5d).
+
 ## A. Objective
 
 A board you can think on: cards you can drag, a canvas that zooms under the pointer, edges you can draw, and undo that works. Read-only rendering already exists; this subplan builds the interaction layer — and deliberately does not inherit the three engine bugs documented in the reference repository.
