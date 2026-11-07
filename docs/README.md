@@ -12,7 +12,8 @@
 | --- | --- | --- | --- |
 | 1 | [`product/definition.md`](product/definition.md) | 20 min | What Thylas is, what it is not, who owns what, what v1 must close |
 | 2 | [`../design/thylas-ui-design-plan.md`](../design/thylas-ui-design-plan.md) §1, §4, §7 | 15 min | The screens and the three structural decisions (notes, tabs, rooms) |
-| 3 | [`architecture/application.md`](architecture/application.md) | 20 min | Stack, layering, where each piece of state lives, the WAM boundary |
+| 3 | [`architecture/tech-stack.md`](architecture/tech-stack.md) | 25 min | **The stack in force**: requirements, candidate evaluation, architecture, WAM boundary, ADRs |
+| 3.5 | [`architecture/application.md`](architecture/application.md) | 20 min | The pre-implementation proposal; superseded where it disagrees (see its §0 delta) |
 | 4 | [`planning/file-plan.md`](planning/file-plan.md) | 20 min | Every file, its job, what it must not do, and what is deliberately absent |
 | 5 | [`planning/roadmap.md`](planning/roadmap.md) | 10 min | Milestones, gates, the two blocking unknowns |
 | 6 | [`design/visual-system.md`](design/visual-system.md) | 10 min | Colour, type, geometry, density — as implemented |

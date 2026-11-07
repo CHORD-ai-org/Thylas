@@ -5,6 +5,19 @@
 **Depends on:** `docs/product/definition.md` (state ownership), `design/thylas-ui-design-plan.md` (screens, tabs, canvas).
 **Labels:** [C] confirmed · [P] proposed · [?] open · [A] assumption.
 
+> **Superseded in part on 2026-11-07 by [`tech-stack.md`](tech-stack.md)**, which is grounded in the implemented app and in versions verified against the registry. Where the two disagree, `tech-stack.md` wins. The deltas:
+>
+> | Topic | This document | `tech-stack.md` |
+> | --- | --- | --- |
+> | Router | `react-router-dom` 7 | `react-router` **8** (`react-router/dom` for `RouterProvider`); `react-router-dom` is removed in v8 |
+> | Vite | 6 | 6.4 now, 8.x after a timeboxed spike |
+> | TanStack Query / Zustand | "Recommended", installed at M1 | **Deferred** until the first real endpoint; context state only |
+> | Editor | Tiptap **2** | Tiptap **3** (latest) |
+> | Module layout | 127 files, `features/` | 41 files, `pages/` (what exists) |
+> | Type system | serif display + grotesque UI | no serif; Plex/Noto contract (`typography.md`) |
+>
+> Everything else here — layering intent, state ownership, B1–B3, the WAM interface sketch — still holds and is carried forward.
+
 ---
 
 ## 1. The stack, and the cost of each choice
