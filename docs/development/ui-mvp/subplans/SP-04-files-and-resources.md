@@ -1,6 +1,6 @@
 # SP-04 · Files and resources
 
-**Status:** Not Started · **Depends:** SP-03 · **Blocks:** SP-05, SP-06
+**Status:** Completed 2026-11-07 (both units) · **Depends:** SP-03 · **Blocks:** SP-05, SP-06
 **Absorbs:** plan/04, the honesty sweep for file actions.
 
 **Units:** [SP-04a](SP-04a-table-grammar.md) — table grammar and column budgets (0.75d) · [SP-04b](SP-04b-file-interactions.md) — disclosure, keyboard, tombstone, honest actions (0.75d).
@@ -64,3 +64,9 @@ Header 11/16 mono, 44px, hairline; rows 32px; sizes/updated/used-by tabular; fil
 
 - The container-query threshold was tuned at 1280; re-measure rather than adjust by eye.
 - `usedBy` counts are mock; they must not imply real referential integrity until storage exists.
+
+## Result (2026-11-07, done)
+
+Two commits: `659cb2f` (SP-04a grammar + measured column budgets) and `0eab7c1` (SP-04b valid controls, keyboard, tombstones, honest actions). Parent §H is satisfied: no clickable span, both actions disabled with a stated reason, five columns at 1440 and four at 1280/1180 with every name readable, the full keyboard path works, and exactly three page-local `.notice` blocks remain repo-wide.
+
+Verification totals: 25 unit tests, 81 real-browser assertions, `tsc`/`lint`/`build` clean. Real upload, previews and drag-to-move remain out of scope; the remaining apology controls belong to SP-06/07/08.

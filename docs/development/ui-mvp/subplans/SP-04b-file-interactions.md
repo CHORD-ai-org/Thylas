@@ -1,6 +1,6 @@
 # SP-04b · File interactions: disclosure, keyboard, tombstones, honest actions
 
-**Parent:** [SP-04](SP-04-files-and-resources.md) · **Days:** 0.75 · **Status:** Not Started · **Depends:** SP-04a
+**Parent:** [SP-04](SP-04-files-and-resources.md) · **Days:** 0.75 · **Status:** Completed 2026-11-07 · **Depends:** SP-04a
 
 ## Objective
 
@@ -52,3 +52,18 @@ Parent §E. Tombstone: 55% ink, 2px dashed left edge, no other change. Disabled 
 
 - Splitting the disclosure changes the row's click target: keep row = select, toggle = expand, never both.
 - Tombstones need an owner for dismissal; if the tab dismisses but the row does not, the state looks broken.
+
+## Result (2026-11-07, done)
+
+The folder chevron is a real `<button aria-expanded>` beside the select button; the table answers `↑↓ Home End ↵ esc`; Escape clears selection and the panel says "Nothing selected". Upload and New folder are `disabled` with `title` + `aria-describedby`, and one quiet `grammar.limit` line states the reason before any click. The `notice` state and its banner are deleted. A deleted object appears as a dimmed dashed row plus its dimmed dashed tab, and Dismiss removes both.
+
+**Deviations, with reasons**
+
+1. **The tombstone is derived from the open tab set, not from a fake deleted file in `data/mock.ts`** (D-021). The plan proposed adding sample data; that would have created two owners for dismissal (a row flag and a tab flag) and a control that pretends to delete. Reconcile already knows which objects no longer resolve, so the tab is the single owner: close it and both disappear. No orphan is possible.
+2. **Disabled styling moved into the shared `Button` primitive.** Files needed a disabled state and Overview already had a local one; two copies would drift. `overview.module.css`'s `.startBtn:disabled` is deleted and the Start button was re-screenshotted to confirm it is still muted.
+3. **`grammar.limit` is a new quiet recipe, not the accent-tinted `grammar.banner`** (D-022). A missing service is not a live state; a permanent terracotta banner on every Files page would not be quiet.
+4. **`useTableKeys` was not extracted.** Processes has no keyboard model yet, so a shared hook would have one consumer. The five-key logic stays in `Files.tsx` with browser assertions; SP-07 can extract it when the second consumer exists (the same "third user" rule that governs components).
+
+**Evidence:** 20 new browser assertions (81 total) — static checks (`<span onClick>` = 0, no apology state, ≤3 notice blocks), disabled actions, disclosure, all five keys, Enter + tab close, and the full tombstone lifecycle — plus `tsc` / `lint` / `test` / `build` clean. Screenshots `sp04b-default`, `sp04b-cleared`, `sp04b-tombstone`, `sp04b-overview`.
+
+**Left:** a real delete action (no files service), drag-to-move, previews.

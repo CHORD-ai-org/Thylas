@@ -163,6 +163,22 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** a hook per page. Rejected: duplicated lifecycle, five places to get the timing wrong.
 **Consequence:** adding a scrollable list is one attribute, and no page imports a scroll hook. The board canvas is not yet a region — SP-06 owns its viewport.
 
+## D-021 · A deleted object has exactly one owner: its tab
+
+**Status:** accepted in force (SP-04b).
+**Context:** SP-04b §F proposed adding a tombstoned file to `data/mock.ts` to demonstrate the state. That creates two dismissal owners (a row flag and a tab flag), invents a delete action with no service, and can leave an orphan tab.
+**Decision:** Files derives tombstone rows from `tabs['ws:<id>']` entries that reconcile marked `missing`. The panel's Dismiss and the tab's close both call `closeObjectTab`; one action removes the row and the tab together. No sample data was added.
+**Alternative:** a `deleted?: boolean` field on `FileItem` plus local row-dismissal state. Rejected: two truths, and a control that looks like deletion but is not.
+**Consequence:** a tombstone appears only for an object that was actually open, which is the honest condition. A file deleted while no tab was open simply is not listed — nothing was lost from the user's working set.
+
+## D-022 · A missing service gets a quiet limit line, not an accent banner
+
+**Status:** accepted in force (SP-04b).
+**Context:** `grammar.banner` is accent-tinted and was written for transient failures. Files needed a permanent sentence explaining why Upload and New folder are unavailable.
+**Decision:** add `grammar.limit` — one 1px rule, the 6px index tick, `--ink-2` text, no accent. Disabled controls carry `title` + `aria-describedby` pointing at it. The post-click notice state and its banner are deleted.
+**Alternative:** keep `grammar.banner` for the reason. Rejected: a permanent terracotta strip on the most-used surface is neither quiet nor a state marker.
+**Consequence:** one more recipe in the grammar file; the three remaining page-local `.notice` recipes (account, boards, processes) still use accent and are owned by SP-06/07/08.
+
 ---
 
 ## Open questions (need a human, not a default)

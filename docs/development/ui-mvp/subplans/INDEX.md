@@ -16,8 +16,8 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-02](SP-02-overview.md) | Overview | — | 1.0 | SP-01 | **Completed 11-07** |
 | [SP-03a](SP-03a-tab-model.md) | Tab model and reconciliation | SP-03 | 1.0 | SP-01 | **Completed 11-07** |
 | [SP-03b](SP-03b-panel-and-restore.md) | Panel widths, scroll restore, workspace semantics | SP-03 | 0.5 | SP-03a | **Completed 11-07** |
-| [SP-04a](SP-04a-table-grammar.md) | Table grammar and column budgets | SP-04 | 0.75 | SP-03b | Not Started |
-| [SP-04b](SP-04b-file-interactions.md) | Disclosure, keyboard, tombstone, honest actions | SP-04 | 0.75 | SP-04a | Not Started |
+| [SP-04a](SP-04a-table-grammar.md) | Table grammar and column budgets | SP-04 | 0.75 | SP-03b | **Completed 11-07** |
+| [SP-04b](SP-04b-file-interactions.md) | Disclosure, keyboard, tombstone, honest actions | SP-04 | 0.75 | SP-04a | **Completed 11-07** |
 | [SP-05a](SP-05a-note-model.md) | Note model, local store, link parser, backlinks | SP-05 | 1.0 | SP-04a | Blocked (Q-1) |
 | [SP-05b](SP-05b-editor-and-save.md) | Editor, save loop, conflict, dirty guard | SP-05 | 1.75 | SP-05a | Blocked (Q-1) |
 | [SP-05c](SP-05c-note-library.md) | Library list, search, panel | SP-05 | 1.25 | SP-05b | Not Started |

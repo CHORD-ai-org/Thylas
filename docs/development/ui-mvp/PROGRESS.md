@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 11:45 (SP-03 complete).
+Last updated: 2026-11-07 12:35 (SP-04 complete).
 
 ---
 
@@ -17,8 +17,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-02 Overview | — | **Completed** 11-07 | 1.0 | SP-01 | computed lede + zero state, honest disabled Start, no new-workspace card, shared section tick |
 | SP-03a Tab model | SP-03 | **Completed** 11-07 | 1.0 | SP-01 | pure `lib/tabs.ts` 12 tests, v2 persistence, tombstones, cross-scope isolation |
 | SP-03b Panel and restore | SP-03 | **Completed** 11-07 | 0.5 | SP-03a | per-context widths, named-region scroll restore, room-preserving switch, settings deleted |
-| SP-04a Table grammar | SP-04 | Not Started | 0.75 | SP-03b | grammar adoption + column budgets |
-| SP-04b File interactions | SP-04 | Not Started | 0.75 | SP-04a | disclosure, keyboard, tombstone, disabled actions |
+| SP-04a Table grammar | SP-04 | **Completed** 11-07 | 0.75 | SP-03b | grammar adoption, measured 3-width budgets, no truncation |
+| SP-04b File interactions | SP-04 | **Completed** 11-07 | 0.75 | SP-04a | real disclosure, 5-key table, tombstone, honest disabled actions |
 | SP-05a Note model | SP-05 | **Blocked** (Q-1) | 1.0 | SP-04a | store, link parser, backlinks |
 | SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP-09a. SP-05 stays blocked on Q-1.
+Remaining: **14 days**. Critical path: SP-06a → SP-06b/c/d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
 
 ---
 
@@ -50,7 +50,8 @@ Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
 | Unit tests | Vitest 5, 25 assertions over routes/selectors/lede/tabs | `src/lib/{routes,tabs}.test.ts`, `src/data/selectors.test.ts` |
-| E2E | 55 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| E2E | 81 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
+| Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
 | Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
 
@@ -58,12 +59,12 @@ Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP
 
 | # | Defect | Where | Owner SP |
 | --- | --- | --- | --- |
-| K1 | Eight controls still accept a click then apologise (Overview Start fixed in SP-02) | Files, Boards, Processes, Notes, Account | SP-04 / SP-07 |
-| K2 | Folder disclosure is a `span` with `onClick` | `src/pages/Files.tsx` | SP-04 |
+| K1 | Other surfaces still accept a click then apologise (Overview and Files are clean) | Boards, Processes, Notes, Account | SP-06 / SP-07 / SP-08 |
+
 | K3 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
 | K4 | Board is read-only and its labels are ~8px at fit | `src/pages/Boards.tsx` | SP-06 |
 | K5 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
-| K6 | `.notice` is duplicated in six page stylesheets (grammar exists, pages not migrated) | `src/pages/*.css` | SP-04 |
+| K6 | Three page-local `.notice` recipes remain (down from six) | `account/boards/processes.module.css` | SP-06 / SP-07 / SP-08 |
 | K7 | Roaming tabindex in the rail not implemented (arrows only) | `src/shell/Rail.tsx` | SP-09 |
 | K8 | Scene dimensions hardcoded in TSX and CSS | `Boards.tsx`, `boards.module.css` | SP-06 |
 | K9 | No loading state language anywhere | all surfaces | SP-07 |
@@ -92,11 +93,16 @@ Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP
 | 11-07 | `npm test` (SP-03b) | 25/25; room detection and scope switching |
 | 11-07 | `npm run e2e` (SP-03b) | 55/55; real drag, width persistence, scroll ±2px, room switch |
 | 11-07 | `npm run build` (SP-03b) | CSS 54.7 KB / JS 130.4 KB gzip |
+| 11-07 | Column budgets (SP-04a) | 1440: 652px/5 cols/332px name · 1280: 492px/4/272px · 1180: 392px/4/212px; no h-scroll |
+| 11-07 | `npm run e2e` (SP-04a) | 61/61; grammar, 44/32 rows, tabular, three widths |
+| 11-07 | `npm run e2e` (SP-04b) | 81/81; disclosure, 5 keys, disabled actions, tombstone lifecycle |
+| 11-07 | Static honesty checks | `<span onClick>` 0 · apology state 0 · page-local `.notice` 3 |
+| 11-07 | `npm run build` (SP-04b) | CSS 55.0 KB / JS 131.0 KB gzip |
 
 ## Next concrete action
 
-1. **SP-04a Table grammar** (0.75 day): adopt `grammar.module.css` in Files, measure column budgets at 1280/1440, kill the remaining page-local notice copies. Exit when the grammar file has real consumers and the table still fits.
-2. Then **SP-04b** (disclosure as a real button, keyboard, tombstone row, honest disabled actions). **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.**
+1. **SP-06a Scene model** (0.75 day): extract the whiteboard's geometry and schema constants before touching the pointer layer. Exit when the scene still renders identically (screenshot diff) and the dimensions live in one file.
+2. Alternatively **SP-07a AI endpoint** (1 day), which is independently unblocked and delivers the secure DeepSeek path. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.**
 
 ## Resolved
 
@@ -112,3 +118,7 @@ Remaining: **15.5 days**. Critical path: SP-04a → SP-06a → SP-06b/c/d → SP
 | R8 | Notes panel opened at 340 though the spec said 300 | SP-03b | per-context defaults: notes 300, workspace 340 |
 | R9 | An already-expanded workspace row collapsed instead of switching | SP-03b | the row always navigates when it is not active |
 | R10 | Dead `/w/:id/settings` route builder | SP-03b | deleted; router and route module both checked |
+| R11 | Folder chevron was a `span` with `onClick` | SP-04b | two sibling buttons, `aria-expanded`, keyboard target |
+| R12 | Upload / New folder apologised after being clicked | SP-04b | disabled with `title` + persistent reason line |
+| R13 | At 1180 `1.2 GB` wrapped and names ellipsised | SP-04a | 430px container step, 11px mono, names fully readable |
+| R14 | Table-head, label and banner recipes were copied per page | SP-04a/04b | `grammar.tableHead` / `label` / `banner` / `limit` consumed |
