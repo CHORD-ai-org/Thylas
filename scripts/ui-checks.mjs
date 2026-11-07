@@ -320,6 +320,58 @@ async function main() {
       && !(c['ws:ws-research'] || []).some(t => t.path.includes('f-onda-spec'));
   `), true);
 
+  // ---- SP-03b: per-context panel widths, scroll memory, room-preserving switch ----
+  await js(`localStorage.setItem('thylas:ui:v2', JSON.stringify({version:2, railCollapsed:false, panelWidth:{workspace:420, notes:300}}));`);
+  await goto('/w/ws-research/files');
+  check('panel: workspace width comes from its own context',
+    await js(`return document.querySelector('[data-panel-context="workspace"]')?.getBoundingClientRect().width;`), 420);
+  await goto('/notes/n-method');
+  check('panel: notes width stays 300',
+    await js(`return document.querySelector('[data-panel-context="notes"]')?.getBoundingClientRect().width;`), 300);
+  await goto('/w/ws-research/files');
+  check('panel: both widths survive a reload',
+    await js(`return document.querySelector('[data-panel-context="workspace"]')?.getBoundingClientRect().width;`), 420);
+
+  await goto('/notes/n-method');
+  const grip = await js(`const b = document.querySelector('[aria-label="Resize panel"]').getBoundingClientRect(); return {x: b.x + b.width / 2, y: b.y + b.height / 2};`);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: grip.x, y: grip.y, button: 'left', buttons: 1, clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: grip.x - 60, y: grip.y, button: 'left', buttons: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: grip.x - 60, y: grip.y, button: 'left', buttons: 0, clickCount: 1 });
+  await sleep(300);
+  check('panel: a real drag changes only the notes width',
+    await js(`return document.querySelector('[data-panel-context="notes"]')?.getBoundingClientRect().width;`), 360);
+  await goto('/w/ws-research/files');
+  check('panel: the drag did not touch the workspace width',
+    await js(`return document.querySelector('[data-panel-context="workspace"]')?.getBoundingClientRect().width;`), 420);
+
+  await goto('/overview');
+  const savedScroll = await js(`
+    const el = document.querySelector('[data-scroll-region="page"]');
+    el.scrollTop = 9999;
+    const y = el.scrollTop;
+    el.dispatchEvent(new Event('scroll', { bubbles: true }));
+    return y;
+  `);
+  check('scroll: the list is actually scrollable', savedScroll, (v) => v > 20);
+  await goto('/recently');
+  await goto('/overview');
+  check('scroll: returning to a list restores its offset',
+    await js(`return document.querySelector('[data-scroll-region="page"]').scrollTop;`),
+    (v) => Math.abs(v - savedScroll) < 2);
+
+  await goto('/w/ws-research/processes');
+  await js(`document.querySelector('[data-ws-row="ws-onda"]').click(); await new Promise(r => setTimeout(r, 500));`);
+  check('workspace: switching keeps the room', await js(`return location.pathname;`), '/w/ws-onda/processes');
+  await goto('/w/ws-research/files/f-raw-runs');
+  await js(`document.querySelector('[data-ws-row="ws-onda"]').click(); await new Promise(r => setTimeout(r, 500));`);
+  check('workspace: switching from an object lands on the room index',
+    await js(`return location.pathname;`), '/w/ws-onda/files');
+
+  const routerChildren = readFileSync(new URL('../src/app/routerChildren.tsx', import.meta.url), 'utf8');
+  check('settings: no dead route in the router', /settings/.test(routerChildren), false);
+  const routeFile = readFileSync(new URL('../src/lib/routes.ts', import.meta.url), 'utf8');
+  check('settings: no dead route builder', /workspaceSettings/.test(routeFile), false);
+
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {
     console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.pass ? '' : `  → ${JSON.stringify(r.actual)}`}`);

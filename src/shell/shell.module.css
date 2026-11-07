@@ -661,6 +661,7 @@
 .panelMeta {
   font: var(--t-mono-s);
   letter-spacing: 0;
+  text-transform: none;
   color: var(--ink-3);
 }
 

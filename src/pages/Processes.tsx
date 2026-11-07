@@ -84,7 +84,7 @@ export function ProcessesPage() {
           </div>
         ) : null}
 
-        <div className={s.tableWrap}>
+        <div className={s.tableWrap} data-scroll-region="processes-table">
           <div className={s.thead}>
             <span className={s.colName}>Process</span>
             <span className={s.colType}>Type</span>
@@ -235,7 +235,7 @@ export function RunDetailPage() {
         </div>
       }
     >
-      <div className={s.runScroll}>
+      <div className={s.runScroll} data-scroll-region="run-detail">
         <header className={s.runHead}>
           <div className={s.runKicker}>
             <span className={s.kickerType}>{run.type}</span>

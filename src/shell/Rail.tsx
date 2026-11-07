@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { routes } from '../lib/routes';
+import { routes, switchWorkspace } from '../lib/routes';
 import { workspaces, processesIn } from '../data/selectors';
 import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
@@ -146,8 +146,14 @@ export function Rail() {
                 data-ws-row={ws.id}
                 data-rail-item={routes.files(ws.id)}
                 onClick={() => {
-                  setOpen((v) => (v.includes(ws.id) ? v.filter((x) => x !== ws.id) : [...v, ws.id]));
-                  if (!expanded) navigate(routes.files(ws.id));
+                  if (ws.id === activeWs) {
+                    setOpen((v) => (v.includes(ws.id) ? v.filter((x) => x !== ws.id) : [...v, ws.id]));
+                    return;
+                  }
+                  // A workspace row that was already expanded still has to
+                  // switch scope; collapsing it instead was the old bug.
+                  setOpen((v) => (v.includes(ws.id) ? v : [...v, ws.id]));
+                  navigate(switchWorkspace(pathname, ws.id));
                 }}
                 aria-expanded={expanded}
                 title={ws.name}

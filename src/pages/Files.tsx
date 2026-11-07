@@ -105,6 +105,7 @@ export function FilesPage() {
     <WorkspaceLayout
       wsId={wsId}
       panelTitle="Details"
+      panelMeta={`${rows.length} items`}
       panel={selected ? <FilePanel file={selected} onOpen={() => open(selected)} /> : undefined}
     >
       <div className={s.crumbs}>
@@ -145,7 +146,7 @@ export function FilesPage() {
       ) : null}
 
       <div className={s.body}>
-        <nav className={s.tree} aria-label="Folders">
+        <nav className={s.tree} aria-label="Folders" data-scroll-region="files-tree">
           {folders.map((folder) => {
             const count = filesInFolder(wsId, folder.id).length;
             const isOpen = expanded.includes(folder.id);
@@ -206,7 +207,14 @@ export function FilesPage() {
           </p>
         </nav>
 
-        <div className={s.tableWrap} tabIndex={0} onKeyDown={onKey} role="grid" aria-label="Files">
+        <div
+          className={s.tableWrap}
+          tabIndex={0}
+          onKeyDown={onKey}
+          role="grid"
+          aria-label="Files"
+          data-scroll-region="files-table"
+        >
           <div className={s.thead} role="row">
             <span className={s.colName} role="columnheader">
               Name

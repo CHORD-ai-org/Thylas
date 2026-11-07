@@ -6,7 +6,7 @@ import s from './shell.module.css';
 
 export function PlainLayout({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <main className={s.plain}>
+    <main className={s.plain} data-scroll-region="page">
       <div className={[s.plainInner, wide ? s.plainWide : ''].join(' ')}>{children}</div>
     </main>
   );
@@ -16,12 +16,14 @@ export function WorkspaceLayout({
   wsId,
   panel,
   panelTitle = 'Details',
+  panelMeta,
   flush = false,
   children,
 }: {
   wsId: string;
   panel?: ReactNode;
   panelTitle?: string;
+  panelMeta?: string;
   flush?: boolean;
   children: ReactNode;
 }) {
@@ -32,8 +34,14 @@ export function WorkspaceLayout({
     <>
       <TabStrip ctx={ctx} wsId={wsId} variant="workspace" />
       <div className={s.body}>
-        <main className={[s.surface, flush ? s.surfaceFlush : ''].join(' ')}>{children}</main>
-        {panel && panelOpen ? <ContextPanel title={panelTitle}>{panel}</ContextPanel> : null}
+        <main className={[s.surface, flush ? s.surfaceFlush : ''].join(' ')} data-scroll-region="surface">
+          {children}
+        </main>
+        {panel && panelOpen ? (
+          <ContextPanel ctx="workspace" title={panelTitle} meta={panelMeta}>
+            {panel}
+          </ContextPanel>
+        ) : null}
       </div>
     </>
   );

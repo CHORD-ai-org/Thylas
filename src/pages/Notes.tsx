@@ -42,7 +42,7 @@ export function NotesPage() {
     <>
       <TabStrip ctx="notes" variant="notes" />
       <div className={s.body}>
-        <nav className={s.list} aria-label="Notes">
+        <nav className={s.list} aria-label="Notes" data-scroll-region="notes-list">
           <div className={s.listHead}>
             <h2 className={s.listTitle}>Notes</h2>
             <Button
@@ -85,7 +85,7 @@ export function NotesPage() {
           <p className={s.listFoot}>One note, one scope. Notes is a lens over every scope you can read.</p>
         </nav>
 
-        <main className={s.readerWrap}>
+        <main className={s.readerWrap} data-scroll-region="notes-reader">
           {note ? (
             <article className={s.reader}>
               <p className={s.eyebrow}>
@@ -134,7 +134,7 @@ export function NotesPage() {
         </main>
 
         {panelOpen ? (
-          <ContextPanel title={note ? 'Scope' : 'Notes'}>
+          <ContextPanel ctx="notes" title={note ? 'Scope' : 'Notes'}>
             {note ? (
               <div className={s.panelInner}>
                 <div className={s.panelFields}>

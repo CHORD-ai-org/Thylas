@@ -30,15 +30,27 @@ type ObjectTabSeed = {
   live?: boolean;
 };
 
+export type PanelContext = 'workspace' | 'notes';
+type UiState = {
+  version: 2;
+  railCollapsed: boolean;
+  panelWidth: Record<PanelContext, number>;
+};
+
+export const PANEL_MIN = 280;
+export const PANEL_MAX = 480;
+const DEFAULT_WIDTH: Record<PanelContext, number> = { workspace: 340, notes: 300 };
+const clampWidth = (n: number): number => Math.min(PANEL_MAX, Math.max(PANEL_MIN, Math.round(n)));
+
 type AppState = {
   railCollapsed: boolean;
   panelOpen: boolean;
-  panelWidth: number;
   paletteOpen: boolean;
   tabs: TabsState;
   toggleRail: () => void;
   togglePanel: () => void;
-  setPanelWidth: (w: number) => void;
+  panelWidthFor: (ctx: PanelContext) => number;
+  setPanelWidthFor: (ctx: PanelContext, w: number) => void;
   openPalette: () => void;
   closePalette: () => void;
   openObjectTab: (ctx: string, seed: ObjectTabSeed) => void;
@@ -47,7 +59,8 @@ type AppState = {
 
 const AppCtx = createContext<AppState | null>(null);
 
-const UI_KEY = 'thylas:ui:v1';
+const UI_KEY = 'thylas:ui:v2';
+const UI_KEY_V1 = 'thylas:ui:v1';
 
 const warned = new Set<string>();
 function warnOnce(key: string, message: string): void {
@@ -72,6 +85,34 @@ function writeJson(store: Storage, key: string, value: unknown): void {
     // Quota, private mode, or a blocked Storage: the app keeps working in memory.
     warnOnce('storage', 'Storage is full or blocked; UI state is in-memory only for this tab.');
   }
+}
+
+function loadUi(): UiState {
+  const v2 = readJson<unknown>(localStorage, UI_KEY, null);
+  if (v2 && typeof v2 === 'object') {
+    const candidate = v2 as Partial<UiState>;
+    if (candidate.version === 2 && candidate.panelWidth && typeof candidate.panelWidth === 'object') {
+      return {
+        version: 2,
+        railCollapsed: Boolean(candidate.railCollapsed),
+        panelWidth: {
+          workspace: clampWidth(candidate.panelWidth.workspace ?? DEFAULT_WIDTH.workspace),
+          notes: clampWidth(candidate.panelWidth.notes ?? DEFAULT_WIDTH.notes),
+        },
+      };
+    }
+  }
+  // v1 had one global width. Keep it for the workspace context; Notes always
+  // wanted the narrower column and that was the known defect SP-03b closes.
+  const v1 = readJson<{ railCollapsed?: boolean; panelWidth?: number } | null>(localStorage, UI_KEY_V1, null);
+  return {
+    version: 2,
+    railCollapsed: Boolean(v1?.railCollapsed),
+    panelWidth: {
+      workspace: clampWidth(v1?.panelWidth ?? DEFAULT_WIDTH.workspace),
+      notes: DEFAULT_WIDTH.notes,
+    },
+  };
 }
 
 function isTabArray(value: unknown): value is Tab[] {
@@ -124,9 +165,7 @@ function knownContexts(): string[] {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [ui, setUi] = useState(() =>
-    readJson(localStorage, UI_KEY, { railCollapsed: false, panelWidth: 340 }),
-  );
+  const [ui, setUi] = useState<UiState>(loadUi);
   const [panelOpen, setPanelOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [tabs, setTabs] = useState<TabsState>(loadTabs);
@@ -152,10 +191,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
   const togglePanel = useCallback(() => setPanelOpen((v) => !v), []);
-  const setPanelWidth = useCallback(
-    (w: number) => setUi((v: typeof ui) => ({ ...v, panelWidth: w })),
-    [],
-  );
+  const setPanelWidthFor = useCallback((ctx: PanelContext, w: number) => {
+    setUi((v) => ({ ...v, panelWidth: { ...v.panelWidth, [ctx]: clampWidth(w) } }));
+  }, []);
+  const panelWidthFor = useCallback((ctx: PanelContext) => ui.panelWidth[ctx], [ui]);
 
   const openObjectTab = useCallback((ctx: string, seed: ObjectTabSeed) => {
     setTabs((prev) => openTab(prev, ctx, makeObjectTab(seed)));
@@ -184,18 +223,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       railCollapsed: ui.railCollapsed,
       panelOpen,
-      panelWidth: ui.panelWidth,
       paletteOpen,
       tabs,
       toggleRail,
       togglePanel,
-      setPanelWidth,
+      panelWidthFor,
+      setPanelWidthFor,
       openPalette: () => setPaletteOpen(true),
       closePalette: () => setPaletteOpen(false),
       openObjectTab,
       closeObjectTab,
     }),
-    [ui, panelOpen, paletteOpen, tabs, toggleRail, togglePanel, setPanelWidth, openObjectTab, closeObjectTab],
+    [ui, panelOpen, paletteOpen, tabs, toggleRail, togglePanel, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

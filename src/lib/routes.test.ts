@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routes } from './routes';
+import { routes, switchWorkspace, workspaceRoom } from './routes';
 
 /* The route builders are the only place a URL is constructed. If one drifts
    from the router table, every link to that surface breaks silently — which is
@@ -22,6 +22,23 @@ describe('routes', () => {
     expect(routes.note('n-1')).toBe('/notes/n-1');
     expect(routes.account()).toBe('/account/profile');
     expect(routes.account('usage')).toBe('/account/usage');
+  });
+
+  it('names the room behind a path, including object details', () => {
+    expect(workspaceRoom('/w/ws-1/files')).toBe('files');
+    expect(workspaceRoom('/w/ws-1/files/f-1')).toBe('files');
+    expect(workspaceRoom('/w/ws-1/boards/b-1')).toBe('boards');
+    expect(workspaceRoom('/w/ws-1/processes/r-1')).toBe('processes');
+    expect(workspaceRoom('/notes/n-1')).toBeNull();
+    expect(workspaceRoom('/w/ws-1/settings')).toBeNull();
+  });
+
+  it('switching workspace keeps the room and never carries an object id', () => {
+    expect(switchWorkspace('/w/ws-research/processes', 'ws-onda')).toBe('/w/ws-onda/processes');
+    expect(switchWorkspace('/w/ws-research/files/f-1', 'ws-onda')).toBe('/w/ws-onda/files');
+    expect(switchWorkspace('/w/ws-research/boards/b-1', 'ws-onda')).toBe('/w/ws-onda/boards');
+    expect(switchWorkspace('/notes/n-1', 'ws-onda')).toBe('/w/ws-onda/files');
+    expect(switchWorkspace('/overview', 'ws-onda')).toBe('/w/ws-onda/files');
   });
 
   it('never produces a double slash, which is how a route silently stops matching', () => {
