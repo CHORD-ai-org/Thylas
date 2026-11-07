@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { boardsIn, getBoard, getWorkspace } from '../data/selectors';
@@ -6,10 +6,8 @@ import { useRegisterTab } from '../state/app';
 import { Badge, Button, EmptyState, Field } from '../components/ui';
 import { IconChevron, IconPlus } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
+import { CARD_HEADER_CENTER, SCENE_H, SCENE_W, fitScale, sceneVars } from './boards/scene';
 import s from './boards.module.css';
-
-const SCENE_W = 1032;
-const SCENE_H = 560;
 
 export function BoardsPage() {
   const { wsId = '' } = useParams();
@@ -86,11 +84,7 @@ export function BoardDetailPage() {
   useEffect(() => {
     const el = areaRef.current;
     if (!el) return;
-    const measure = () => {
-      const w = el.clientWidth - 72;
-      const h = el.clientHeight - 104;
-      setFit(Math.min(1, w / SCENE_W, h / SCENE_H));
-    };
+    const measure = () => setFit(fitScale(el.clientWidth, el.clientHeight));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -112,7 +106,7 @@ export function BoardDetailPage() {
 
   const center = (id: string) => {
     const card = cards.find((c) => c.id === id);
-    return card ? { x: card.x + card.w / 2, y: card.y + 34 } : { x: 0, y: 0 };
+    return card ? { x: card.x + card.w / 2, y: card.y + CARD_HEADER_CENTER } : { x: 0, y: 0 };
   };
 
   return (
@@ -177,7 +171,7 @@ export function BoardDetailPage() {
           </p>
         </div>
 
-        <div className={s.canvasArea} ref={areaRef}>
+        <div className={s.canvasArea} ref={areaRef} style={sceneVars() as CSSProperties}>
           {empty ? (
             <EmptyState
               title="This board has no scene yet"
@@ -207,7 +201,7 @@ export function BoardDetailPage() {
                 </div>
               ))}
 
-              <svg className={s.edgeLayer} width={1032} height={560} aria-hidden>
+              <svg className={s.edgeLayer} width={SCENE_W} height={SCENE_H} aria-hidden>
                 {board.edges.map((edge) => {
                   const from = cards.find((c) => c.id === edge.from);
                   const to = cards.find((c) => c.id === edge.to);
@@ -290,10 +284,10 @@ export function BoardDetailPage() {
                   key={section.id}
                   className={s.minimapSection}
                   style={{
-                    left: `${(section.x / 1032) * 100}%`,
-                    top: `${(section.y / 560) * 100}%`,
-                    width: `${(section.w / 1032) * 100}%`,
-                    height: `${(section.h / 560) * 100}%`,
+                    left: `${(section.x / SCENE_W) * 100}%`,
+                    top: `${(section.y / SCENE_H) * 100}%`,
+                    width: `${(section.w / SCENE_W) * 100}%`,
+                    height: `${(section.h / SCENE_H) * 100}%`,
                   }}
                 />
               ))}

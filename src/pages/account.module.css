@@ -165,7 +165,7 @@
   gap: var(--s6);
   padding: var(--s3) 0;
   border-bottom: 1px solid var(--line);
-  max-width: 560px;
+  max-width: var(--w-sheet);
 }
 
 .prefLabel {

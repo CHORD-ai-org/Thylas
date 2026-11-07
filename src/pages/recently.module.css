@@ -1,5 +1,5 @@
 .head {
-  max-width: 560px;
+  max-width: var(--w-sheet);
 }
 
 .title {

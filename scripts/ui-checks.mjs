@@ -476,6 +476,54 @@ async function main() {
     return !document.querySelector('[data-missing="true"]') && !document.querySelector('[data-tombstone="true"]');
   `), true);
 
+  // ---- SP-06a: one source for scene constants, rendering unchanged ----
+  const boardsDir = new URL('../src/pages/boards/', import.meta.url);
+  const boardUnits = readdirSync(boardsDir).filter(
+    (f) => f !== 'scene.ts' && /\.(ts|tsx|css)$/.test(f),
+  );
+  const boardText = [
+    readFileSync(new URL('../src/pages/Boards.tsx', import.meta.url), 'utf8'),
+    readFileSync(new URL('../src/pages/boards.module.css', import.meta.url), 'utf8'),
+    ...boardUnits.map((f) => readFileSync(new URL(f, boardsDir), 'utf8')),
+  ].join('\n');
+  check('scene: no hardcoded 1032/560 outside scene.ts', /1032|560/.test(boardText), false);
+  const allCss = readdirSync(new URL('../src/pages/', import.meta.url))
+    .filter((f) => f.endsWith('.css'))
+    .map((f) => readFileSync(new URL(`../src/pages/${f}`, import.meta.url), 'utf8'))
+    .join('\n');
+  check('scene: no numeric scene size anywhere in page CSS', /1032|560/.test(allCss), false);
+  check('scene: shared sheet token still resolves to the old 560px width', await js(`
+    const d = document.createElement('div');
+    d.style.width = 'var(--w-sheet)';
+    document.body.appendChild(d);
+    const w = getComputedStyle(d).width;
+    d.remove();
+    return w;
+  `), '560px');
+
+  await goto('/w/ws-research/boards/b-lit');
+  check('scene: geometry is identical after extracting the constants', await js(`
+    const svg = document.querySelector('svg[class*="edgeLayer"]');
+    const scene = svg?.parentElement;
+    if (!scene) return null;
+    const cs = getComputedStyle(scene);
+    const m = new DOMMatrix(cs.transform);
+    return {
+      w: Math.round(parseFloat(cs.width)),
+      h: Math.round(parseFloat(cs.height)),
+      svgW: svg.getAttribute('width'),
+      svgH: svg.getAttribute('height'),
+      scale: Number(m.a.toFixed(3)),
+      cards: document.querySelectorAll('[class*="bcard"]').length,
+    };
+  `), (v) => !!v && v.w === 1032 && v.h === 560 && v.svgW === '1032' && v.svgH === '560'
+    && v.scale > 0.1 && v.scale <= 1 && v.cards > 0);
+
+  await goto('/w/ws-onda/boards/b-onda');
+  check('scene: empty board still renders its guide', await js(`
+    return document.body.innerText.includes('no scene yet');
+  `), true);
+
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {
     console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.pass ? '' : `  → ${JSON.stringify(r.actual)}`}`);

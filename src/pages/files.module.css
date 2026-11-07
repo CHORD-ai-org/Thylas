@@ -393,7 +393,7 @@
 
 .sheet {
   width: 100%;
-  max-width: 560px;
+  max-width: var(--w-sheet);
   padding: var(--s8);
   border: 1px solid var(--line);
   border-radius: var(--r-surface);

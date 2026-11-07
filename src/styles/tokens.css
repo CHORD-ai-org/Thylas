@@ -16,6 +16,12 @@
   --tint-live: rgba(181, 111, 80, 0.055);
   --scrim: rgba(73, 54, 38, 0.16);
 
+  /* Shared narrow-sheet width for Account, Recently, file preview and route
+     error. 35rem is the previous fixed sheet width at a 16px root; written
+     in rem so it scales with the reader's font size and cannot be confused
+     with the board scene height, whose only source is boards/scene.ts. */
+  --w-sheet: 35rem;
+
   /* grid */
   --h-strip-rail: 40px;
   --w-panel-min: 280px;

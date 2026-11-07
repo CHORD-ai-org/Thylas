@@ -139,7 +139,7 @@
   overflow: hidden;
   background-color: var(--bg-paper);
   background-image: radial-gradient(circle, rgba(73, 54, 38, 0.13) 1px, transparent 1px);
-  background-size: 16px 16px;
+  background-size: var(--scene-grid) var(--scene-grid);
   background-position: -1px -1px;
 }
 
@@ -152,8 +152,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 1032px;
-  height: 560px;
+  width: var(--scene-w);
+  height: var(--scene-h);
   transform-origin: 0 0;
 }
 
