@@ -75,7 +75,6 @@ export function FilesPage() {
     setSelectedId(null);
     setExpanded(folders.map((f) => f.id));
     // folder set changes only when the workspace changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsId]);
 
   const rows = useMemo(() => filesInFolder(wsId, folderId), [wsId, folderId]);

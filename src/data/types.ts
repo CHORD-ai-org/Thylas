@@ -2,7 +2,9 @@
    These describe the UI's own model. Wire types for WAM would live in
    services/wam/types.ts once a contract exists — nothing here is that. */
 
-export type Id = string;
+import type { FileKind, Id } from '../lib/types';
+
+export type { FileKind, Id };
 
 export type WorkspaceScope = 'personal' | 'org';
 
@@ -23,7 +25,6 @@ export type User = {
   role: string;
 };
 
-export type FileKind = 'pdf' | 'csv' | 'md' | 'parquet' | 'json' | 'png' | 'txt';
 
 export type Source =
   | { kind: 'uploaded' }

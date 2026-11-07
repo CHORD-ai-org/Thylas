@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import type { FileKind } from '../data/types';
+import type { FileKind } from '../lib/types';
 import type { Tone } from '../lib/tone';
 import s from './ui.module.css';
 

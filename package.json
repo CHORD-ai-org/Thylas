@@ -8,7 +8,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "e2e": "node scripts/ui-checks.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -19,7 +22,10 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^10.14.0",
     "typescript": "~5.7.2",
-    "vite": "^6.0.7"
+    "typescript-eslint": "^8.72.1",
+    "vite": "^6.0.7",
+    "vitest": "^5.1.0"
   }
 }

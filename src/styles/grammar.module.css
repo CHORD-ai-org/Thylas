@@ -1,0 +1,109 @@
+/* Shared visual grammar. These are the recipes that were copied into six page
+   stylesheets; they are extracted here so a change lands once. Pages may add
+   layout around them (grid templates, widths) but must not re-declare type,
+   padding or tone. Not imported by anything yet — SP-04 starts consuming it. */
+
+/* Section label with the 6px index tick (branding-desk §6). */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.label::before {
+  content: '';
+  width: 6px;
+  height: 1px;
+  background: var(--line-strong);
+  flex: 0 0 auto;
+}
+
+/* Table header. The grid template stays local to each table. */
+.tableHead {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  align-items: center;
+  height: var(--h-toolbar);
+  padding: 0 var(--s4);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--line);
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Inline banner: the reason sits next to the thing that cannot act. */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: 7px 12px;
+  border-left: 2px solid var(--accent);
+  background: var(--tint-live);
+  font: var(--t-caption);
+  line-height: 16px;
+  color: var(--ink-2);
+}
+
+/* Filter chips: one implementation for files, processes, recently, notes. */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--r-chip);
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.filter:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.filterOn {
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.filterCount {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+/* Label/value row used by every panel. */
+.fieldRow {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: var(--s3);
+  padding: 5px 0;
+  font: var(--t-ui);
+}
+
+.fieldLabel {
+  color: var(--ink-3);
+}
+
+.fieldValue {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}

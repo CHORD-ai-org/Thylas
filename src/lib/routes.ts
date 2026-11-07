@@ -1,4 +1,4 @@
-import type { Id } from '../data/types';
+import type { Id } from './types';
 
 export const routes = {
   root: () => '/',
