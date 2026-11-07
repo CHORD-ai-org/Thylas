@@ -3,7 +3,6 @@ import { BOARDS } from '../../data/mock';
 import {
   ANCHOR_DOT,
   ANCHOR_HIT,
-  CARD_DEFAULT_H,
   CARD_HEADER_CENTER,
   MAX_SCALE,
   MIN_SCALE,
@@ -179,9 +178,9 @@ describe('sceneFromBoard (mock migration)', () => {
     expect(scene.viewport).toEqual({ x: 0, y: 0, zoom: 1 });
   });
 
-  it('gives every card a height for geometry without mutating the sample', () => {
+  it('leaves the height to the content, without mutating the sample', () => {
     const scene = sceneFromBoard(legacy);
-    expect(scene.cards.every((c) => c.h === CARD_DEFAULT_H)).toBe(true);
+    expect(scene.cards.every((c) => c.h === 0)).toBe(true);
     expect('h' in legacy.boardCards[0]!).toBe(false);
     expect(scene.sections[0]).not.toBe(legacy.sections[0]);
   });

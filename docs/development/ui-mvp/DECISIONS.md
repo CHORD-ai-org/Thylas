@@ -203,6 +203,38 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** one `setState` per frame. Rejected: it satisfies "at most once per frame" but still re-renders the whole scene, and acceptance #3 explicitly forbids it.
 **Consequence:** viewport state is not visible to React DevTools and cannot drive JSX. Anything that needs the zoom value must read the dock label or the scene transform. Measured: 0 card mutations during wheel pan, 150-card P95 16.7ms.
 
+## D-026 · Card height is measured, not assumed
+
+**Status:** accepted in force (SP-06c).
+**Context:** `BoardScene` needed a height for hit testing and snapping, so SP-06a wrote `h: CARD_DEFAULT_H` (96) into every card. Rendering that as `min-height` made c-5 grow over c-6 and put c-5's resize handle under c-6 — the handle was simply unreachable (found by a CDP probe that logged the pointer target).
+**Decision:** `h: 0` means "content-sized". Cards are laid out by their own text; gestures read `offsetHeight` for every card **once per pointer session** into a map, and clamp/drag/resize use that map. A resize writes a real number, which pins the card from then on.
+**Alternative:** measure on every pointer move. Rejected: 150 forced layouts per frame. **Alternative:** keep a fixed 96px card. Rejected: it silently clips a live card's extra row.
+**Consequence:** geometry can never assume `h > 0`; `rectOf` always takes a height reader. The measurement is taken at pointerdown, so a card that reflows mid-drag (it cannot, no text is edited during a drag) would be off by the difference.
+
+## D-027 · Snap is resolved continuously and applied once, on release
+
+**Status:** accepted in force (SP-06c).
+**Context:** SP-06c §UX: "dropping a card within 6px of a neighbour's axis snaps once; there is no magnetic pull while moving". A pull that fights the pointer is the documented failure mode.
+**Decision:** every `pointermove` computes `snapMove` against the selection's bounding box and writes the resulting guide line, but the card itself follows the raw delta. `pointerup` applies `dx + snap.dx`, so the drop lands aligned in one step. Only one snap per axis, and only within 6px.
+**Alternative:** correct the position live. Rejected: the card would jump ±6px under the cursor, and a drag through a dense area would feel ratcheted.
+**Consequence:** the guide can show while the card is up to 6px away — that gap is the point, and it is why the guide is drawn at the *target* line rather than at the card edge.
+
+## D-028 · One command path for every edit, and undo clears the selection
+
+**Status:** accepted in force (SP-06c).
+**Context:** drag, resize, delete, create, retitle and keyboard nudges all change the scene. After deleting a card, an undo that restores it while it is still "selected" hides the fact that it came back.
+**Decision:** every mutation is a `CardEdit` applied by `applyEdit(scene, edit, 'do' | 'undo')`; the stack holds 50 edits and pushes on release, never per move. Undo and redo clear the selection.
+**Alternative:** snapshot the whole scene per edit. Rejected: 150 cards × 50 states of JSON, and it makes "which property changed" unknowable.
+**Consequence:** delete-undo restores the original z-order because the edit carries card indexes. The cleared selection is visible in the status bar, which drops back to "No selection".
+
+## D-029 · Card edits persist locally; the viewport still does not
+
+**Status:** accepted in force (SP-06c), under Q-4's default ("localStorage is acceptable for the MVP").
+**Context:** Q-4 asked whether board persistence in `localStorage` is acceptable. SP-06a built the versioned store but wired nothing. Q-4's remaining open half is the *viewport*: a saved zoom/pan changes what the next visit looks like, and no one has approved that.
+**Decision:** the card scene is written to `thylas:board:v1:<id>` (300ms debounce, `pagehide` flush, quota failure falls back to memory with one console warning). `BoardScene.viewport` is still never read: on load the canvas calls `fit()`, so every visit starts at 100%. "Reset to sample" removes the stored key.
+**Alternative:** persist everything the schema holds. Rejected: it makes Q-4 answer itself.
+**Consequence:** the header says "edits are kept in this browser" — not "saved", because there is no service and no other device. A reload does not preserve where you were looking.
+
 ---
 
 ## Open questions (need a human, not a default)

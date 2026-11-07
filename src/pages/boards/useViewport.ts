@@ -220,5 +220,5 @@ export function useCanvasViewport(refs: ViewportRefs, enabled = true) {
     };
   }, [enabled, apply, schedule, fit, zoomIn, zoomOut, stagePointer]);
 
-  return { zoomIn, zoomOut, fit };
+  return { zoomIn, zoomOut, fit, view, fitRatio };
 }

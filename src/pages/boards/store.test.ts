@@ -91,6 +91,29 @@ describe('board store round trip', () => {
   });
 });
 
+describe('clear', () => {
+  it('removes the saved scene so the sample shows again', () => {
+    const storage = memoryStorage();
+    const store = createLocalBoardStore(storage, 0);
+    const id = scene().id;
+    store.save(scene());
+    store.flush();
+    expect(storage.data.size).toBe(1);
+    store.clear(id);
+    expect(storage.data.size).toBe(0);
+    expect(store.load(id).ok).toBe(false);
+  });
+
+  it('cancels a write that was still debouncing', () => {
+    const storage = memoryStorage();
+    const store = createLocalBoardStore(storage, 50);
+    store.save(scene());
+    store.clear(scene().id);
+    store.flush();
+    expect(storage.data.size).toBe(0);
+  });
+});
+
 describe('serialisation budget', () => {
   it('serialises a 200-card scene in under 20ms', () => {
     const base = scene();

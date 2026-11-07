@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 16:50 (SP-06b complete).
+Last updated: 2026-11-07 17:55 (SP-06c complete).
 
 ---
 
@@ -24,7 +24,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
-| SP-06c Cards | SP-06 | Not Started | 1.5 | SP-06b | create, drag, snap, undo |
+| SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | create, 1:1 drag, one 6px snap, marquee, resize, 50-step undo, local store |
 | SP-06d Edges | SP-06 | Not Started | 1.5 | SP-06c | anchors, labels, hit areas |
 | SP-07a AI endpoint | SP-07 | Not Started | 1.0 | SP-03b | middleware + error taxonomy |
 | SP-07b AI panel | SP-07 | Not Started | 0.75 | SP-07a, SP-02 | four states, footer meta |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
+Remaining: **10.5 days**. Critical path: SP-06d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
 
 ---
 
@@ -51,8 +51,9 @@ Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is i
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
 | Unit tests | Vitest 5, 53 assertions incl. viewport maths | `src/pages/boards/{scene,store}.test.ts` |
 | E2E | 100 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
-| Board scene | pure constants + versioned store (not wired) · ref-driven viewport | `src/pages/boards/`, `22342da` |
+| Board scene | pure constants + versioned store · ref-driven viewport · editable cards | `src/pages/boards/`, `SP-06c` commit |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
+| Board editing | double-click create, drag with one 6px snap + guides, marquee, shift-add, multi-drag, resize, delete, 1/10px nudge, 50-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
 | Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
 | Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
 
@@ -60,11 +61,10 @@ Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is i
 
 | # | Defect | Where | Owner SP |
 | --- | --- | --- | --- |
-| K1 | Other surfaces still accept a click then apologise (Overview and Files are clean) | Boards, Processes, Notes, Account | SP-06 / SP-07 / SP-08 |
+| K1 | Other surfaces still accept a click then apologise (Overview, Files and Boards are clean) | Processes, Notes, Account | SP-07 / SP-08 |
 | K3 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
-| K4 | Board is read-only and its labels are ~8px at fit | `src/pages/Boards.tsx` | SP-06 |
 | K5 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
-| K6 | Three page-local `.notice` recipes remain (down from six) | `account/boards/processes.module.css` | SP-06 / SP-07 / SP-08 |
+| K6 | Two page-local `.notice` recipes remain (down from six) | `account/processes.module.css` | SP-07 / SP-08 |
 | K7 | Roaming tabindex in the rail not implemented (arrows only) | `src/shell/Rail.tsx` | SP-09 |
 | K9 | No loading state language anywhere | all surfaces | SP-07 |
 
@@ -107,10 +107,21 @@ Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is i
 | 11-07 | 150-card pan trace | 148 frames · P50 16.7ms · P95 16.7ms · max 16.8ms · 0 >20ms |
 | 11-07 | Zoom screenshots | 10% / 51% / 100% / 400%, grid legible at every step |
 | 11-07 | `npm run build` (SP-06b) | CSS 55.2 KB / JS 132.3 KB gzip |
+| 11-07 | `npm test` (SP-06c) | 84/84; 31 new geometry, command and store cases |
+| 11-07 | `npm run e2e` (SP-06c) | 127/127; 27 new card assertions, real mouse input through CDP |
+| 11-07 | Card creation | double-click → card + focused title input at 456px (clamped from a click at 505) |
+| 11-07 | Drag fidelity | 160 × 100 scene units dragged → 360/356, ±1px |
+| 11-07 | Snap | 4px off c-2's left edge → guide at 40, release lands on 40 exactly |
+| 11-07 | Undo | delete of 2 cards restored in one step, z-order `c-1…c-6` intact |
+| 11-07 | Resize | handle drag +40px → card width +40px (screen), min 180 / 64 enforced |
+| 11-07 | Persistence | 7 cards and the moved position survive a reload through `thylas:board:v1` |
+| 11-07 | Reset | sample restored, stored copy removed (`getItem` → null) |
+| 11-07 | `npm run build` (SP-06c) | CSS 56.7 KB / JS 138.2 KB gzip |
+| 11-07 | Screenshots | `sp06c-selection`, `sp06c-guide`, `sp06c-editing`, `sp06c-created` |
 
 ## Next concrete action
 
-1. **SP-06c Cards** (1.5 days): create by double-click, 1:1 drag with one 6px snap, selection, delete, undo/redo (50 ops). Exit when a 150-card **drag** holds P95 ≤ 20ms and one undo restores a deleted card.
+1. **SP-06d Edges** (1.5 days): anchors on hover, drag from an anchor to a card, edge labels, hit areas that scale with zoom. Exit when three labelled edges can be drawn and undone, and edge hit targets stay 24px at 10% and 400%.
 2. Alternatively **SP-07a AI endpoint** (1 day), independently unblocked. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so do not wire `BoardScene.viewport` yet.
 
 ## Resolved
@@ -132,3 +143,7 @@ Remaining: **12 days**. Critical path: SP-06c → SP-06d → SP-09a; SP-07a is i
 | R13 | At 1180 `1.2 GB` wrapped and names ellipsised | SP-04a | 430px container step, 11px mono, names fully readable |
 | R14 | Table-head, label and banner recipes were copied per page | SP-04a/04b | `grammar.tableHead` / `label` / `banner` / `limit` consumed |
 | R15 | Scene dimensions were hardcoded in TSX and CSS | SP-06a | one source in `boards/scene.ts`; injected as CSS variables |
+| R16 | The board claimed 14 cards and rendered 6 | SP-06c | every count now derives from the scene; e2e asserts `6 CARDS` and no `14 cards` |
+| R17 | Section / Edge / Card tools did nothing and apologised after the click | SP-06c | toolbar holds Select, Undo, Redo — all real; no "deferred" copy anywhere |
+| R18 | A board could not be written to | SP-06c | create, drag, snap, marquee, resize, delete, nudge, undo all through one command path |
+| R19 | "New board" apologised after being clicked | SP-06c | disabled with `title` + persistent `boards-limit` reason |

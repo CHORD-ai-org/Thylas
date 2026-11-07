@@ -22,6 +22,8 @@ export interface BoardStore {
   load(id: string): LoadResult;
   save(scene: BoardScene): void;
   flush(): void;
+  /** Forgets the saved scene so the sample board shows again. */
+  clear(id: string): void;
 }
 
 export function boardKey(id: string): string {
@@ -102,5 +104,14 @@ export function createLocalBoardStore(
     },
 
     flush: write,
+
+    clear(id) {
+      pending = null;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      storage.removeItem?.(boardKey(id));
+    },
   };
 }

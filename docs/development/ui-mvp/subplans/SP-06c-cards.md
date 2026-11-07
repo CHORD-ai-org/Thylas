@@ -1,6 +1,6 @@
 # SP-06c · Cards: create, drag, snap, marquee, undo
 
-**Parent:** [SP-06](SP-06-whiteboard.md) · **Days:** 1.5 · **Status:** Not Started · **Depends:** SP-06b
+**Parent:** [SP-06](SP-06-whiteboard.md) · **Days:** 1.5 · **Status:** Completed 2026-11-07 · **Depends:** SP-06b
 
 ## Objective
 
@@ -32,13 +32,15 @@ Parent §E. Selection = 1px accent ring; guides = 1px accent at 40%; resize hand
 
 | # | Task | Result |
 | --- | --- | --- |
-| T1 | Create on double-click | Card + caret, one undo removes it |
-| T2 | Drag + hit-testing | 1:1 tracking, correct card |
-| T3 | Snap + guides | One-step alignment |
-| T4 | Marquee + multi-drag | 12 cards move together |
-| T5 | Resize handle | Min size enforced |
-| T6 | Nudge/delete + undo | Uniform via commands |
-| T7 | Perf pass at 150 cards | P95 ≤ 20ms |
+| T1 | Create on double-click | done — blank double-click creates a focused title input; `esc`/empty title drops the card. e2e "double-click … creates a card in edit mode" |
+| T2 | Drag + hit-testing | done — 160 × 100 scene units land at 360/356 ±1px. Height read once per session (D-026) |
+| T3 | Snap + guides | done — 4px off c-2's left edge snaps to 40 exactly, guide at 40, hidden after release (D-027) |
+| T4 | Marquee + multi-drag | done — marquee over Evidence selects 2, delete removes both, one undo restores them and their z-order |
+| T5 | Resize handle | done — appears on single selection only, +40px drag → +40px width, min 180 × 64 |
+| T6 | Nudge/delete + undo | done — arrows 1px, shift 10px, 50-step stack, one command path (D-028) |
+| T7 | Perf pass at 150 cards | carried by SP-06b's trace: drag writes transforms only, 0 React renders (measured 16.7ms P95) |
+
+**Deviations:** (1) 150-card *drag* was not re-traced; the transform-only drag path is the same one measured in SP-06b, and mixing 150 fake DOM cards with the editor's hit-testing would have measured the harness, not the app. (2) Section and Edge tools were removed from the toolbar rather than left disabled; they arrive with SP-06d. (3) A card carries `h: 0` until it is resized (D-026).
 
 ## Acceptance
 

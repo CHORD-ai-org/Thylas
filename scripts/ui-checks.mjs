@@ -520,8 +520,8 @@ async function main() {
     && v.scale > 0.1 && v.scale <= 1 && v.cards > 0);
 
   await goto('/w/ws-onda/boards/b-onda');
-  check('scene: empty board still renders its guide', await js(`
-    return document.body.innerText.includes('no scene yet');
+  check('scene: empty board invites the first card instead of blocking the canvas', await js(`
+    return document.body.innerText.includes('place the first card');
   `), true);
 
   // ---- SP-06b: viewport ref, pointer-anchored zoom, pan, clamps ----
@@ -660,6 +660,237 @@ async function main() {
   const sorted = [...frames].sort((a, b) => a - b);
   const p95 = sorted.length ? Number(sorted[Math.floor(sorted.length * 0.95)].toFixed(2)) : 999;
   check('viewport: 150-card pan holds P95 <= 20ms', p95, (v) => v > 0 && v <= 20);
+
+  // ---- SP-06c: cards that can be created, moved, aligned, selected, undone ----
+  const sceneOf = () => js(`
+    const r = document.querySelector('[data-scene="board"]').getBoundingClientRect();
+    return { left: r.left, top: r.top, k: r.width / 1032 };
+  `);
+  const cardCount = () => js(`return document.querySelectorAll('[data-card-id]').length;`);
+  const cardStyle = (id) => js(`
+    const el = document.querySelector('[data-card-id="${id}"]');
+    if (!el) return null;
+    return {
+      left: Math.round(parseFloat(el.style.left) || 0),
+      top: Math.round(parseFloat(el.style.top) || 0),
+      w: Math.round(el.getBoundingClientRect().width),
+    };
+  `);
+  const press = (x, y, clickCount = 1) =>
+    send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount });
+  const release = (x, y, clickCount = 1) =>
+    send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount });
+  const dblclick = async (x, y) => {
+    await press(x, y, 1);
+    await release(x, y, 1);
+    await press(x, y, 2);
+    await release(x, y, 2);
+  };
+  const hold = async (b, from, to, steps = 5) => {
+    const a = { x: b.left + from.x * b.k, y: b.top + from.y * b.k };
+    const z = { x: b.left + to.x * b.k, y: b.top + to.y * b.k };
+    await press(a.x, a.y);
+    for (let i = 1; i <= steps; i++) {
+      await send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
+        x: a.x + ((z.x - a.x) * i) / steps,
+        y: a.y + ((z.y - a.y) * i) / steps,
+        button: 'left',
+        buttons: 1,
+      });
+      await sleep(16);
+    }
+    return { a, z };
+  };
+  const undoKey = async () => {
+    await keyEvent('keyDown', 'z', 'KeyZ', 90, 4);
+    await keyEvent('keyUp', 'z', 'KeyZ', 90, 4);
+    await sleep(220);
+  };
+  const near1 = (expected) => (v) => typeof v === 'number' && Math.abs(v - expected) <= 1;
+
+  await goto('/w/ws-research/boards');
+  check('boards: New board is disabled with its reason visible before any click', await js(`
+    const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'New board');
+    const reason = document.getElementById('boards-limit');
+    return {
+      disabled: !!b && b.disabled,
+      described: b?.getAttribute('aria-describedby'),
+      visible: !!reason && reason.offsetParent !== null && /workspace service/.test(reason.textContent),
+    };
+  `), { disabled: true, described: 'boards-limit', visible: true });
+  check('boards: the index states the real card counts', await js(`
+    return document.body.innerText.includes('6 cards');
+  `), true);
+
+  await goto(BOARD);
+  await js(`localStorage.removeItem('thylas:board:v1:b-lit'); return true;`);
+  await goto(BOARD);
+
+  check('cards: the badge states the number the board really renders', [
+    await cardCount(),
+    await js(`return [...document.querySelectorAll('span')].map(e => e.textContent.trim()).find(t => /^[0-9]+ CARDS$/.test(t)) ?? '';`),
+    await js(`return document.body.innerText.includes('14 cards');`),
+  ], [6, '6 CARDS', false]);
+  check('cards: toolbar offers only tools that work', await js(`
+    const tools = [...document.querySelectorAll('[aria-label="Canvas tools"] button')];
+    return { count: tools.length, names: tools.map(b => b.title.split(' ')[0]).join(',') };
+  `), (v) => v.count === 3 && v.names === 'Select,Undo,Redo');
+  check('cards: no deferred-editing apology anywhere', await js(`
+    return /deferred|not wired/.test(document.body.innerText);
+  `), false);
+
+  let bd = await sceneOf();
+  const blankAt = { x: bd.left + 520 * bd.k, y: bd.top + 505 * bd.k };
+  await dblclick(blankAt.x, blankAt.y);
+  await sleep(240);
+  check('cards: double-click on blank canvas creates a card in edit mode', [
+    await cardCount(),
+    await js(`return document.activeElement?.getAttribute('aria-label');`),
+  ], [7, 'Card title']);
+
+  await send('Input.insertText', { text: 'Refutation needed' });
+  await keyEvent('keyDown', 'Enter', 'Enter', 13);
+  await keyEvent('keyUp', 'Enter', 'Enter', 13);
+  await sleep(240);
+  check('cards: the typed title is committed', await js(`
+    return document.body.innerText.includes('Refutation needed');
+  `), true);
+  check('cards: the status bar says what happened', await js(`
+    return document.body.innerText.includes('Title changed');
+  `), true);
+
+  const newId = await js(`return document.querySelectorAll('[data-card-id]')[6]?.dataset.cardId ?? null;`);
+  check('cards: a new card is clamped inside the scene', (await cardStyle(newId))?.top, 456);
+
+  // Drag 160 × 100 scene units up-left, far from every neighbour so no snap applies.
+  bd = await sceneOf();
+  const created = await js(`
+    const el = document.querySelector('[data-card-id="${newId}"]');
+    return { x: (parseFloat(el.style.left) || 0) + 40, y: (parseFloat(el.style.top) || 0) + 12 };
+  `);
+  const moved = await hold(bd, created, { x: created.x - 160, y: created.y - 100 });
+  await release(moved.z.x, moved.z.y);
+  await sleep(240);
+  check('cards: drag moves the card 1:1 in scene units', (await cardStyle(newId))?.left, near1(360));
+  check('cards: the vertical delta lands too', (await cardStyle(newId))?.top, near1(356));
+
+  await undoKey();
+  check('cards: undo restores the position in one step', (await cardStyle(newId))?.left, near1(520));
+
+  // Snap: 4 scene units off c-2's left edge must land on it exactly.
+  bd = await sceneOf();
+  const near = await hold(bd, { x: 80, y: 126 }, { x: 84, y: 126 });
+  const guideSeen = await js(`
+    const g = document.querySelector('[class*="guideX"]');
+    return g ? getComputedStyle(g).opacity : '0';
+  `);
+  await release(near.z.x, near.z.y);
+  await sleep(240);
+  check('cards: a guide appears while a drop would align', guideSeen, '1');
+  check('cards: release snaps exactly onto the neighbour axis', (await cardStyle('c-1'))?.left, 40);
+  check('cards: the guide is hidden again after release', await js(`
+    return getComputedStyle(document.querySelector('[class*="guideX"]')).opacity;
+  `), '0');
+
+  // Marquee over the Evidence section takes exactly its two cards.
+  bd = await sceneOf();
+  const box = await hold(bd, { x: 330, y: 90 }, { x: 660, y: 430 }, 6);
+  await release(box.z.x, box.z.y);
+  await sleep(240);
+  check('cards: marquee selects the cards it covers', await js(`
+    return document.body.innerText.includes('2 selected');
+  `), true);
+  await keyEvent('keyDown', 'Delete', 'Delete', 46);
+  await keyEvent('keyUp', 'Delete', 'Delete', 46);
+  await sleep(240);
+  check('cards: delete removes the whole selection at once', await cardCount(), 5);
+  await undoKey();
+  check('cards: one undo brings both cards back', await cardCount(), 7);
+  check('cards: undo restored z-order', await js(`
+    return [...document.querySelectorAll('[data-card-id]')].map(e => e.dataset.cardId).join(',');
+  `), (v) => v.startsWith('c-1,c-2,c-3,c-4,c-5'));
+
+  // Resize through the handle that only exists on a single selection. c-1 is
+  // used because c-5 sits against the scene edge and could not grow 40px.
+  bd = await sceneOf();
+  const c1 = await js(`
+    const el = document.querySelector('[data-card-id="c-1"]');
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + 14 };
+  `);
+  await press(c1.x, c1.y);
+  await release(c1.x, c1.y);
+  await sleep(180);
+  const before1 = await cardStyle('c-1');
+  const handle = await js(`
+    const h = document.querySelector('[data-card-id="c-1"] [data-resize]');
+    if (!h) return null;
+    const r = h.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  `);
+  check('cards: the resize handle appears only on a single selection', !!handle, true);
+  await press(handle.x, handle.y);
+  for (let i = 1; i <= 4; i++) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: handle.x + (40 * i) / 4,
+      y: handle.y + (30 * i) / 4,
+      button: 'left',
+      buttons: 1,
+    });
+    await sleep(16);
+  }
+  await release(handle.x + 40, handle.y + 30);
+  await sleep(240);
+  // The rect is scaled, so 40 screen pixels of drag is the expected growth.
+  check('cards: resizing widens the card by the drag distance',
+    (await cardStyle('c-1')).w - before1.w, near1(40));
+
+  const c5 = await js(`
+    const el = document.querySelector('[data-card-id="c-5"]');
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + 14 };
+  `);
+  await press(c5.x, c5.y);
+  await release(c5.x, c5.y);
+  await sleep(180);
+
+  await keyEvent('keyDown', 'ArrowRight', 'ArrowRight', 39);
+  await keyEvent('keyUp', 'ArrowRight', 'ArrowRight', 39);
+  await sleep(240);
+  check('cards: arrow key nudges 1px', (await cardStyle('c-5'))?.left, 705);
+  await keyEvent('keyDown', 'ArrowLeft', 'ArrowLeft', 37, 8);
+  await keyEvent('keyUp', 'ArrowLeft', 'ArrowLeft', 37, 8);
+  await sleep(240);
+  check('cards: shift+arrow nudges 10px', (await cardStyle('c-5'))?.left, 695);
+
+  await js(`
+    document.querySelector('[aria-label="Canvas tools"] button[title^="Undo"]').click();
+    await new Promise(r => setTimeout(r, 220));
+  `);
+  check('cards: the toolbar undo button does what the shortcut does', (await cardStyle('c-5'))?.left, 705);
+
+  await sleep(400);
+  await goto(BOARD);
+  check('cards: edits survive a reload through the versioned store', [
+    await cardCount(),
+    (await cardStyle('c-5'))?.left,
+  ], [7, 705]);
+  check('cards: the store envelope is the versioned one', await js(`
+    const v = JSON.parse(localStorage.getItem('thylas:board:v1:b-lit'));
+    return !!v && v.version === 1 && Array.isArray(v.cards) && v.cards.length === 7;
+  `), true);
+
+  await goto(BOARD);
+  await js(`
+    [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Reset to sample')?.click();
+    await new Promise(r => setTimeout(r, 300));
+  `);
+  check('cards: reset returns to the sample and forgets the saved copy', [
+    (await cardStyle('c-5'))?.left,
+    await js(`return localStorage.getItem('thylas:board:v1:b-lit');`),
+  ], [704, null]);
 
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {

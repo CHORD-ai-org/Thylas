@@ -25,15 +25,6 @@
   color: var(--ink-2);
 }
 
-.notice {
-  margin-top: var(--s3);
-  padding: 7px 10px;
-  border-left: 2px solid var(--accent);
-  background: var(--tint-live);
-  font: var(--t-caption);
-  color: var(--ink-2);
-}
-
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
@@ -137,6 +128,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  touch-action: none;
   background-color: var(--bg-paper);
   background-image: radial-gradient(circle, rgba(73, 54, 38, 0.13) 1px, transparent 1px);
   background-size: var(--scene-grid) var(--scene-grid);
@@ -163,6 +155,9 @@
   width: var(--scene-w);
   height: var(--scene-h);
   transform-origin: 0 0;
+  /* Pointer handling relies on real mouse events for double-click, so the
+     canvas suppresses text selection instead of cancelling pointerdown. */
+  user-select: none;
 }
 
 .section {
@@ -206,15 +201,81 @@
   border-radius: 2px;
   text-align: left;
   box-shadow: var(--e1);
+  cursor: default;
+  user-select: none;
 }
 
 .bcard:hover {
   border-color: var(--ink-3);
 }
 
-.bcardSelected {
+.bcardSelected,
+.bcard[data-picked] {
+  /* The selected card is lifted so its resize handle is never covered by a
+     neighbour that happens to sit under the same corner. */
+  z-index: 1;
   box-shadow: 0 0 0 1px var(--accent), var(--e1);
   border-color: var(--accent);
+}
+
+.cardInput {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  background: transparent;
+  font: 400 13px/18px var(--ui);
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  user-select: text;
+}
+
+.resizeHandle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 8px;
+  height: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent);
+  cursor: nwse-resize;
+}
+
+/* Guides and marquee live inside the scene, so they scale with it and need no
+   coordinate conversion. JS toggles opacity to 0/1; nothing here animates. */
+.guideX {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: var(--scene-h);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.guideY {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--scene-w);
+  height: 1px;
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.marquee {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bcardLive {
@@ -301,6 +362,14 @@
   color: var(--ink);
 }
 
+.tool:disabled,
+.tool:disabled:hover {
+  color: var(--ink-3);
+  background: none;
+  opacity: 0.4;
+  cursor: default;
+}
+
 .minimap {
   position: absolute;
   left: 12px;
@@ -332,6 +401,12 @@
 .minimapSection {
   position: absolute;
   background: rgba(146, 123, 101, 0.22);
+}
+
+.minimapCard {
+  position: absolute;
+  background: rgba(73, 54, 38, 0.3);
+  border-radius: 1px;
 }
 
 .zoomDock {
@@ -438,4 +513,30 @@
   color: var(--ink-2);
   border-top: 1px solid var(--line);
   padding-top: 6px;
+}
+
+.canvasHint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 32ch;
+  text-align: center;
+  font: var(--t-caption);
+  line-height: 17px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.panelHint {
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  font: var(--t-caption);
+  line-height: 16px;
+  color: var(--ink-3);
+}
+
+.monoValue {
+  font: var(--t-mono-s);
+  color: var(--ink-2);
 }

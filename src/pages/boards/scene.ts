@@ -180,8 +180,11 @@ export function cardCenter(card: Rect): Point {
   return { x: card.x + card.w / 2, y: card.y + CARD_HEADER_CENTER };
 }
 
-/** Migration from the sample boards into the versioned scene schema. The mock
-   cards have no height; geometry needs one, so the default is recorded. */
+/** Migration from the sample boards into the versioned scene schema.
+   Card height `0` means "follows the content": the card is laid out by its own
+   text, and gestures read the real height from the DOM once per session. A
+   number is an explicit height the user set through the resize handle, so
+   geometry must never assume `h > 0`. */
 export function sceneFromBoard(legacy: LegacyBoard): BoardScene {
   return {
     version: 1,
@@ -189,7 +192,8 @@ export function sceneFromBoard(legacy: LegacyBoard): BoardScene {
     name: legacy.name,
     updated: legacy.updated,
     sections: legacy.sections.map((section) => ({ ...section })),
-    cards: legacy.boardCards.map((card) => ({ ...card, h: CARD_DEFAULT_H })),
+    // Sample cards are content-sized; the numbers arrive from measurement.
+    cards: legacy.boardCards.map((card) => ({ ...card, h: 0 })),
     edges: legacy.edges.map((edge) => ({ ...edge })),
     viewport: { x: 0, y: 0, zoom: 1 },
   };
