@@ -217,6 +217,23 @@ describe('align and distribute', () => {
     ];
     expect(distributeRects(tight, 'h').gap).toBe(0);
   });
+
+  // The array order is the scene order, which is rarely the visual order: a
+  // selection can hold the bottom card first. Each object keeps its own slot.
+  it('keeps every object where it belongs when the input is out of order', () => {
+    const shuffled: Rect[] = [
+      { x: 300, y: 0, w: 80, h: 40 },
+      { x: 0, y: 0, w: 100, h: 40 },
+      { x: 140, y: 0, w: 60, h: 80 },
+    ];
+    const result = distributeRects(shuffled, 'h');
+    const byX = [...result.rects].sort((a, b) => a.x - b.x);
+    expect(byX.map((r) => r.w)).toEqual([100, 60, 80]);
+    const gapA = (byX[1]?.x ?? 0) - ((byX[0]?.x ?? 0) + (byX[0]?.w ?? 0));
+    const gapB = (byX[2]?.x ?? 0) - ((byX[1]?.x ?? 0) + (byX[1]?.w ?? 0));
+    expect(gapA).toBeCloseTo(gapB, 5);
+    expect(result.rects[2]?.x).toBeGreaterThan(result.rects[1]?.x ?? 0);
+  });
 });
 
 describe('anchor hit testing', () => {

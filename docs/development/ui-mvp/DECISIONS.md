@@ -235,6 +235,62 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** persist everything the schema holds. Rejected: it makes Q-4 answer itself.
 **Consequence:** the header says "edits are kept in this browser" — not "saved", because there is no service and no other device. A reload does not preserve where you were looking.
 
+## D-030 · Sections are frames that own membership by geometry; the capsule is the only handle
+
+**Status:** accepted in force (SP-06c second pass).
+**Context:** The board needed the reference's section frames: a tint, a pill with a count, a fold. If a section's body were draggable, a marquee could never start inside one, and a card dropped into a section would drag the whole frame.
+**Decision:** a card belongs to the section whose rect holds its centre, recomputed by `reframe()` after every edit — membership is never a separate field to keep in sync. Only the pill drags the frame; the frame's body belongs to the canvas.
+**Alternative:** an explicit `sectionId` written on drop. Rejected: it goes wrong the moment a section is resized or a card is dragged out by its corner.
+**Consequence:** a card can change section without any command saying so; the counts follow. Deleting a frame keeps its cards, because they only lost their tint.
+
+## D-031 · Snap resolves against frames as well as cards
+
+**Status:** accepted in force (SP-06c second pass).
+**Context:** D-027 snaps a drop to a neighbour's axis. With frames on the board, the axis a reader wants is often the frame's edge, not a card's.
+**Decision:** `snapMove` is given cards and sections that are not being moved, in one list. A guide may therefore land on a frame edge, and the drop aligns to it.
+**Alternative:** cards only. Rejected: dropping a card flush inside a frame then became impossible without pixel-hunting.
+**Consequence:** a card inside a frame is 4px from its own frame's mid axis at rest, so a small drag pulls it onto that axis. That is a feature, and it is why the e2e drags 41px rather than 5px to test a free move.
+
+## D-032 · Grips and link dots are screen-sized, not scene-sized
+
+**Status:** accepted in force (SP-06c second pass).
+**Context:** Handles lived inside the scaled scene, so at the fitted 56% they were 4px targets, and at 400% they were 32px blobs.
+**Decision:** the viewport writes `--hud-shrink` (`1 / zoom`) on the scene element on every commit; `.handles i` and `.anchors i` scale by it. Zoom never re-renders React, so the value is written imperatively beside the transform.
+**Alternative:** compute sizes in React from a `zoom` state. Rejected: it would re-render 150 cards per wheel tick, and it goes stale exactly like the status bar did (R21).
+**Consequence:** the link dot's target is widened by a pseudo-element that grows *outwards only* — an inwards ring put the card's own header inside a connection target and swallowed the click (R27).
+
+## D-033 · The edge bar is docked above the status line
+
+**Status:** accepted in force (SP-06d).
+**Context:** The bar for a selected edge floated 40px above the line's midpoint. The midpoint of a short edge sits near a card, so the bar covered that card's title row — and its buttons ate the click, so the card could not be selected at all (measured: `status` stayed `Edge · …`).
+**Decision:** the bar is fixed at the bottom centre of the canvas, 56px above the status line. Shape, arrows and delete stay in it.
+**Alternative:** keep it near the line and clamp it away from cards. Rejected: it needs a collision test against every card on every pan, for a bar that only exists while an edge is selected.
+**Consequence:** the bar no longer points at the edge it edits; the accent line and the right panel do that job. Copy is fixed: `Edge · <from> → <to>` in the status line.
+
+## D-034 · The edge hit width is compensated by hand
+
+**Status:** accepted in force (SP-06d).
+**Context:** The spec asks for a 24px target at 10% and 400%. `vector-effect="non-scaling-stroke"` makes the *rendering* constant but Chromium's hit test still multiplies by the scene scale: measured half-widths were 6px at 56% and 12px at 100% with the attribute applied.
+**Decision:** the hit path keeps a transparent stroke of `calc(24px * var(--hud-shrink))`, so `width × zoom` is 24 at any zoom. The visible line keeps `non-scaling-stroke`, so a hairline stays a hairline.
+**Alternative:** an invisible `<rect>` per edge. Rejected: it cannot follow a curve.
+**Consequence:** measured 12px half-width at 56% and at 100%; the e2e asserts 9px off the line still hits and 20px off does not.
+
+## D-035 · Edge labels are drawn above cards but stay inert
+
+**Status:** accepted in force (SP-06d).
+**Context:** The spec wants labels clickable. Making the chip take pointer events made cards underneath unclickable — the first card in the e2e lost its selection to a chip lying over its header.
+**Decision:** the label layer stays `pointer-events: none`. The chip is 18px tall and the line passes through its middle, so the line's 24px band covers the whole chip: clicking the label selects the edge without the chip ever intercepting.
+**Alternative:** make the chip clickable only when it does not overlap a card. Rejected: the overlap is a rendering fact, not a hit-test hint, and it would flicker as cards move.
+**Consequence:** where a card covers a chip, the card wins — the honest outcome. A label on a bent edge (where the line leaves the chip's middle) is only clickable along the line.
+
+## D-036 · A context menu speaks for the selection, not for the object under the cursor
+
+**Status:** accepted in force (SP-06c second pass).
+**Context:** Right-clicking inside a three-object selection kept the selection (correct) but offered `Edit card` (opens the first card, not the clicked one) and `Duplicate` / `Delete` that then acted on all three.
+**Decision:** single-object items appear only when exactly one object is picked, and the labels carry the count: `Duplicate 3`, `Delete 3`. A right-click on an unselected object selects it first.
+**Alternative:** collapse the selection to the clicked object. Rejected: a right-click inside a set is how a reader asks "what can I do with these".
+**Consequence:** the menu has three items on a set, five on a single card, four on a frame; the e2e asserts the set case and the single case.
+
 ---
 
 ## Open questions (need a human, not a default)

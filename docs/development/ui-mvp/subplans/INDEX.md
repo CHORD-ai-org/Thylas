@@ -23,8 +23,8 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-05c](SP-05c-note-library.md) | Library list, search, panel | SP-05 | 1.25 | SP-05b | Not Started |
 | [SP-06a](SP-06a-scene-model.md) | Scene model, geometry, persistence schema | SP-06 | 0.75 | SP-04a | **Completed 11-07** |
 | [SP-06b](SP-06b-viewport.md) | Viewport: zoom, pan, pointer machine | SP-06 | 1.25 | SP-06a | **Completed 11-07** |
-| [SP-06c](SP-06c-cards.md) | Cards: create, drag, snap, marquee, undo | SP-06 | 1.5 | SP-06b | **Completed** 11-07 |
-| [SP-06d](SP-06d-edges.md) | Edges, anchors, labels | SP-06 | 1.5 | SP-06c | Not Started |
+| [SP-06c](SP-06c-cards.md) | Cards: create, drag, snap, marquee, undo | SP-06 | 1.5 | SP-06b | **Completed** 11-07 (second pass) |
+| [SP-06d](SP-06d-edges.md) | Edges, anchors, labels | SP-06 | 1.5 | SP-06c | **Completed** 11-07 |
 | [SP-07a](SP-07a-ai-endpoint.md) | AI middleware, client, error taxonomy | SP-07 | 1.0 | SP-03b | Not Started |
 | [SP-07b](SP-07b-ai-panel.md) | Overview AI panel and its states | SP-07 | 0.75 | SP-07a, SP-02 | Not Started |
 | [SP-07c](SP-07c-process-states.md) | Process states, controls, labelled simulator | SP-07 | 0.75 | SP-03b | Not Started |
@@ -32,7 +32,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-09a](SP-09a-gates.md) | Gates script and e2e expansion | SP-09 | 1.0 | SP-02…SP-08 | Not Started |
 | [SP-09b](SP-09b-visual-audit.md) | Visual, a11y, perf, identity test | SP-09 | 1.0 | SP-09a | Not Started |
 
-Remaining: **18 working days** (SP-03…SP-09), of which SP-05 and SP-06 are 9.
+Remaining: **9 working days** (SP-05, SP-07, SP-08, SP-09), of which SP-05 is 4 and stays blocked on Q-1. SP-06 is closed.
 
 ## Rules
 

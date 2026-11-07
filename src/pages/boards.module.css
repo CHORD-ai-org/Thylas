@@ -207,6 +207,10 @@
   pointer-events: none;
 }
 
+/* Stroke widths below are screen pixels, not scene units: the paths carry
+   vector-effect="non-scaling-stroke", so a hairline stays a hairline at 400%
+   and the hit area stays clickable at 10%. The property is set as an SVG
+   attribute in Boards.tsx — this Chrome ignores it in CSS. */
 .edgeLine {
   fill: none;
   stroke: color-mix(in oklab, var(--ink-2) 62%, var(--bg-paper));
@@ -229,7 +233,9 @@
 .edgeHit {
   fill: none;
   stroke: transparent;
-  stroke-width: 14;
+  /* Hit testing ignores non-scaling-stroke in this Chrome, so the width is
+     compensated by hand: 24px of screen space at every zoom. */
+  stroke-width: calc(24px * var(--hud-shrink, 1));
   pointer-events: stroke;
   cursor: pointer;
 }
@@ -264,6 +270,10 @@
   pointer-events: none;
 }
 
+/* The chip is drawn above cards so the label stays readable, but it is inert:
+   the line runs through its middle, and the line's 24px target is what takes
+   the click. Making the chip itself clickable would steal clicks from any card
+   it happens to lie over (measured: c-6 lost its selection to a chip). */
 .edgeLabel rect {
   fill: var(--bg-paper);
   stroke: var(--line-strong);
@@ -424,6 +434,8 @@
   visibility: hidden;
 }
 
+/* Grips are screen-sized, not scene-sized: the viewport writes --hud-shrink
+   (1 / zoom) on the scene, so an 8px handle reads as 8px at 50% and at 200%. */
 .anchors i {
   position: absolute;
   width: 9px;
@@ -433,13 +445,28 @@
   box-shadow: inset 0 0 0 1.5px var(--accent);
   pointer-events: auto;
   cursor: crosshair;
-  transition: transform 90ms var(--ease), background 90ms var(--ease);
+  transform: scale(var(--hud-shrink, 1));
+  transition: background 90ms var(--ease);
 }
 
 .anchors i:hover {
-  transform: scale(1.35);
+  transform: scale(calc(var(--hud-shrink, 1) * 1.35));
   background: var(--accent);
 }
+
+/* A 9px dot is a 9px target. The pseudo-element widens the target to ~29px on
+   the two axes, but only *outwards*: growing inwards would put the card's own
+   header strip inside a link target, and clicking the header would start a
+   connection instead of selecting the card (measured, then fixed here). */
+.anchors i::after {
+  content: '';
+  position: absolute;
+}
+
+.anchors i[data-side='t']::after { inset: -10px -10px 0 -10px; }
+.anchors i[data-side='b']::after { inset: 0 -10px -10px -10px; }
+.anchors i[data-side='l']::after { inset: -10px 0 -10px -10px; }
+.anchors i[data-side='r']::after { inset: -10px -10px -10px 0; }
 
 .anchors i[data-side='t'] { left: 50%; top: -5px; margin-left: -4.5px; }
 .anchors i[data-side='r'] { right: -5px; top: 50%; margin-top: -4.5px; }
@@ -454,6 +481,7 @@
   background: var(--bg-surface);
   box-shadow: inset 0 0 0 1.5px var(--accent);
   pointer-events: auto;
+  transform: scale(var(--hud-shrink, 1));
 }
 
 .handles i[data-dir='nw'] { left: -5px; top: -5px; cursor: nwse-resize; }
@@ -706,6 +734,11 @@
 .selectionHud,
 .edgeHud {
   position: absolute;
+  /* Docked above the status line instead of floating at the middle of the
+     selected line: a bar over the line lands on the very card the line points
+     at, and its buttons then swallow clicks meant for that card. */
+  left: 50%;
+  bottom: 56px;
   z-index: 20;
   display: flex;
   align-items: center;

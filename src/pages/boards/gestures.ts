@@ -308,8 +308,10 @@ export function distributeRects(
   if (gap < 8) return { rects: rects.slice(), gap };
   const out = rects.slice();
   let cursor = axis === 'h' ? first.x : first.y;
-  for (const { r } of order) {
-    out[order.findIndex((o) => o.r === r)] =
+  // `index` is the position in the caller's array — the order in the scene, not
+  // the sort order. Writing to the sorted slot swaps the objects instead.
+  for (const { r, index } of order) {
+    out[index] =
       axis === 'h' ? { ...r, x: Math.round(cursor) } : { ...r, y: Math.round(cursor) };
     cursor += size(r) + gap;
   }

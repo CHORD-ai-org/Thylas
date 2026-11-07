@@ -54,6 +54,23 @@ Parent §E. Selection = 1px accent ring; guides = 1px accent at 40%; resize hand
 
 Geometry unit tests already exist (SP-06a); e2e: create → drag → snap → undo; manual 150-card trace; screenshots of guides, selection, resize.
 
+## Second pass (11-07, after review)
+
+The first pass was rejected: "仿照 HeptaBase RE". It had one card shape, no sections, no edges, one resize corner and a 50-step undo. What the second pass added, all in the same page:
+
+| Added | Evidence |
+| --- | --- |
+| Sections: tint, pill header with count, collapse, drag by the capsule only | e2e: capsule selects the frame, deleting it keeps its cards |
+| Five card fills, fold to one row, `ref` and `live` rows | e2e: `plain,sage,amber,clay,stone`; folded heights `44,44,44` |
+| Eight resize handles, screen-sized at every zoom (D-032) | e2e: `e,n,ne,nw,s,se,sw,w`; +40/+29 drag → +40/+29 box |
+| Hover anchors, drag to connect, edges with shape/arrows/label | `SP-06d` |
+| Floating selection bar: five fills, fold, duplicate, delete | e2e: bar recolours and deletes the whole selection |
+| Object and blank context menus | e2e: five object items, four blank items, `Duplicate N` for a set (D-036) |
+| Minimap with a viewport frame, zoom dock, auto-pan at the canvas edge | e2e: minimap click recentres, drag near the edge pans |
+| A 2400 × 1600 workspace, fitted on load | e2e: canvas is 2400×1600 and the first view fits the content |
+
+The e2e suite grew from 100 to 183 assertions to cover it; the mock scene was re-laid out because cards overlapped their frames.
+
 ## Risks
 
 - Snap that fights the pointer is worse than no snap: only snap on release, or with a hard 6px threshold and no easing.

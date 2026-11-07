@@ -202,7 +202,6 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
     return { left: at.left, top: at.top, width: (right - left) * zoom, height: (bottom - top) * zoom };
   }, [selectedCards, selectedSections, zoom, scene, selection]);
 
-  const edgeAnchor = editor.selectedEdge ? edgeScreenOf(editor.selectedEdge, scene, toScreen) : null;
 
   const bounds = contentBounds(scene);
   const viewRect = {
@@ -284,9 +283,9 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
                 const selected = selection.includes(edge.id);
                 return (
                   <g key={edge.id} className={s.edge} data-selected={selected || undefined}>
-                    <path className={s.edgeLine} d={geometry.path} />
+                    <path className={s.edgeLine} d={geometry.path} vectorEffect="non-scaling-stroke" />
                     {geometry.arrows.map((arrow, i) => (
-                      <path key={i} className={s.edgeHead} d={arrow} />
+                      <path key={i} className={s.edgeHead} d={arrow} vectorEffect="non-scaling-stroke" />
                     ))}
                     <path
                       className={s.edgeHit}
@@ -468,7 +467,7 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
             </button>
             <span className={s.dockDivider} />
             <button type="button" onClick={() => zoomTo(1)} title="Reset to 100%">
-              100%
+              1:1
             </button>
             <button type="button" onClick={fit} aria-label="Fit the board" title="Fit (⌘0)">
               <IconFit size={13} />
@@ -481,7 +480,9 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
               {editor.lastAction ?? (selection.length === 0 ? 'Double-click to add · hover a card to connect' : '')}
             </span>
             <span className={s.statusCount}>
-              {counts.cards} cards · {Math.round(zoom * 100)}%
+              {/* Zoom lives in the dock, where it updates on every wheel tick;
+                  a second copy here would lag until the next render. */}
+              {counts.cards} cards · {counts.sections} sections
             </span>
           </div>
 
@@ -523,10 +524,9 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
             </div>
           ) : null}
 
-          {edgeAnchor && !editor.editing ? (
+          {editor.selectedEdge && !editor.editing ? (
             <div
               className={s.edgeHud}
-              style={{ left: clampLeft(edgeAnchor.left, areaRef.current?.clientWidth ?? 0), top: Math.max(8, edgeAnchor.top - 40) }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <span className={s.hudLabel}>Edge</span>
@@ -563,6 +563,16 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
               x={editor.contextMenu.x}
               y={editor.contextMenu.y}
               target={editor.contextMenu.target}
+              kind={
+                selection.length > 1
+                  ? 'many'
+                  : selectedSections.length === 1
+                    ? 'section'
+                    : selectedCards.length === 1
+                      ? 'card'
+                      : 'none'
+              }
+              count={selection.length}
               hasCard={selectedCards.length > 0}
               onPick={(action) => {
                 editor.dismissMenu();
@@ -1053,24 +1063,31 @@ function ContextMenu({
   x,
   y,
   target,
+  kind,
+  count,
   hasCard,
   onPick,
 }: {
   x: number;
   y: number;
   target: 'blank' | 'object';
+  /** What the menu speaks for: one card, one frame, or the whole selection. */
+  kind: 'card' | 'section' | 'many' | 'none';
+  count: number;
   hasCard: boolean;
   onPick: (action: string) => void;
 }) {
   const items: Array<{ id: string; label: string; hint?: string; danger?: boolean } | { divider: true; id: string }> =
     target === 'object'
       ? [
-          { id: 'open', label: 'Edit card', hint: '↵' },
-          { id: 'editSection', label: 'Rename section' },
+          // One-object actions only appear when exactly one object is picked;
+          // duplicated and deleted objects always follow the selection.
+          ...(kind === 'card' ? [{ id: 'open', label: 'Edit card', hint: '↵' }] : []),
+          ...(kind === 'section' ? [{ id: 'editSection', label: 'Rename section' }] : []),
           { id: 'fold', label: 'Fold / unfold', hint: 'F' },
-          { id: 'duplicate', label: 'Duplicate', hint: '⌘D' },
+          { id: 'duplicate', label: count > 1 ? `Duplicate ${count}` : 'Duplicate', hint: '⌘D' },
           { divider: true, id: 'd1' },
-          { id: 'delete', label: 'Delete', hint: '⌫', danger: true },
+          { id: 'delete', label: count > 1 ? `Delete ${count}` : 'Delete', hint: '⌫', danger: true },
         ]
       : [
           { id: 'newCard', label: 'New card', hint: 'N' },
@@ -1157,16 +1174,6 @@ function edgeGeometry(edge: SceneEdge, scene: BoardScene) {
     arrows.push(`M ${head.left.x} ${head.left.y} L ${head.tip.x} ${head.tip.y} L ${head.right.x} ${head.right.y}`);
   }
   return { path, mid, arrows, label: edge.label };
-}
-
-function edgeScreenOf(
-  edge: SceneEdge,
-  scene: BoardScene,
-  toScreen: (x: number, y: number) => { left: number; top: number },
-) {
-  const geometry = edgeGeometry(edge, scene);
-  if (!geometry) return null;
-  return toScreen(geometry.mid.x, geometry.mid.y);
 }
 
 function edgeTitle(edge: SceneEdge, scene: BoardScene) {

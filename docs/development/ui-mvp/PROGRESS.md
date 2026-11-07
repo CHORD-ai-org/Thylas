@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 17:55 (SP-06c complete).
+Last updated: 2026-11-07 20:10 (SP-06c second pass, SP-06d complete).
 
 ---
 
@@ -24,8 +24,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
-| SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | create, 1:1 drag, one 6px snap, marquee, resize, 50-step undo, local store |
-| SP-06d Edges | SP-06 | Not Started | 1.5 | SP-06c | anchors, labels, hit areas |
+| SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | sections, five fills, folds, eight handles, menus, minimap; second pass against the reference |
+| SP-06d Edges | SP-06 | **Completed** 11-07 | 1.5 | SP-06c | anchors, connect, bend, elbow, arrows, labels, 24px target at any zoom |
 | SP-07a AI endpoint | SP-07 | Not Started | 1.0 | SP-03b | middleware + error taxonomy |
 | SP-07b AI panel | SP-07 | Not Started | 0.75 | SP-07a, SP-02 | four states, footer meta |
 | SP-07c Process states | SP-07 | Not Started | 0.75 | SP-03b | filters, controls, labelled simulator |
@@ -33,7 +33,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **10.5 days**. Critical path: SP-06d → SP-09a; SP-07a is independently unblocked. SP-05 stays blocked on Q-1.
+Remaining: **9 days**. Critical path: SP-07a → SP-07b → SP-09a; SP-05 stays blocked on Q-1. SP-06 is closed.
 
 ---
 
@@ -49,11 +49,13 @@ Remaining: **10.5 days**. Critical path: SP-06d → SP-09a; SP-07a is independen
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
-| Unit tests | Vitest 5, 53 assertions incl. viewport maths | `src/pages/boards/{scene,store}.test.ts` |
-| E2E | 100 assertions, self-starting dev server | `scripts/ui-checks.mjs` |
-| Board scene | pure constants + versioned store · ref-driven viewport · editable cards | `src/pages/boards/`, `SP-06c` commit |
+| Unit tests | Vitest 5, 101 assertions: scene maths, store, history, gestures, tabs, routes, selectors | `src/**/*.test.ts` |
+| E2E | 183 assertions, self-starting dev server, fails the run on a page error | `scripts/ui-checks.mjs` |
+| Board scene | pure constants + versioned store (v2, v1 migrated) · ref-driven viewport · 2400 × 1600 workspace | `src/pages/boards/` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
-| Board editing | double-click create, drag with one 6px snap + guides, marquee, shift-add, multi-drag, resize, delete, 1/10px nudge, 50-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
+| Board editing | double-click create, drag with one 6px snap on cards *and* frames, marquee, shift-add, multi-drag, eight handles, delete, 1/10px nudge, 40-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
+| Board structure | sections with a pill and a count, five card fills, folds, `ref` / `live` rows, object and blank menus, minimap, zoom dock | `SP-06c` commits |
+| Board edges | hover anchors, drag to connect, bend, elbow, one/both arrowheads, labels, delete, 24px target at any zoom | `SP-06d` commits |
 | Tabs | pure `lib/tabs.ts`; versioned sessionStorage v2; tombstones | `e39d117` |
 | Panel / scroll | per-context widths, one global scroll restorer | `f2ec062` |
 
@@ -118,11 +120,18 @@ Remaining: **10.5 days**. Critical path: SP-06d → SP-09a; SP-07a is independen
 | 11-07 | Reset | sample restored, stored copy removed (`getItem` → null) |
 | 11-07 | `npm run build` (SP-06c) | CSS 56.7 KB / JS 138.2 KB gzip |
 | 11-07 | Screenshots | `sp06c-selection`, `sp06c-guide`, `sp06c-editing`, `sp06c-created` |
+| 11-07 | `npm test` (SP-06c pass 2) | 101/101; distribute keyed by caller index |
+| 11-07 | `npm run e2e` (SP-06c pass 2) | 183/183; canvas, fit, sections, fills, folds, menus, edges, storage |
+| 11-07 | Resize grips | measured 9px dot / 8px handle at 56% and 100% (constant on screen) |
+| 11-07 | Edge target | half-width 12px at 56% and 100%; 9px off the line hits, 20px off misses |
+| 11-07 | Edge bar hand-off | clicking a card title with an edge selected leaves `Selected · …` and no bar |
+| 11-07 | `npm run build` (SP-06d) | CSS 65.6 KB / JS 478.1 KB (149.4 KB gzip) |
+| 11-07 | Screenshots | `.workbuddy/tmp/0{1..9}-*.png`: fit, 100%, marquee, menu, edge, zoomed grips |
 
 ## Next concrete action
 
-1. **SP-06d Edges** (1.5 days): anchors on hover, drag from an anchor to a card, edge labels, hit areas that scale with zoom. Exit when three labelled edges can be drawn and undone, and edge hit targets stay 24px at 10% and 400%.
-2. Alternatively **SP-07a AI endpoint** (1 day), independently unblocked. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so do not wire `BoardScene.viewport` yet.
+1. **SP-07a AI endpoint** (1 day): the middleware and its error taxonomy. It is the only remaining unit on the critical path that is not blocked.
+2. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved
 
@@ -147,3 +156,11 @@ Remaining: **10.5 days**. Critical path: SP-06d → SP-09a; SP-07a is independen
 | R17 | Section / Edge / Card tools did nothing and apologised after the click | SP-06c | toolbar holds Select, Undo, Redo — all real; no "deferred" copy anywhere |
 | R18 | A board could not be written to | SP-06c | create, drag, snap, marquee, resize, delete, nudge, undo all through one command path |
 | R19 | "New board" apologised after being clicked | SP-06c | disabled with `title` + persistent `boards-limit` reason |
+| R20 | Mock cards overlapped each other and spilled past their frame | SP-06c | frames are all 760 tall, column pitch 145; screenshot at fit shows no overhang |
+| R21 | Status bar printed a zoom percentage that only updated on re-render, next to a live one | SP-06c | the status shows counts; zoom lives in the dock (`Boards.tsx`) |
+| R22 | Grips and link dots shrank with the canvas (4px at 56%) | SP-06c | `--hud-shrink` on the scene; dot measured 9px at 56% and 100% (D-032) |
+| R23 | `distributeRects` wrote positions in sort order, so objects swapped places | SP-06c | keyed by the caller's index; unit test with an out-of-order input |
+| R24 | The edge bar covered the card it pointed at and ate its click | SP-06d | bar docked above the status line (D-033); e2e asserts the title is clickable |
+| R25 | The edge target shrank to 6px half-width at 56% (`non-scaling-stroke` is ignored by hit testing) | SP-06d | width `calc(24px * --hud-shrink)`; half-width measured 12px at 56% and 100% (D-034) |
+| R26 | Discarding an empty card left its edges on the board | SP-06c | the discard commit drops the edges too |
+| R27 | A clickable edge label stole the click from the card under it | SP-06d | labels stay inert; the line's band takes the click (D-035) |

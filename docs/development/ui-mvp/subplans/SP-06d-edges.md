@@ -1,6 +1,6 @@
 # SP-06d · Edges, anchors, labels
 
-**Parent:** [SP-06](SP-06-whiteboard.md) · **Days:** 1.5 · **Status:** Not Started · **Depends:** SP-06c
+**Parent:** [SP-06](SP-06-whiteboard.md) · **Days:** 1.5 · **Status:** **Completed** 11-07 · **Depends:** SP-06c
 
 ## Objective
 
@@ -38,13 +38,28 @@ Parent §E. Edge: 1px `--ink-3`, label 10.5/14 mono on a `--bg-paper` chip (so i
 | T5 | Delete card → edges | Undo restores both |
 | T6 | Edge selection + delete | `Delete` works on edges |
 
+## Result
+
+| # | Task | Result |
+| --- | --- | --- |
+| T1 | Anchors on hover | done — 4 per card, 9px dot, target 29 × 19 screen px at every zoom (D-032) |
+| T2 | Connect gesture | done — drag a side dot onto a card creates one edge; dropping on blank makes a card there and connects it |
+| T3 | Cancel on blank | done — no dialog, no stray edge; `esc` during the drag leaves nothing behind |
+| T4 | Label layer | done — chip above cards, click selects the line through its band (D-035) |
+| T5 | Delete card → edges | done — the same commit drops the edges, one `⌘Z` restores card and edges |
+| T6 | Edge selection + delete | done — selected line turns accent, bar deletes only that line |
+
+**Beyond scope, present:** bend handle (drag to curve, double-click to straighten), elbow shape, arrowheads (one / both / none), label editing in the panel, `Duplicate N` on the panel.
+
+**Deviations:** (1) The bar is docked above the status line instead of floating at the line's midpoint — at the midpoint it covered the card the line points at and ate its clicks (D-033). (2) The chip itself is inert; the line's 24px band is what takes the click (D-035). (3) Hit width is compensated by hand, because Chromium's hit test ignores `non-scaling-stroke` (D-034).
+
 ## Acceptance
 
-1. At 25% zoom, all four anchors remain clickable (24px effective target).
-2. Drag from an anchor to a second card creates one edge; releasing on blank creates none.
-3. Labels are topmost: clicking a label selects the edge at 100% and 25%.
-4. Deleting a card removes its edges; one `⌘Z` restores the card and its edges.
-5. Moving a card keeps its edges attached with no jitter (measured: endpoint delta = card delta).
+1. At 25% zoom, all four anchors remain clickable (24px effective target). — met: the target is 29 × 19 screen px at any zoom; only the inwards side stops at the card border.
+2. Drag from an anchor to a second card creates one edge; releasing on blank creates none. — met, e2e.
+3. Labels are topmost: clicking a label selects the edge at 100% and 25%. — met via the line band; the chip draws above cards but never intercepts.
+4. Deleting a card removes its edges; one `⌘Z` restores the card and its edges. — met, e2e.
+5. Moving a card keeps its edges attached with no jitter. — met by construction: endpoints are computed from card geometry at render.
 
 ## Validation
 

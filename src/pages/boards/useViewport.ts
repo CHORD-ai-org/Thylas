@@ -78,6 +78,9 @@ export function useCanvasViewport(
     const v = view.current;
     if (r.scene.current) {
       r.scene.current.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.zoom})`;
+      // Grips and dots cancel the scene scale so they stay the same size on
+      // screen at every zoom. Written here because zoom never re-renders.
+      r.scene.current.style.setProperty('--hud-shrink', String(1 / v.zoom));
     }
     if (r.area.current) {
       // The grid follows pan and zoom, but the dot radius stays 1px because it
