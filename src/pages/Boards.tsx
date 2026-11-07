@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { boardsIn, getBoard, getWorkspace } from '../data/selectors';
@@ -6,7 +6,8 @@ import { useRegisterTab } from '../state/app';
 import { Badge, Button, EmptyState, Field } from '../components/ui';
 import { IconChevron, IconPlus } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
-import { CARD_HEADER_CENTER, SCENE_H, SCENE_W, fitScale, sceneVars } from './boards/scene';
+import { CARD_HEADER_CENTER, SCENE_H, SCENE_W, sceneVars } from './boards/scene';
+import { useCanvasViewport, type ViewportRefs } from './boards/useViewport';
 import s from './boards.module.css';
 
 export function BoardsPage() {
@@ -75,21 +76,21 @@ export function BoardDetailPage() {
   const { wsId = '', boardId = '' } = useParams();
   const navigate = useNavigate();
   const board = getBoard(boardId);
-  const [zoom, setZoom] = useState(1);
-  const [fit, setFit] = useState(0.72);
   const [selected, setSelected] = useState<string | null>('c-3');
   const [notice, setNotice] = useState<string | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = areaRef.current;
-    if (!el) return;
-    const measure = () => setFit(fitScale(el.clientWidth, el.clientHeight));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const zoomLabelRef = useRef<HTMLSpanElement>(null);
+  const refs: ViewportRefs = {
+    area: areaRef,
+    stage: stageRef,
+    scene: sceneRef,
+    zoomLabel: zoomLabelRef,
+  };
+  const enabled = !!board && board.sections.length > 0;
+  // Cmd+0 / Cmd++ / Cmd+- are bound to the viewport inside the hook.
+  const { zoomIn, zoomOut } = useCanvasViewport(refs, enabled);
 
   useRegisterTab(
     `ws:${wsId}`,
@@ -183,10 +184,10 @@ export function BoardDetailPage() {
               }
             />
           ) : (
-            <div className={s.stage} style={{ width: SCENE_W * fit * zoom, height: SCENE_H * fit * zoom }}>
+            <div className={s.stage} ref={stageRef}>
             <div
               className={s.scene}
-              style={{ transform: `scale(${fit * zoom})` }}
+              ref={sceneRef}
               onClick={(e) => {
                 if (e.target === e.currentTarget) setSelected(null);
               }}
@@ -297,11 +298,11 @@ export function BoardDetailPage() {
           )}
           {empty ? null : (
           <div className={s.zoomDock}>
-            <button type="button" onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))} aria-label="Zoom out">
+            <button type="button" onClick={zoomOut} aria-label="Zoom out">
               −
             </button>
-            <span className={s.zoomValue}>{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => setZoom((z) => Math.min(1.6, Number((z + 0.1).toFixed(2))))} aria-label="Zoom in">
+            <span className={s.zoomValue} ref={zoomLabelRef}>100%</span>
+            <button type="button" onClick={zoomIn} aria-label="Zoom in">
               +
             </button>
           </div>
@@ -309,7 +310,7 @@ export function BoardDetailPage() {
           )}
           <div className={s.statusBar}>
             <span>{selectedCard ? `Selected · ${selectedCard.title.slice(0, 28)}` : 'No selection'}</span>
-            <span className={s.statusHint}>Selection only · drag, edges and writing are deferred</span>
+            <span className={s.statusHint}>Pan and zoom active · dragging, edges and writing are deferred</span>
             <span className={s.statusCount}>{board.cards} cards</span>
           </div>
         </div>

@@ -143,6 +143,14 @@
   background-position: -1px -1px;
 }
 
+.canvasArea[data-space] {
+  cursor: grab;
+}
+
+.canvasArea[data-panning] {
+  cursor: grabbing;
+}
+
 .stage {
   position: relative;
   flex: 0 0 auto;

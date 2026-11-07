@@ -20,6 +20,8 @@ export const MAX_SCALE = 4;
 export const SNAP_THRESHOLD = 6;
 export const ANCHOR_HIT = 24;
 export const ANCHOR_DOT = 12;
+export const WHEEL_ZOOM_SENSITIVITY = 0.0015;
+export const ZOOM_STEP = 1.1;
 
 export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -141,6 +143,35 @@ export function anchorDotSize(scale: number): number {
    marquee that ends exactly on a card's border must not select it. */
 export function rectsIntersect(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** A neutral viewport: user zoom is 1 (dock reads 100%) and the scene sits at
+    the stage origin. `fit` is applied separately when the canvas is measured. */
+export function fitViewport(): Viewport {
+  return { x: 0, y: 0, zoom: 1 };
+}
+
+export function panBy(view: Viewport, dx: number, dy: number): Viewport {
+  return { ...view, x: view.x + dx, y: view.y + dy };
+}
+
+/** Keep the scene point under `pointer` fixed while the zoom changes.
+    `pointer` is in screen pixels relative to the scene origin; `fit` cancels
+    out of the ratio, so only the user zoom is needed here. */
+export function zoomAt(view: Viewport, nextZoom: number, pointer: Point): Viewport {
+  const zoom = clampScale(nextZoom);
+  const ratio = zoom / view.zoom;
+  return {
+    zoom,
+    x: pointer.x - (pointer.x - view.x) * ratio,
+    y: pointer.y - (pointer.y - view.y) * ratio,
+  };
+}
+
+/** Continuous, not stepped: pinch gestures arrive as ctrl+wheel with small
+    deltas, and 30 of them must accumulate into 30 distinct zoom values. */
+export function wheelZoom(view: Viewport, deltaY: number, pointer: Point): Viewport {
+  return zoomAt(view, view.zoom * Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY), pointer);
 }
 
 /** The centre of a card's header row — where edges attach in the read-only

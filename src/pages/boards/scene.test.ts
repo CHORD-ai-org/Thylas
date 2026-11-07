@@ -15,10 +15,14 @@ import {
   cardCenter,
   clampScale,
   fitScale,
+  fitViewport,
+  panBy,
   rectsIntersect,
   sceneFromBoard,
   sceneVars,
   snap,
+  wheelZoom,
+  zoomAt,
   type Rect,
 } from './scene';
 
@@ -101,6 +105,53 @@ describe('rectsIntersect', () => {
     expect(rectsIntersect(rect(0, 0), rect(100, 0))).toBe(false);
     expect(rectsIntersect(rect(0, 0), rect(0, 60))).toBe(false);
     expect(rectsIntersect(rect(0, 0), rect(200, 200))).toBe(false);
+  });
+});
+
+describe('viewport maths (SP-06b)', () => {
+  it('starts neutral and pans without touching zoom', () => {
+    expect(fitViewport()).toEqual({ x: 0, y: 0, zoom: 1 });
+    expect(panBy(fitViewport(), -30, 12)).toEqual({ x: -30, y: 12, zoom: 1 });
+  });
+
+  it('keeps the scene point under the pointer fixed across a zoom change', () => {
+    const view = { x: 20, y: 30, zoom: 1 };
+    const pointer = { x: 200, y: 150 };
+    const scenePoint = {
+      x: (pointer.x - view.x) / view.zoom,
+      y: (pointer.y - view.y) / view.zoom,
+    };
+    const next = zoomAt(view, 2, pointer);
+    expect((pointer.x - next.x) / next.zoom).toBeCloseTo(scenePoint.x, 6);
+    expect((pointer.y - next.y) / next.zoom).toBeCloseTo(scenePoint.y, 6);
+    // reversing the zoom returns to the original viewport
+    expect(zoomAt(next, 1, pointer)).toEqual(view);
+  });
+
+  it('clamps zoom to 10–400%', () => {
+    const p = { x: 0, y: 0 };
+    expect(zoomAt(fitViewport(), 100, p).zoom).toBe(MAX_SCALE);
+    expect(zoomAt(fitViewport(), 0.00001, p).zoom).toBe(MIN_SCALE);
+  });
+
+  it('accumulates 30 wheel gestures into 30 distinct steps, not one', () => {
+    let view = fitViewport();
+    const values: number[] = [];
+    for (let i = 0; i < 30; i++) {
+      view = wheelZoom(view, -20, { x: 300, y: 200 });
+      values.push(view.zoom);
+    }
+    expect(new Set(values).size).toBe(30);
+    expect(view.zoom).toBeGreaterThan(2);
+    expect(view.zoom).toBeCloseTo(Math.exp(30 * 20 * 0.0015), 6);
+    // the buggy closure-based version would have produced a single step
+    expect(view.zoom).not.toBeCloseTo(Math.exp(20 * 0.0015), 2);
+  });
+
+  it('survives a long zoom-out without leaving the clamp range', () => {
+    let view = fitViewport();
+    for (let i = 0; i < 200; i++) view = wheelZoom(view, 100, { x: 0, y: 0 });
+    expect(view.zoom).toBe(MIN_SCALE);
   });
 });
 

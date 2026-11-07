@@ -524,6 +524,143 @@ async function main() {
     return document.body.innerText.includes('no scene yet');
   `), true);
 
+  // ---- SP-06b: viewport ref, pointer-anchored zoom, pan, clamps ----
+  const BOARD = '/w/ws-research/boards/b-lit';
+  const probe = () => js(`
+    const area = document.querySelector('[class*="canvasArea"]');
+    const stage = document.querySelector('[class*="stage"]');
+    const scene = document.querySelector('svg[class*="edgeLayer"]').parentElement;
+    const m = new DOMMatrix(getComputedStyle(scene).transform);
+    const ar = area.getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    const label = document.querySelector('[class*="zoomValue"]');
+    return { a: m.a, e: m.e, f: m.f, stageX: sr.left - ar.left, stageY: sr.top - ar.top,
+             areaX: ar.left, areaY: ar.top, areaW: ar.width, areaH: ar.height,
+             label: label?.textContent ?? '' };
+  `);
+  const wheel = (x, y, deltaY, modifiers = 0, deltaX = 0) =>
+    send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX, deltaY, modifiers });
+  const keyEvent = (type, k, code, vk, modifiers = 0) =>
+    send('Input.dispatchKeyEvent', { type, key: k, code, windowsVirtualKeyCode: vk, modifiers });
+
+  await goto(BOARD);
+  let p = await probe();
+  check('viewport: dock starts at 100%', p.label, '100%');
+  const cx = p.areaX + p.areaW / 2;
+  const cy = p.areaY + p.areaH / 2;
+
+  const scales = [];
+  for (let i = 0; i < 30; i++) {
+    await wheel(cx, cy, -20, 2);
+    await sleep(34);
+    scales.push((await probe()).a);
+  }
+  check('viewport: 30 ctrl+wheel gestures produce 30 distinct zoom steps',
+    new Set(scales.map((v) => v.toFixed(4))).size, 30);
+  check('viewport: accumulated zoom is continuous, not a single step',
+    (await probe()).a / p.a, (v) => v > 2 && v < 3);
+
+  await goto(BOARD);
+  p = await probe();
+  const pointer = { x: p.areaX + p.areaW * 0.45, y: p.areaY + p.areaH * 0.45 };
+  const stagePointer = (v) => ({ x: pointer.x - v.areaX - v.stageX, y: pointer.y - v.areaY - v.stageY });
+  const scenePoint = (v) => {
+    const q = stagePointer(v);
+    return { x: (q.x - v.e) / v.a, y: (q.y - v.f) / v.a };
+  };
+  const before = scenePoint(p);
+  await wheel(pointer.x, pointer.y, -120, 2);
+  await sleep(90);
+  const zoomed = await probe();
+  const after = scenePoint(zoomed);
+  check('viewport: zoom keeps the point under the pointer fixed', Math.abs(after.x - before.x) + Math.abs(after.y - before.y),
+    (v) => v < 2);
+  await wheel(pointer.x, pointer.y, 120, 2);
+  await sleep(90);
+  const restored = scenePoint(await probe());
+  check('viewport: zooming back returns to the same scene point',
+    Math.abs(restored.x - before.x) + Math.abs(restored.y - before.y), (v) => v < 2);
+
+  await goto(BOARD);
+  await js(`
+    const scene = document.querySelector('svg[class*="edgeLayer"]').parentElement;
+    window.__cardMut = 0;
+    window.__obs = new MutationObserver((list) => {
+      for (const m of list) {
+        if (m.target === scene && m.attributeName === 'style') continue;
+        window.__cardMut++;
+      }
+    });
+    window.__obs.observe(scene, { attributes: true, childList: true, subtree: true });
+  `);
+  p = await probe();
+  for (let i = 0; i < 10; i++) {
+    await wheel(p.areaX + p.areaW / 2, p.areaY + p.areaH / 2, 12, 0, 4);
+    await sleep(20);
+  }
+  const panned = await probe();
+  check('viewport: wheel pans the scene', Math.abs(panned.f - p.f), (v) => v > 20);
+  check('viewport: wheel pan never re-renders cards', await js(`return window.__cardMut;`), 0);
+  await js(`window.__obs.disconnect();`);
+
+  await goto(BOARD);
+  p = await probe();
+  await keyEvent('keyDown', ' ', 'Space', 32);
+  check('viewport: space shows the grab cursor', await js(`
+    return document.querySelector('[class*="canvasArea"]').hasAttribute('data-space');
+  `), true);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', buttons: 1, clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cx + 60, y: cy + 30, button: 'left', buttons: 1 });
+  await sleep(60);
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx + 60, y: cy + 30, button: 'left', buttons: 0, clickCount: 1 });
+  const dragged = await probe();
+  check('viewport: space-drag pans 1:1', [Math.round(dragged.e - p.e), Math.round(dragged.f - p.f)], [60, 30]);
+  check('viewport: pan session releases its listeners', await js(`
+    return !document.querySelector('[class*="canvasArea"]').hasAttribute('data-panning');
+  `), true);
+  await keyEvent('keyUp', ' ', 'Space', 32);
+
+  for (let i = 0; i < 60; i++) await wheel(cx, cy, 200, 2);
+  await sleep(120);
+  check('viewport: zoom clamps at 10%', (await probe()).label, '10%');
+  for (let i = 0; i < 80; i++) await wheel(cx, cy, -200, 2);
+  await sleep(120);
+  check('viewport: zoom clamps at 400%', (await probe()).label, '400%');
+  await keyEvent('keyDown', '0', 'Digit0', 48, 4);
+  await keyEvent('keyUp', '0', 'Digit0', 48, 4);
+  await sleep(90);
+  const fitted = await probe();
+  check('viewport: Cmd+0 fits the scene', [fitted.label, Math.round(fitted.e), Math.round(fitted.f)], ['100%', 0, 0]);
+
+  // 150-card frame budget. Cards are plain DOM nodes appended to the scene;
+  // a pan must cost one O(1) transform write per frame, never a React render.
+  await goto(BOARD);
+  await js(`
+    const scene = document.querySelector('svg[class*="edgeLayer"]').parentElement;
+    for (let i = 0; i < 150; i++) {
+      const d = document.createElement('div');
+      d.style.cssText = 'position:absolute;width:180px;height:88px;left:' + ((i % 15) * 66) + 'px;top:' +
+        (Math.floor(i / 15) * 52) + 'px;background:#FBF9F4;border:1px solid #E6DED1;pointer-events:none';
+      scene.appendChild(d);
+    }
+    window.__frames = [];
+    let last = performance.now();
+    const tick = (t) => {
+      window.__frames.push(t - last);
+      last = t;
+      if (window.__frames.length < 120) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  `);
+  for (let i = 0; i < 60; i++) {
+    await wheel(cx, cy, i % 2 ? 8 : -8);
+    await sleep(16);
+  }
+  const frames = await js(`return window.__frames.slice(2);`);
+  const sorted = [...frames].sort((a, b) => a - b);
+  const p95 = sorted.length ? Number(sorted[Math.floor(sorted.length * 0.95)].toFixed(2)) : 999;
+  check('viewport: 150-card pan holds P95 <= 20ms', p95, (v) => v > 0 && v <= 20);
+
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {
     console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.pass ? '' : `  → ${JSON.stringify(r.actual)}`}`);
