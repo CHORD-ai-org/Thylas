@@ -120,10 +120,12 @@ Consequence for the current UI: `Overview` intent Start, `Files` Upload / New fo
 | --- | --- |
 | Global | `⌘K` palette · `⌘\` panel · `esc` closes the topmost overlay |
 | Rail `[P]` | `↑↓` siblings, `→` expand, `←` collapse, `↵` open |
-| Tabs | `⌘⇧[` / `⌘⇧]` previous/next tab `[P]`; `⌘W` closes the active object tab, never a room tab `[P]` |
+| Tabs | Close via the tab control; switch via the palette. `⌘W` / `⌘⇧[` / `⌘⇧]` are **not bound** (browser-reserved, D-013) |
 | Tables | `↑↓` selection, `↵` open, `esc` clear selection |
 | Palette | `↑↓`, `↵`, `esc`, type-to-filter |
 | Board | `+/-` zoom, `0` fit, `esc` deselect |
+
+**Changed 2026-11-07 (D-013):** the tab shortcuts originally proposed here are not bound. Chrome consumes `⌘W` and `⌘⇧[`/`]` before the page sees them, so a handler would either never fire or fight the browser. Closing uses the tab control; cycling uses the palette.
 
 Forbidden: single-letter shortcuts outside the palette, shortcuts that shadow browser tab switching (`⌘1/2/3`), and any shortcut that is not discoverable in the palette.
 

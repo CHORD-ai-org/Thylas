@@ -3,6 +3,8 @@ import {
   STATE_LABEL,
   STATE_TONE,
   getProcess,
+  needsInput,
+  pendingLede,
   processesIn,
   getWorkspace,
   filesInFolder,
@@ -29,6 +31,19 @@ describe('run state vocabulary', () => {
   });
 });
 
+describe('the computed Overview lede (SP-02)', () => {
+  it('singular, plural and zero are all distinct and grammatical', () => {
+    expect(pendingLede(1)).toContain('1 process needs a decision');
+    expect(pendingLede(2)).toContain('2 processes need a decision');
+    expect(pendingLede(0)).toContain('Nothing needs you right now');
+    expect(pendingLede(0)).not.toContain('0 process');
+  });
+
+  it('changes when the model changes', () => {
+    expect(pendingLede(0)).not.toBe(pendingLede(1));
+  });
+});
+
 describe('sample model consistency', () => {
   it('gives every process a workspace that exists', () => {
     for (const ws of ['ws-research', 'ws-onda']) {
@@ -49,5 +64,17 @@ describe('sample model consistency', () => {
   it('resolves a run by id and returns undefined for a stranger', () => {
     expect(getProcess('run-baseline')?.name).toBe('baseline-sweep');
     expect(getProcess('run-nope')).toBeUndefined();
+  });
+
+  it('collects needs_input across workspaces, and nothing else', () => {
+    const pending = needsInput();
+    expect(pending.length).toBeGreaterThan(0);
+    expect(pending.every((p) => p.state === 'needs_input')).toBe(true);
+    expect(new Set(pending.map((p) => p.wsId)).size).toBeGreaterThan(1);
+    // The lede and the section count read the same list, so a run cannot be
+    // announced without a row or shown without a count.
+    expect(pending.length).toBe(
+      ['ws-research', 'ws-onda'].flatMap((ws) => processesIn(ws)).filter((p) => p.state === 'needs_input').length,
+    );
   });
 });

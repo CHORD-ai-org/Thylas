@@ -1,21 +1,25 @@
+/* Overview. Type comes only from typography.css tokens; the only display step
+   on this screen is the greeting. Section labels compose the shared grammar
+   recipe (6px index tick) rather than redefining it here. */
+
 .head {
   max-width: 620px;
 }
 
 .greeting {
   font: var(--t-display);
-  letter-spacing: -0.012em;
+  letter-spacing: -0.015em;
   color: var(--ink);
 }
 
 .lede {
   margin-top: var(--s2);
   max-width: 48ch;
-  font: 400 13px/20px var(--ui);
+  font: var(--t-ui);
   color: var(--ink-2);
 }
 
-/* ---- intent ---- */
+/* ---- intent: a real field, a permanently unavailable submission ---- */
 
 .intentForm {
   margin-top: var(--s8);
@@ -37,10 +41,19 @@
   border-color: var(--ink-3);
 }
 
+/* The 6px index tick marks the writing field, the same way it marks a section.
+   A magnifier would have promised search; there is no search here. */
+.intentTick {
+  width: 6px;
+  height: 1px;
+  background: var(--line-strong);
+  flex: 0 0 auto;
+}
+
 .intentInput {
   flex: 1;
   min-width: 0;
-  font: 400 14px/20px var(--ui);
+  font: var(--t-read);
   color: var(--ink);
 }
 
@@ -60,37 +73,26 @@
   cursor: not-allowed;
 }
 
-.intentMeta {
+.intentFoot {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--s4);
   margin-top: 8px;
+}
+
+/* Reason before the click, not after it. One 1px rule, no tinted banner. */
+.intentReason {
+  min-width: 0;
+  padding-left: 10px;
+  border-left: 1px solid var(--line-strong);
   font: var(--t-caption);
   color: var(--ink-2);
 }
 
-.intentMeta > span:first-child {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.intentMeta strong {
-  font-weight: 500;
-  color: var(--ink);
-  margin: 0 3px 0 2px;
-}
-
-.metaHint {
-  color: var(--ink-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.metaRight {
+.intentMeta {
+  flex: 0 0 auto;
+  font: var(--t-caption);
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -102,23 +104,15 @@
   border-radius: var(--r-chip);
 }
 
-.notice {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-left: 2px solid var(--accent);
-  background: var(--tint-live);
-  font: var(--t-caption);
-  line-height: 16px;
-  color: var(--ink-2);
-}
-
 /* ---- two-column orientation ---- */
 
 .split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: var(--s12);
-  margin-top: 44px;
+  /* The right column is the panel width: a needs-you question is the longest
+     line on this screen and must not be cut by the action chip. */
+  grid-template-columns: minmax(0, 1fr) var(--w-panel);
+  gap: var(--s8);
+  margin-top: var(--s12);
 }
 
 .col {
@@ -148,8 +142,14 @@
   text-align: left;
 }
 
-.row:hover .rowTitle {
-  color: var(--accent);
+/* Hover is a tint, never a colour change on the text. Focus comes from the
+   global :focus-visible rule in base.css, so every row shares one ring. */
+.row:hover {
+  background: var(--tint-hover);
+}
+
+.row:active {
+  background: var(--bg-paper);
 }
 
 .rowGlyph {
@@ -159,11 +159,6 @@
   width: 18px;
   color: var(--ink-3);
   flex: 0 0 auto;
-}
-
-.boardGlyph {
-  font-size: 11px;
-  color: var(--ink-2);
 }
 
 .rowMain {
@@ -180,15 +175,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color var(--dur-fast) var(--ease);
 }
 
 .rowMeta {
+  min-width: 0;
   font: var(--t-caption);
   color: var(--ink-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* In the 300px Needs-you column a trailing chip would squeeze the question —
+   the one piece of text the row exists for. The chip shares the second line. */
+.needMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.needMeta .rowMeta {
+  flex: 1;
+}
+
+.needMeta > :last-child {
+  flex: 0 0 auto;
 }
 
 .rowState {
@@ -214,6 +226,7 @@
   margin-left: auto;
   padding-left: var(--s3);
   font: var(--t-mono-s);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -253,6 +266,10 @@
   border-color: var(--line-strong);
 }
 
+.wsCard:active {
+  border-color: var(--ink-3);
+}
+
 .wsCardTop {
   display: flex;
   align-items: center;
@@ -266,6 +283,7 @@
 
 .wsCardMeta {
   font: var(--t-caption);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-2);
   margin-top: 6px;
 }
@@ -276,30 +294,12 @@
   margin-top: 10px;
 }
 
-.wsNew {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 3px;
-  min-height: 96px;
-  padding: 12px 14px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-surface);
-  color: var(--ink-3);
-  font: var(--t-ui);
-  text-align: left;
-}
-
-.wsNew:hover {
-  border-color: var(--ink-3);
-  color: var(--ink);
-}
-
-.wsNewHint {
-  font: var(--t-mono-s);
-  color: var(--ink-3);
-  letter-spacing: var(--track-caption);
+/* Absence is the honest form: no disabled "New workspace" button, no dashed
+   card. One sentence says where workspaces come from. */
+.footNote {
+  margin-top: var(--s3);
+  font: var(--t-caption);
+  color: var(--ink-2);
 }
 
 @media (max-width: 1160px) {

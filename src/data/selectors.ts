@@ -48,6 +48,13 @@ export function processesIn(wsId: string): Process[] {
   return PROCESSES.filter((p) => p.wsId === wsId);
 }
 
+/** Runs waiting on a person, across every workspace. Overview owns the only
+    cross-workspace list in the app; keeping the filter here means the lede and
+    the "Needs you" rows can never disagree about what counts. */
+export function needsInput(): Process[] {
+  return PROCESSES.filter((p) => p.state === 'needs_input');
+}
+
 export function getProcess(id: string | undefined): Process | undefined {
   return PROCESSES.find((p) => p.id === id);
 }
@@ -76,6 +83,14 @@ export const STATE_TONE: Record<RunState, Tone> = {
 
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
+}
+
+/** The Overview lede. Kept next to `needsInput()` so the zero state cannot be
+    a sentence that only exists in a screenshot: it is a tested pure function. */
+export function pendingLede(count: number): string {
+  const tail = 'Pick up the thread you dropped, or describe something new.';
+  if (count === 0) return `Nothing needs you right now. ${tail}`;
+  return `${plural(count, 'process', 'processes')} ${count === 1 ? 'needs' : 'need'} a decision. ${tail}`;
 }
 
 /** Distinct note bodies are counted as authored "reading minutes" in the list meta. */

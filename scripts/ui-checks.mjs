@@ -10,7 +10,7 @@
  * Exit code: 0 = all assertions pass, 1 = assertion failure, 2 = harness error.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -141,6 +141,31 @@ async function main() {
   await goto('/overview');
   check('overview: greeting renders', await js(`return document.querySelector('h1')?.textContent.trim();`), (v) => v?.startsWith('Welcome back'));
 
+  // ---- SP-02 acceptance ----
+  check(
+    'overview: exactly one display-sized element',
+    await js(`
+      return [...document.querySelectorAll('main *')]
+        .filter(el => el.textContent.trim() && parseFloat(getComputedStyle(el).fontSize) >= 24)
+        .map(el => el.tagName + '@' + getComputedStyle(el).fontSize);
+    `),
+    (v) => Array.isArray(v) && v.length === 1,
+  );
+  check('overview: lede is computed from the sample', await js(`return document.querySelector('main header p')?.textContent.trim();`),
+    (v) => typeof v === 'string' && /^\d+ process(es)? (needs|need) a decision/.test(v));
+  check('overview: reason is visible before any click', await js(`
+    const el = document.getElementById('intent-reason');
+    return !!el && el.offsetParent !== null && el.textContent.includes('not connected');
+  `), true);
+  check('overview: no New workspace affordance', await js(`return !document.body.innerText.includes('New workspace');`), true);
+  check('overview: no small text outside glyph tiles', await js(`
+    return [...document.querySelectorAll('main *')]
+      .filter(el => el.textContent.trim() && !el.className.toString().includes('glyph'))
+      .every(el => parseFloat(getComputedStyle(el).fontSize) >= 11);
+  `), true);
+  const overviewCss = readFileSync(new URL('../src/pages/overview.module.css', import.meta.url), 'utf8');
+  check('overview: accent confined to shared primitives', (overviewCss.match(/var\(--accent/g) ?? []).length, 0);
+
   await js(`${helpers}
     const input = document.querySelector('input[aria-label="Describe what you want to work on"]');
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
@@ -151,6 +176,12 @@ async function main() {
     await new Promise(r => setTimeout(r, 200));
   `);
   check('overview: intent does not claim to have been sent', await js(`return document.body.innerText.includes('Nothing was sent') || document.body.innerText.includes('not connected');`), true);
+  check('overview: Start stays disabled with text', await js(`
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Start');
+    return !!btn && btn.disabled && btn.getAttribute('aria-describedby') === 'intent-reason';
+  `), true);
+  check('overview: no post-click apology appears', await js(`return !document.body.innerText.includes('Nothing was sent');`), true);
+  check('overview: typed text stays in the field', await js(`return document.querySelector('input[aria-label="Describe what you want to work on"]').value;`), 'compare the papers');
 
   await js(`${helpers} click(byText('button', 'Research')); await new Promise(r => setTimeout(r, 700));`);
   check('rail: opens workspace files', await js(`return location.pathname;`), '/w/ws-research/files');
@@ -228,6 +259,27 @@ async function main() {
 
   await goto('/w/ws-research/processes/run-baseline');
   check('run: detail renders its bands', await js(`return document.body.innerText.includes('GIVEN TO WAM');`), true);
+
+  // ---- SP-02: every Overview row opens the object it names, in its own workspace ----
+  await goto('/overview');
+  await js(`${helpers} click(byText('button', 'protocol-brief')); await new Promise(r => setTimeout(r, 600));`);
+  check('overview: needs-you row opens its own run', await js(`return location.pathname;`), '/w/ws-onda/processes/run-onda-brief');
+
+  await goto('/overview');
+  await js(`${helpers} click(byText('main button', 'raw-runs.parquet')); await new Promise(r => setTimeout(r, 600));`);
+  check('overview: continue row resumes the object', await js(`return location.pathname;`), '/w/ws-research/files/f-raw-runs');
+
+  await goto('/overview');
+  // 'Onda Lab' also appears in a needs-you row's meta; the ORG badge is what
+  // makes the workspace card unambiguous.
+  await js(`
+    const card = [...document.querySelectorAll('main button')]
+      .find(b => b.textContent.includes('Onda Lab') && b.textContent.includes('ORG'));
+    card.click();
+    await new Promise(r => setTimeout(r, 600));
+  `);
+  check('overview: workspace card opens that workspace', await js(`return location.pathname;`), '/w/ws-onda/files');
+  await goto('/overview');
 
   const failed = results.filter((r) => !r.pass);
   for (const r of results) {

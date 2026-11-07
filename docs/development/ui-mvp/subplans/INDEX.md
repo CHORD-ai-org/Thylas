@@ -13,7 +13,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | --- | --- | --- | --- | --- | --- |
 | SP-00 | Foundation | — | 1.5 | — | **Completed 11-07** |
 | SP-01 | Application shell | — | 2.0 | SP-00 | **Completed 11-07** |
-| [SP-02](SP-02-overview.md) | Overview | — | 1.0 | SP-01 | Not Started |
+| [SP-02](SP-02-overview.md) | Overview | — | 1.0 | SP-01 | **Completed 11-07** |
 | [SP-03a](SP-03a-tab-model.md) | Tab model and reconciliation | SP-03 | 1.0 | SP-01 | Not Started |
 | [SP-03b](SP-03b-panel-and-restore.md) | Panel widths, scroll restore, workspace semantics | SP-03 | 0.5 | SP-03a | Not Started |
 | [SP-04a](SP-04a-table-grammar.md) | Table grammar and column budgets | SP-04 | 0.75 | SP-03b | Not Started |

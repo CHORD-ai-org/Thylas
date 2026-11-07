@@ -149,22 +149,19 @@
   color: var(--ink-3);
 }
 
+/* The 6px index tick is a brand carrier, not a per-page decision. Compose the
+   shared recipe so every surface gets the same label and the same spacing. */
 .sectionLabel {
-  display: flex;
+  composes: label from '../styles/grammar.module.css';
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--s3);
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line);
-  font: var(--t-caption);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-2);
 }
 
 .labelAside {
+  margin-left: auto;
   font: var(--t-mono-s);
   letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
 

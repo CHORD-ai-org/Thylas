@@ -1,6 +1,6 @@
 # Visual Audit — the implemented UI
 
-**Status:** audit of commit `2171d90`, no code changed.
+**Status:** audit of commit `2171d90`, no code changed. **Historical snapshot** — the numbers below describe that commit, not the current tree. Resolved since: fonts and the 7-step scale (SP-00), tab states and rail keyboard (SP-01), and Overview's hard-coded lede / accent-on-hover / post-click apology / "New workspace" card (SP-02). The remaining findings (page-local `.notice` copies, 8px board labels, hardcoded scene dimensions, no loading language) still stand.
 **Method:** read every file under `src/`; rendered all nine surfaces in headless Chrome at 1440×900 and 1280×800; measured the declarations rather than judging from screenshots alone (`grep -rhoE "font-size: [0-9.]+px"`, `border-radius`, selector counts); checked which fonts actually resolve on this machine.
 **Verdict:** the layout decisions are sound; the *typographic and state systems* are not yet a system. That is what makes it read as an inexpensive template.
 

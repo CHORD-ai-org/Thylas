@@ -1,7 +1,11 @@
 /* Shared visual grammar. These are the recipes that were copied into six page
    stylesheets; they are extracted here so a change lands once. Pages may add
    layout around them (grid templates, widths) but must not re-declare type,
-   padding or tone. Not imported by anything yet — SP-04 starts consuming it. */
+   padding or tone.
+
+   Consumed by `SectionLabel` (the shared primitive) since SP-02: the 6px index
+   tick now appears on every surface. SP-04 migrates the remaining page-local
+   recipes (banner, filters, field rows, table heads). */
 
 /* Section label with the 6px index tick (branding-desk §6). */
 .label {

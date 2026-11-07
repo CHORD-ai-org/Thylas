@@ -97,6 +97,8 @@ Format: **status · context · decision · alternative · consequence**.
 **Decision:** the input is real (state, validation, keyboard), and until SP-07 it is `disabled` with a reason. In SP-07 it sends to `/api/ai` and renders a completion, labelled "DeepSeek · dev endpoint". It never claims to start a process.
 **Consequence:** no false affordance; the AI path is honest about being a completion, not a run.
 
+**Clarified in SP-02 (2026-11-07):** "it is disabled" means the **Start control**, not the field. The field stays editable and keeps typed text; Start is disabled with `title` + `aria-describedby` pointing at a persistent reason line. See D-017.
+
 ## D-016 · Two-level planning: parents keep the spec, units do the work
 
 **Status:** accepted.
@@ -126,6 +128,24 @@ Format: **status · context · decision · alternative · consequence**.
 **Context:** the contract proposes one Tab stop for the rail. Implementing roving across a dynamically expanded workspace list is easy to half-finish — a `tabIndex` that changes without focus following makes Tab look broken.
 **Decision:** ship arrow-key traversal (`↑↓ Home End → ←`) with native tab order; revisit in the a11y sweep with a test.
 **Consequence:** Tab through the rail takes up to a dozen presses until SP-09.
+
+---
+
+## D-017 · Start is disabled regardless of the text
+
+**Status:** accepted in force (SP-02); supersedes the "disabled until text" wording in SP-02 §D.
+**Context:** the interaction contract §6 requires the reason to be visible *before* the click, and classifies a service-missing submit as "render the control disabled with `title`". Enabling Start once the field has text would create exactly the fake control the audit set out to remove: a button that looks available and does nothing.
+**Decision:** field editable, Start `disabled` at all times, one persistent caption ("Submission needs the WAM service — not connected in this build. Nothing is sent."), no `sent` state, no post-click banner. SP-07a/07b enable it when there is a real endpoint.
+**Alternative:** enable on text and show a persistent (not post-click) reason. Rejected: the button still has no behaviour, so its enabled state is a claim the app cannot keep.
+**Consequence:** the reason is announced with the field via `aria-describedby`; a disabled button is not a Tab stop, so "Tab to Start" in SP-02 §I is replaced by a DOM assertion on `disabled` + `aria-describedby`. The Overview has no accent of its own until SP-07 — accent is a state marker, not decoration.
+
+## D-018 · The 6px index tick is a shared primitive, not a page style
+
+**Status:** accepted in force (SP-02).
+**Context:** SP-02 §E asked Overview section labels to use `grammar.label`, but `SectionLabel` is shared and `grammar.module.css` had no consumer. Copying the tick into `overview.module.css` would have created a second visual language on the other eight surfaces.
+**Decision:** `ui.module.css .sectionLabel` composes `grammar.label`; `SectionLabel` gains no new prop. The tick now appears on every surface that uses the shared label.
+**Alternative:** per-page tick (rejected: nine copies), or adding a `tick` prop to `SectionLabel` (rejected: a brand constant is not a per-call option).
+**Consequence:** one CSS Modules `composes` dependency from `components/` to `styles/`; verified by build and by Files/Notes/Overview screenshots. The grammar file's header now says which recipes remain for SP-04.
 
 ---
 
