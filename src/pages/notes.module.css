@@ -56,15 +56,6 @@
   font-weight: 500;
 }
 
-.notice {
-  margin: 8px 4px 0;
-  font: var(--t-caption);
-  line-height: 15px;
-  color: var(--ink-2);
-  border-left: 2px solid var(--accent);
-  padding-left: 6px;
-}
-
 .noteList {
   display: flex;
   flex-direction: column;

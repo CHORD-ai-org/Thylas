@@ -188,6 +188,33 @@ async function main() {
   check('files: rows render', await js(`return document.querySelectorAll('[role="row"][aria-selected]').length;`), (v) => v >= 5);
   check('panel: selection details are present', await js(`${helpers} return !!byText('aside', 'Used by');`), true);
 
+  // ---- SP-04a: one table grammar, measured column budgets ----
+  const filesCss = readFileSync(new URL('../src/pages/files.module.css', import.meta.url), 'utf8');
+  check('files: no page-local notice recipe', (filesCss.match(/^\.notice \{/gm) ?? []).length, 0);
+  check('files: header 44px and rows 32px', await js(`
+    const h = document.querySelector('[role="columnheader"]').parentElement.getBoundingClientRect().height;
+    const r = document.querySelector('[role="row"][aria-selected]').getBoundingClientRect().height;
+    return [Math.round(h), Math.round(r)];
+  `), (v) => v[0] === 44 && v[1] === 32);
+  check('files: numeric columns are tabular', await js(`
+    const el = document.querySelector('[role="gridcell"][class*="mono"]');
+    return el ? getComputedStyle(el).fontVariantNumeric : '';
+  `), 'tabular-nums');
+  const measureTable = () => js(`
+    const wrap = document.querySelector('[data-scroll-region="files-table"]');
+    const heads = [...document.querySelectorAll('[role="columnheader"]')].filter(h => getComputedStyle(h).display !== 'none');
+    return { w: wrap.clientWidth, sw: wrap.scrollWidth, cols: heads.length, name: Math.round(heads[0].getBoundingClientRect().width) };
+  `);
+  for (const [w, cols] of [[1440, 5], [1280, 4], [1180, 4]]) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: 900, deviceScaleFactor: 1, mobile: false });
+    await sleep(350);
+    const m = await measureTable();
+    check(`files: ${w} shows ${cols} columns, no h-scroll, name >= 160px`, m,
+      (v) => v.cols === cols && v.sw <= v.w + 1 && v.name >= 160);
+  }
+  await send('Emulation.clearDeviceMetricsOverride');
+  await sleep(300);
+
   const tabsBefore = await js(`return document.querySelectorAll('[role="tab"]').length;`);
   await js(`${helpers}
     const row = document.querySelector('[role="row"][aria-selected]');

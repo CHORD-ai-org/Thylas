@@ -7,6 +7,7 @@ import { useApp, useRegisterTab } from '../state/app';
 import { Button, EmptyState, Field, TypeGlyph, Badge } from '../components/ui';
 import { IconChevron, IconFolder, IconUpload } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
+import g from '../styles/grammar.module.css';
 import s from './files.module.css';
 
 function sourceLabel(file: FileItem): string {
@@ -137,7 +138,7 @@ export function FilesPage() {
       </div>
 
       {notice ? (
-        <div className={s.notice} role="status">
+        <div className={g.banner} role="status">
           {notice}
           <button type="button" className={s.noticeClose} onClick={() => setNotice(null)} aria-label="Dismiss">
             ×

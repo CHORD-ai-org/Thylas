@@ -3,9 +3,9 @@
    layout around them (grid templates, widths) but must not re-declare type,
    padding or tone.
 
-   Consumed by `SectionLabel` (the shared primitive) since SP-02: the 6px index
-   tick now appears on every surface. SP-04 migrates the remaining page-local
-   recipes (banner, filters, field rows, table heads). */
+   Consumed since SP-02 by `SectionLabel` (the 6px index tick) and since SP-04
+   by Files (tableHead, label, banner) and Notes (banner). SP-06/07/08 migrate
+   the remaining page-local notice and filter recipes. */
 
 /* Section label with the 6px index tick (branding-desk §6). */
 .label {

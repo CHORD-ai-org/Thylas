@@ -7,6 +7,7 @@ import { Button, EmptyState, Field } from '../components/ui';
 import { IconPlus } from '../components/icons';
 import { TabStrip } from '../shell/TabStrip';
 import { ContextPanel } from '../shell/ContextPanel';
+import g from '../styles/grammar.module.css';
 import s from './notes.module.css';
 
 function scopeLabel(n: ReturnType<typeof notes>[number]): string {
@@ -67,7 +68,7 @@ export function NotesPage() {
               </button>
             ))}
           </div>
-          {notice ? <p className={s.notice}>{notice}</p> : null}
+          {notice ? <p className={g.banner}>{notice}</p> : null}
           <ul className={s.noteList}>
             {visible.map((n) => (
               <li key={n.id}>

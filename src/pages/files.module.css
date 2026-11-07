@@ -25,7 +25,8 @@
 }
 
 .crumbLink:hover {
-  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .crumbTail {
@@ -41,19 +42,7 @@
   margin-left: auto;
 }
 
-.notice {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--s3);
-  padding: 7px var(--s4);
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-surface);
-  font: var(--t-caption);
-  color: var(--ink-2);
-  flex: 0 0 auto;
-}
-
+/* The inline banner recipe lives in grammar.module.css now. */
 .noticeClose {
   color: var(--ink-3);
   line-height: 1;
@@ -178,20 +167,8 @@
 
 
 .thead {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
-  display: grid;
+  composes: tableHead from '../styles/grammar.module.css';
   grid-template-columns: minmax(140px, 1fr) 58px 74px 100px 56px;
-  align-items: center;
-  height: var(--h-toolbar);
-  padding: 0 var(--s4);
-  background: var(--bg-app);
-  border-bottom: 1px solid var(--line);
-  font: var(--t-mono-s);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-3);
 }
 
 .tbody {
@@ -230,6 +207,7 @@
 }
 
 .fileName {
+  font: var(--t-ui-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -255,11 +233,13 @@
 
 .mono {
   font: var(--t-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-2);
 }
 
 .monoDim {
   font: var(--t-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
 
@@ -279,8 +259,6 @@
 
 .panelName {
   font: var(--t-section);
-  font-size: 15px;
-  line-height: 22px;
   overflow-wrap: anywhere;
 }
 
@@ -301,18 +279,11 @@
 }
 
 .panelSectionHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line);
-  font: var(--t-caption);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-2);
+  composes: label from '../styles/grammar.module.css';
 }
 
 .panelCount {
+  margin-left: auto;
   font: var(--t-mono-s);
   color: var(--ink-3);
 }
@@ -401,8 +372,7 @@
 }
 
 .sheetLine {
-  font: var(--t-section);
-  font-size: 16px;
+  font: var(--t-read);
 }
 
 .sheetHint {
@@ -433,5 +403,37 @@
 
   .colSource {
     display: none;
+  }
+}
+
+/* Measured at an 1180 viewport with the 340px panel open: the table is 392px.
+   At this size the numeric cells also step down to the 11px mono token and stay
+   on one line — 12px mono made "1.2 GB" wrap. Both changes give the name column
+   back enough room that a 20-character file name is readable. */
+@container (max-width: 430px) {
+  .thead,
+  .trow {
+    grid-template-columns: minmax(140px, 1fr) 48px 62px 54px;
+    padding-left: var(--s2);
+    padding-right: var(--s2);
+  }
+
+  .thead > * {
+    white-space: nowrap;
+  }
+
+  .colName {
+    gap: 6px;
+  }
+
+  .mono {
+    font: var(--t-mono-s);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .colSize,
+  .colUsed {
+    padding-right: 4px;
   }
 }
