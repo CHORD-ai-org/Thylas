@@ -141,3 +141,107 @@ export const IconMore = ({ size = 16 }: Props) => (
     <circle cx="12.6" cy="8" r="0.9" />
   </svg>
 );
+
+/* ---- canvas icons. Same 16px box and 1.2px stroke as the rest; a board
+   toolbar that used text glyphs read as an unfinished prototype. ---- */
+
+export const IconCursor = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M4 2.8 12 8l-3.4 1L7 12.6z" />
+  </svg>
+);
+
+export const IconCard = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <rect x="2.6" y="3.6" width="10.8" height="8.8" rx="1" />
+    <path d="M2.6 6.4h10.8" />
+  </svg>
+);
+
+export const IconSection = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <rect x="2.4" y="4.4" width="11.2" height="8" rx="1" />
+    <path d="M2.4 2.6h4.2" />
+  </svg>
+);
+
+export const IconLink = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <circle cx="4" cy="11.6" r="1.6" />
+    <circle cx="12" cy="4.4" r="1.6" />
+    <path d="M5.2 10.4c2-2 4-4 5.6-5.2" />
+  </svg>
+);
+
+export const IconUndo = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M3 6.6h5.6a3.4 3.4 0 0 1 0 6.8H6.8" />
+    <path d="M5.2 4.2 3 6.6l2.2 2.4" />
+  </svg>
+);
+
+export const IconRedo = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M13 6.6H7.4a3.4 3.4 0 0 0 0 6.8h1.8" />
+    <path d="M10.8 4.2 13 6.6l-2.2 2.4" />
+  </svg>
+);
+
+export const IconFit = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M2.6 6V2.6H6M10 2.6h3.4V6M13.4 10v3.4H10M6 13.4H2.6V10" />
+  </svg>
+);
+
+export const IconMinus = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M3.4 8h9.2" />
+  </svg>
+);
+
+export const IconTrash = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M3.4 4.6h9.2M6.4 4.6V3h3.2v1.6M4.6 4.6l.6 8.4h5.6l.6-8.4" />
+  </svg>
+);
+
+export const IconFold = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M3 4.4h10M3 11.6h10M6.6 8 8 6.6 9.4 8" />
+  </svg>
+);
+
+export const IconAlign = ({
+  size = 16,
+  dir = 'left',
+}: Props & { dir?: 'left' | 'centerH' | 'right' | 'top' | 'centerV' | 'bottom' }) => {
+  const bars: Record<string, string> = {
+    left: 'M3 3.4h10M3 6.2h6M3 9h10M3 11.8h6',
+    centerH: 'M8 3.4h0M3 3.4h10M5 6.2h6M3 9h10M5 11.8h6',
+    right: 'M3 3.4h10M7 6.2h6M3 9h10M7 11.8h6',
+    top: 'M3.4 3v10M6.2 3v6M9 3v10M11.8 3v6',
+    centerV: 'M3.4 3v10M6.2 5v6M9 3v10M11.8 5v6',
+    bottom: 'M3.4 3v10M6.2 7v6M9 3v10M11.8 7v6',
+  };
+  return (
+    <svg {...base(size)} aria-hidden>
+      <path d={bars[dir] ?? bars.left} />
+    </svg>
+  );
+};
+
+export const IconDistribute = ({ size = 16, axis = 'h' }: Props & { axis?: 'h' | 'v' }) => (
+  <svg {...base(size)} aria-hidden>
+    {axis === 'h' ? (
+      <>
+        <path d="M2.8 2.6v10.8M13.2 2.6v10.8" />
+        <rect x="6.4" y="4.6" width="3.2" height="6.8" rx="0.6" />
+      </>
+    ) : (
+      <>
+        <path d="M2.6 2.8h10.8M2.6 13.2h10.8" />
+        <rect x="4.6" y="6.4" width="6.8" height="3.2" rx="0.6" />
+      </>
+    )}
+  </svg>
+);

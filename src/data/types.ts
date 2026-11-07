@@ -118,6 +118,11 @@ export type Process = {
   capabilities: RunAction[];
 };
 
+/* The five fills the canvas can render. Declared here (rather than imported
+   from the board page) so `data/` stays the root of the domain model; the page
+   narrows this union structurally. */
+export type BoardColor = 'plain' | 'sage' | 'amber' | 'clay' | 'stone';
+
 export type BoardSection = {
   id: Id;
   title: string;
@@ -125,7 +130,7 @@ export type BoardSection = {
   y: number;
   w: number;
   h: number;
-  tint: string;
+  color: BoardColor;
 };
 
 export type BoardCard = {
@@ -137,6 +142,8 @@ export type BoardCard = {
   title: string;
   eyebrow: string;
   lines: string[];
+  color?: BoardColor;
+  folded?: boolean;
   ref?: string;
   live?: { runLabel: string; note: string };
 };
@@ -145,6 +152,10 @@ export type BoardEdge = {
   from: Id;
   to: Id;
   label: string;
+  fromSide?: 't' | 'r' | 'b' | 'l';
+  toSide?: 't' | 'r' | 'b' | 'l';
+  shape?: 'curve' | 'ortho';
+  direction?: 'none' | 'one' | 'both';
 };
 
 export type Board = {
