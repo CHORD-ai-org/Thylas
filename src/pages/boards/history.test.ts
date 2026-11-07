@@ -1,128 +1,98 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyEdit,
-  editLabel,
+  HISTORY_LIMIT,
+  canRedo,
+  canUndo,
   emptyHistory,
-  pushEdit,
-  redoEdit,
-  undoEdit,
-  type CardEdit,
+  pushHistory,
+  redoHistory,
+  undoHistory,
 } from './history';
 import type { BoardScene, SceneCard } from './scene';
 
 function card(id: string, x = 0, y = 0): SceneCard {
-  return { id, sectionId: 's-1', x, y, w: 200, h: 96, title: id, eyebrow: 'CARD', lines: [] };
+  return { id, sectionId: 's-1', x, y, w: 200, h: 96, title: id, eyebrow: 'CARD', lines: [], color: 'plain' };
 }
 
 function scene(cards: SceneCard[]): BoardScene {
-  return {
-    version: 1,
-    id: 'b-1',
-    name: 'Board',
-    updated: 'now',
-    sections: [],
-    cards,
-    edges: [],
-    viewport: { x: 0, y: 0, zoom: 1 },
-  };
+  return { version: 2, id: 'b-1', name: 'Board', updated: 'now', sections: [], cards, edges: [] };
 }
 
-describe('applyEdit', () => {
-  it('adds a card on create and removes it on undo', () => {
-    const edit: CardEdit = { kind: 'create', card: card('c-new', 40, 40) };
-    const after = applyEdit(scene([card('c-1')]), edit, 'do');
-    expect(after.cards.map((c) => c.id)).toEqual(['c-1', 'c-new']);
-    const back = applyEdit(after, edit, 'undo');
-    expect(back.cards.map((c) => c.id)).toEqual(['c-1']);
+const base = scene([card('a'), card('b')]);
+
+describe('snapshot history', () => {
+  it('starts empty and reports what can be done', () => {
+    expect(canUndo(emptyHistory)).toBe(false);
+    expect(canRedo(emptyHistory)).toBe(false);
+    expect(undoHistory(emptyHistory, base)).toBeNull();
+    expect(redoHistory(emptyHistory, base)).toBeNull();
   });
 
-  it('restores z-order when a delete is undone', () => {
-    const base = scene([card('a'), card('b'), card('c')]);
-    const middle = base.cards[1];
-    if (!middle) throw new Error('fixture is missing its middle card');
-    const edit: CardEdit = { kind: 'delete', entries: [{ index: 1, card: middle }] };
-    const after = applyEdit(base, edit, 'do');
-    expect(after.cards.map((c) => c.id)).toEqual(['a', 'c']);
-    expect(applyEdit(after, edit, 'undo').cards.map((c) => c.id)).toEqual(['a', 'b', 'c']);
+  it('undoes to the state before the edit and keeps the label', () => {
+    const edited = scene([card('a'), card('b', 40, 20)]);
+    const history = pushHistory(emptyHistory, base, 'Moved a card');
+    const result = undoHistory(history, edited);
+    expect(result?.scene).toEqual(base);
+    expect(result?.label).toBe('Moved a card');
+    expect(canUndo(result!.history)).toBe(false);
+    expect(canRedo(result!.history)).toBe(true);
   });
 
-  it('moves many cards in one step and reverses all of them', () => {
-    const base = scene([card('a', 10, 10), card('b', 50, 50)]);
-    const edit: CardEdit = {
-      kind: 'move',
-      moves: [
-        { id: 'a', from: { x: 10, y: 10 }, to: { x: 20, y: 30 } },
-        { id: 'b', from: { x: 50, y: 50 }, to: { x: 60, y: 70 } },
-      ],
-    };
-    const after = applyEdit(base, edit, 'do');
-    expect(after.cards.map((c) => [c.x, c.y])).toEqual([
-      [20, 30],
-      [60, 70],
-    ]);
-    expect(applyEdit(after, edit, 'undo').cards.map((c) => [c.x, c.y])).toEqual([
-      [10, 10],
-      [50, 50],
-    ]);
+  it('redoes the state the undo left behind', () => {
+    const edited = scene([card('a'), card('b', 40, 20)]);
+    const undone = undoHistory(pushHistory(emptyHistory, base, 'Moved a card'), edited)!;
+    const redone = redoHistory(undone.history, undone.scene)!;
+    expect(redone.scene).toEqual(edited);
+    expect(canRedo(redone.history)).toBe(false);
+    expect(canUndo(redone.history)).toBe(true);
   });
 
-  it('resizes and retitles a single card without touching the others', () => {
-    const base = scene([card('a'), card('b')]);
-    const resized = applyEdit(base, { kind: 'resize', id: 'a', from: { w: 200, h: 96 }, to: { w: 260, h: 140 } }, 'do');
-    expect(resized.cards[0]).toMatchObject({ w: 260, h: 140 });
-    expect(resized.cards[1]).toMatchObject({ w: 200, h: 96 });
+  it('walks three edits backwards and forwards in order', () => {
+    const s1 = scene([card('a')]);
+    const s2 = scene([card('a'), card('b')]);
+    const s3 = scene([card('a'), card('b'), card('c')]);
 
-    const titled = applyEdit(base, { kind: 'title', id: 'b', from: 'b', to: 'Renamed' }, 'do');
-    expect(titled.cards[1]?.title).toBe('Renamed');
-    expect(applyEdit(titled, { kind: 'title', id: 'b', from: 'b', to: 'Renamed' }, 'undo').cards[1]?.title).toBe('b');
-  });
-});
+    let history = pushHistory(emptyHistory, base, 'one');
+    history = pushHistory(history, s1, 'two');
+    history = pushHistory(history, s2, 'three');
 
-describe('history stack', () => {
-  const edit: CardEdit = { kind: 'title', id: 'a', from: '', to: 'x' };
+    const back1 = undoHistory(history, s3)!;
+    expect(back1.scene).toEqual(s2);
+    const back2 = undoHistory(back1.history, back1.scene)!;
+    expect(back2.scene).toEqual(s1);
+    const back3 = undoHistory(back2.history, back2.scene)!;
+    expect(back3.scene).toEqual(base);
+    expect(canUndo(back3.history)).toBe(false);
 
-  it('drops the redo branch when a new edit is pushed', () => {
-    const first = pushEdit(emptyHistory, edit);
-    const undone = undoEdit(first);
-    expect(undone).not.toBeNull();
-    const branched = pushEdit(undone!.history, { kind: 'title', id: 'a', from: '', to: 'y' });
-    expect(branched.future).toHaveLength(0);
-    expect(branched.past).toHaveLength(1);
+    const fwd = redoHistory(back3.history, back3.scene)!;
+    expect(fwd.scene).toEqual(s1);
   });
 
-  it('redo puts the edit back on the past and returns it', () => {
-    const undone = undoEdit(pushEdit(emptyHistory, edit))!;
-    const redone = redoEdit(undone.history)!;
-    expect(redone.edit).toEqual(edit);
-    expect(redone.history.past).toHaveLength(1);
-    expect(redone.history.future).toHaveLength(0);
+  it('a new edit drops the redo stack, because that redo would no longer match', () => {
+    const a = scene([card('a')]);
+    const b = scene([card('a'), card('b')]);
+    const undone = undoHistory(pushHistory(emptyHistory, a, 'one'), b)!;
+    expect(canRedo(undone.history)).toBe(true);
+    const branched = pushHistory(undone.history, undone.scene, 'other');
+    expect(canRedo(branched)).toBe(false);
   });
 
-  it('returns null at the ends instead of throwing', () => {
-    expect(undoEdit(emptyHistory)).toBeNull();
-    expect(redoEdit(emptyHistory)).toBeNull();
-  });
-
-  it('caps the stack at 50 steps, dropping the oldest', () => {
+  it('keeps at most forty steps', () => {
     let history = emptyHistory;
-    for (let i = 0; i < 60; i += 1) {
-      history = pushEdit(history, { kind: 'title', id: 'a', from: `${i}`, to: `${i + 1}` });
+    let current = base;
+    for (let i = 0; i < HISTORY_LIMIT + 12; i++) {
+      history = pushHistory(history, current, `step ${i}`);
+      current = scene([...current.cards, card(`x${i}`)]);
     }
-    expect(history.past).toHaveLength(50);
-    expect((history.past[0] as { from: string }).from).toBe('10');
+    expect(history.past).toHaveLength(HISTORY_LIMIT);
+    expect(history.past[HISTORY_LIMIT - 1]?.label).toBe(`step ${HISTORY_LIMIT + 11}`);
   });
 
-  it('labels every edit for the status bar', () => {
-    expect(editLabel({ kind: 'create', card: card('a') })).toBe('Card added');
-    expect(editLabel({ kind: 'delete', entries: [{ index: 0, card: card('a') }] })).toBe('Card deleted');
-    expect(
-      editLabel({
-        kind: 'delete',
-        entries: [
-          { index: 0, card: card('a') },
-          { index: 1, card: card('b') },
-        ],
-      }),
-    ).toBe('2 cards deleted');
+  it('does not mutate the history it was given', () => {
+    const history = pushHistory(emptyHistory, base, 'one');
+    const frozenPast = history.past;
+    undoHistory(history, base);
+    expect(history.past).toBe(frozenPast);
+    expect(history.past).toHaveLength(1);
   });
 });

@@ -1,109 +1,68 @@
-/* Board edit commands and a bounded undo stack. Every mutation goes through
-   `applyEdit`, including keyboard nudges and delete, so there is exactly one
-   way a card can change and exactly one way it can be reversed. Pure: no
-   React, no storage. */
+/* Undo history as labelled scene snapshots.
 
-import type { BoardScene, SceneCard } from './scene';
+   SP-06c stored inverse edits (move back, re-insert at index, restore title).
+   That worked for one object kind; with cards, sections and edges, every new
+   command would need a hand-written inverse, and a single wrong inverse
+   corrupts the board silently. A snapshot is one array of cards — a few
+   hundred KB at worst — and it cannot be wrong.
 
-export type CardEdit =
-  | { kind: 'create'; card: SceneCard }
-  | { kind: 'delete'; entries: Array<{ index: number; card: SceneCard }> }
-  | { kind: 'move'; moves: Array<{ id: string; from: { x: number; y: number }; to: { x: number; y: number } }> }
-  | { kind: 'resize'; id: string; from: { w: number; h: number }; to: { w: number; h: number } }
-  | { kind: 'title'; id: string; from: string; to: string };
+   The label travels with the snapshot so the status bar can say what an undo
+   will do instead of just "Undo". */
 
-export type Direction = 'do' | 'undo';
+import type { BoardScene } from './scene';
 
-export function applyEdit(scene: BoardScene, edit: CardEdit, direction: Direction): BoardScene {
-  const forward = direction === 'do';
-  switch (edit.kind) {
-    case 'create': {
-      const cards = forward
-        ? [...scene.cards, edit.card]
-        : scene.cards.filter((c) => c.id !== edit.card.id);
-      return { ...scene, cards };
-    }
-    case 'delete': {
-      if (forward) {
-        const gone = new Set(edit.entries.map((e) => e.card.id));
-        return { ...scene, cards: scene.cards.filter((c) => !gone.has(c.id)) };
-      }
-      // Reinsert by original index so z-order survives an undo.
-      const cards = [...scene.cards];
-      for (const { index, card } of [...edit.entries].sort((a, b) => a.index - b.index)) {
-        cards.splice(Math.min(index, cards.length), 0, card);
-      }
-      return { ...scene, cards };
-    }
-    case 'move': {
-      const by = new Map(edit.moves.map((m) => [m.id, forward ? m.to : m.from]));
-      return {
-        ...scene,
-        cards: scene.cards.map((c) => {
-          const p = by.get(c.id);
-          return p ? { ...c, x: p.x, y: p.y } : c;
-        }),
-      };
-    }
-    case 'resize': {
-      const size = forward ? edit.to : edit.from;
-      return {
-        ...scene,
-        cards: scene.cards.map((c) => (c.id === edit.id ? { ...c, w: size.w, h: size.h } : c)),
-      };
-    }
-    case 'title': {
-      const title = forward ? edit.to : edit.from;
-      return {
-        ...scene,
-        cards: scene.cards.map((c) => (c.id === edit.id ? { ...c, title } : c)),
-      };
-    }
-  }
-}
+export const HISTORY_LIMIT = 40;
 
-export function editLabel(edit: CardEdit): string {
-  switch (edit.kind) {
-    case 'create':
-      return 'Card added';
-    case 'delete':
-      return edit.entries.length === 1 ? 'Card deleted' : `${edit.entries.length} cards deleted`;
-    case 'move':
-      return edit.moves.length === 1 ? 'Moved' : `Moved ${edit.moves.length}`;
-    case 'resize':
-      return 'Resized';
-    case 'title':
-      return 'Title changed';
-  }
-}
-
-export const HISTORY_LIMIT = 50;
-
-export type History = { past: CardEdit[]; future: CardEdit[] };
+export type HistoryEntry = { scene: BoardScene; label: string };
+export type History = { past: HistoryEntry[]; future: HistoryEntry[] };
 
 export const emptyHistory: History = { past: [], future: [] };
 
-export function pushEdit(history: History, edit: CardEdit, limit = HISTORY_LIMIT): History {
-  const past = [...history.past, edit];
-  return { past: past.length > limit ? past.slice(past.length - limit) : past, future: [] };
-}
-
-export function undoEdit(history: History): { history: History; edit: CardEdit } | null {
-  if (history.past.length === 0) return null;
-  const edit = history.past[history.past.length - 1];
-  if (!edit) return null;
+/** Record the state *before* an edit. Any new edit drops the redo stack: a
+   redo that no longer matches the document is a lie. */
+export function pushHistory(history: History, before: BoardScene, label: string): History {
   return {
-    history: { past: history.past.slice(0, -1), future: [edit, ...history.future] },
-    edit,
+    past: [...history.past, { scene: before, label }].slice(-HISTORY_LIMIT),
+    future: [],
   };
 }
 
-export function redoEdit(history: History): { history: History; edit: CardEdit } | null {
-  if (history.future.length === 0) return null;
-  const edit = history.future[0];
-  if (!edit) return null;
+export function undoHistory(
+  history: History,
+  current: BoardScene,
+): { history: History; scene: BoardScene; label: string } | null {
+  const entry = history.past[history.past.length - 1];
+  if (!entry) return null;
   return {
-    history: { past: [...history.past, edit], future: history.future.slice(1) },
-    edit,
+    history: {
+      past: history.past.slice(0, -1),
+      future: [{ scene: current, label: entry.label }, ...history.future].slice(0, HISTORY_LIMIT),
+    },
+    scene: entry.scene,
+    label: entry.label,
   };
+}
+
+export function redoHistory(
+  history: History,
+  current: BoardScene,
+): { history: History; scene: BoardScene; label: string } | null {
+  const entry = history.future[0];
+  if (!entry) return null;
+  return {
+    history: {
+      past: [...history.past, { scene: current, label: entry.label }].slice(-HISTORY_LIMIT),
+      future: history.future.slice(1),
+    },
+    scene: entry.scene,
+    label: entry.label,
+  };
+}
+
+export function canUndo(history: History): boolean {
+  return history.past.length > 0;
+}
+
+export function canRedo(history: History): boolean {
+  return history.future.length > 0;
 }
