@@ -112,7 +112,7 @@ Packages: `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`, `@cod
 
 **Exit:** type → wait 1 s → reload → identical text; two tabs → second save shows the conflict banner; close a dirty tab → the strip asks; `npm run e2e` covers all three.
 
-### Step 4 · Library, search, panel, links (1.25 days)
+### Step 4 · Library, search, panel, links (1.25 days) — **done 11-08**
 
 | # | Requirement | Notes |
 | --- | --- | --- |

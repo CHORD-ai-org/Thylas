@@ -1,6 +1,6 @@
 # SP-05c · Note library, search, panel
 
-**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.25 · **Status:** Not Started · **Depends:** SP-05b
+**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.25 · **Status:** Completed 11-08 · **Depends:** SP-05b
 
 ## Objective
 
@@ -41,6 +41,20 @@ Parent §E. Chips: 2px radius, 1px line, 13/20, no fill; dangling = dashed borde
 | T3 | Chip render + autocomplete | `[[` completes; click opens |
 | T4 | Backlinks panel | Count and rows correct |
 | T5 | Create/rename/delete rules | Unique titles, confirm delete |
+
+## Result
+
+| # | Task | Result |
+| --- | --- | --- |
+| T1 | List, filter, empty | done — rows carry `tabIndex` so a list costs one Tab, and ↑/↓ move between them (audit A8); the empty state names the search term and the scope |
+| T2 | Search | done — 200 ms debounce over titles **and** bodies; the footer reads `2 of 6 notes` |
+| T3 | Chip render + autocomplete | done — typed `[[` opens a picker over the titles this note may reach, and choosing one inserts the closing brackets too |
+| T4 | Backlinks panel | done — `Links out (N)` and `Linked from (N)`, each row opens that note; built per render, so a delete updates the count without a reload |
+| T5 | Create / rename / delete | done — the dangling chip creates the note it names; rename refuses a duplicate in the same scope; delete asks once and says there is no undo |
+
+**Beyond the plan, present:** the panel is now `Links out` / `Linked from` / `Delete` instead of a `References` block that showed files; the list footer counts what is filtered against what exists.
+
+**Deviations:** (1) Search is a field in the list rather than only a palette entry — the palette is a jump surface, and a reader looking for a phrase in a note wants to see the results as a list. (2) The delete confirmation is inline in the panel, not a dialog: same two-press pattern as a dirty tab. (3) `⌘K` does not yet index note bodies; the plan's validation line for that is open (see below).
 
 ## Acceptance
 

@@ -2,8 +2,9 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { relativeTime } from '../lib/relative';
+import { buildBacklinks, outgoing } from '../lib/markdown/backlinks';
 import { getWorkspace } from '../data/selectors';
-import { createNote, getNoteById, renameNote, saveNote, useNotes } from '../state/notes';
+import { createNote, getNoteById, removeNote, renameNote, saveNote, useNotes } from '../state/notes';
 import type { Note } from '../data/types';
 import { useApp, useRegisterTab } from '../state/app';
 import { Button, EmptyState, Field } from '../components/ui';
@@ -12,13 +13,13 @@ import { TabStrip } from '../shell/TabStrip';
 import { ContextPanel } from '../shell/ContextPanel';
 import { NoteReader } from './notes/NoteReader';
 import type { NoteEditorHandle } from './notes/NoteEditor';
-
-/* CodeMirror is 166 KB gzip on its own. Most visits read and never type, so the
-   editor is loaded the first time someone presses Edit rather than on every
-   page load. The shell stays at 155 KB. */
-const NoteEditor = lazy(() => import('./notes/NoteEditor').then((m) => ({ default: m.NoteEditor })));
 import g from '../styles/grammar.module.css';
 import s from './notes.module.css';
+
+/* CodeMirror is 174 KB gzip on its own. Most visits read and never type, so the
+   editor is loaded the first time someone presses Edit rather than on every
+   page load. The shell stays at 157 KB. */
+const NoteEditor = lazy(() => import('./notes/NoteEditor').then((m) => ({ default: m.NoteEditor })));
 
 function scopeLabel(note: Note): string {
   return note.scope === 'personal' ? 'Personal' : (getWorkspace(note.wsId)?.name ?? 'Workspace');
@@ -27,6 +28,7 @@ function scopeLabel(note: Note): string {
 const scopeOf = (note: Note): string => (note.scope === 'personal' ? 'personal' : (note.wsId ?? ''));
 
 const SAVE_IDLE = 800;
+const SEARCH_IDLE = 200;
 
 export function NotesPage() {
   const { noteId } = useParams();
@@ -34,6 +36,8 @@ export function NotesPage() {
   const { panelOpen, markDirty } = useApp();
   const all = useNotes();
   const [scope, setScope] = useState<string>('all');
+  const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
 
   const note = noteId ? all.find((n) => n.id === noteId) : undefined;
 
@@ -49,6 +53,7 @@ export function NotesPage() {
   const [showTheirs, setShowTheirs] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const timer = useRef<number | null>(null);
   const editor = useRef<NoteEditorHandle | null>(null);
   /* The version this editing session started from. Comparing against the
@@ -61,7 +66,17 @@ export function NotesPage() {
     return ['all', ...Array.from(ids)];
   }, [all]);
 
-  const visible = all.filter((n) => scope === 'all' || scopeOf(n) === scope);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebounced(query), SEARCH_IDLE);
+    return () => window.clearTimeout(handle);
+  }, [query]);
+
+  const needle = debounced.trim().toLowerCase();
+  const visible = all.filter((n) => {
+    if (scope !== 'all' && scopeOf(n) !== scope) return false;
+    if (needle === '') return true;
+    return n.title.toLowerCase().includes(needle) || n.body.toLowerCase().includes(needle);
+  });
 
   const store = (id: string) => getNoteById(id);
 
@@ -146,19 +161,28 @@ export function NotesPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [unsaved]);
 
-  /* Leaving the note abandons the editor, not the text: a pending save is
-     flushed before the component that owns the timer goes away. */
   useEffect(() => {
     return () => {
       if (timer.current) window.clearTimeout(timer.current);
     };
   }, []);
 
-  const addNote = () => {
+  const openNote = (id: string) => {
+    if (editing && note) flush(note.id, draft);
+    setEditing(false);
+    setConfirmDelete(false);
+    navigate(routes.note(id));
+  };
+
+  const addNote = (title?: string) => {
     const created = createNote(
-      scope === 'all' || scope === 'personal'
-        ? { scope: 'personal' }
-        : { scope: 'workspace', wsId: scope },
+      title === undefined
+        ? scope === 'all' || scope === 'personal'
+          ? { scope: 'personal' }
+          : { scope: 'workspace', wsId: scope }
+        : note
+          ? { scope: note.scope, ...(note.wsId === undefined ? {} : { wsId: note.wsId }), title }
+          : { scope: 'personal', title },
     );
     navigate(routes.note(created.id));
     baseVersion.current = created.version;
@@ -167,6 +191,39 @@ export function NotesPage() {
     setTitleDraft(created.title);
     setSaved('clean');
   };
+
+  const deleteNote = () => {
+    if (!note) return;
+    markDirty(routes.note(note.id), false);
+    removeNote(note.id);
+    setEditing(false);
+    navigate(routes.notes());
+  };
+
+  /* Arrow keys move between rows: a list of six buttons should not cost six
+     Tabs (audit A8). */
+  const onListKeys = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const rows = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('[data-note-row]')];
+    const at = rows.indexOf(document.activeElement as HTMLButtonElement);
+    if (at === -1) return;
+    e.preventDefault();
+    const next = e.key === 'ArrowDown' ? Math.min(rows.length - 1, at + 1) : Math.max(0, at - 1);
+    rows[next]?.focus();
+  };
+
+  const backlinkIds = note ? (buildBacklinks(all).get(note.id) ?? []) : [];
+  const incoming = backlinkIds
+    .map((id) => all.find((n) => n.id === id))
+    .filter((n): n is Note => n !== undefined);
+  const outgoingNotes = note
+    ? outgoing(note, all)
+        .map((id) => all.find((n) => n.id === id))
+        .filter((n): n is Note => n !== undefined)
+    : [];
+  const linkTitles = note
+    ? all.filter((n) => scopeOf(n) === scopeOf(note) && n.id !== note.id).map((n) => n.title)
+    : [];
 
   const words = note && note.body.trim() !== '' ? note.body.trim().split(/\s+/).length : 0;
 
@@ -179,6 +236,10 @@ export function NotesPage() {
           ? 'Not saved — this note changed elsewhere'
           : 'Saved automatically';
 
+  const emptyMessage = needle
+    ? `No note matches “${debounced.trim()}” in ${scope === 'all' ? 'any scope' : (getWorkspace(scope)?.name ?? 'Personal')}.`
+    : 'No note in this scope yet.';
+
   return (
     <>
       <TabStrip ctx="notes" variant="notes" />
@@ -190,12 +251,25 @@ export function NotesPage() {
               size="sm"
               variant="ghost"
               icon={<IconPlus size={12} />}
-              onClick={addNote}
+              onClick={() => addNote()}
               aria-label="New note"
             >
               New
             </Button>
           </div>
+
+          <input
+            className={s.search}
+            type="search"
+            value={query}
+            placeholder="Search titles and text…"
+            aria-label="Search notes"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setQuery('');
+            }}
+          />
+
           <div className={s.filters}>
             {scopes.map((id) => (
               <button
@@ -209,18 +283,17 @@ export function NotesPage() {
               </button>
             ))}
           </div>
-          <ul className={s.noteList}>
-            {visible.map((n) => (
+
+          <ul className={s.noteList} onKeyDown={onListKeys} aria-label="Note list">
+            {visible.map((n, i) => (
               <li key={n.id}>
                 <button
                   type="button"
+                  data-note-row
+                  tabIndex={n.id === noteId || (noteId === undefined && i === 0) ? 0 : -1}
                   className={[s.noteRow, n.id === noteId ? s.noteRowOn : ''].join(' ')}
                   aria-current={n.id === noteId ? 'page' : undefined}
-                  onClick={() => {
-                    if (editing && note) flush(note.id, draft);
-                    setEditing(false);
-                    navigate(routes.note(n.id));
-                  }}
+                  onClick={() => openNote(n.id)}
                 >
                   <span className={s.noteRowTitle}>{n.title}</span>
                   <span className={s.noteRowMeta}>
@@ -229,13 +302,9 @@ export function NotesPage() {
                 </button>
               </li>
             ))}
-            {visible.length === 0 ? (
-              <li className={s.listEmpty}>No note in this scope yet.</li>
-            ) : null}
+            {visible.length === 0 ? <li className={s.listEmpty}>{emptyMessage}</li> : null}
           </ul>
-          <p className={s.listFoot}>
-            One note, one scope. Notes is a lens over every scope you can read.
-          </p>
+          <p className={s.listFoot}>{visible.length} of {all.length} notes · {scope === 'all' ? 'every scope you can read' : (getWorkspace(scope)?.name ?? 'Personal')}</p>
         </nav>
 
         <main className={s.readerWrap} data-scroll-region="notes-reader">
@@ -340,29 +409,39 @@ export function NotesPage() {
                       initialBody={note.body}
                       onChange={onChange}
                       onEscape={exitEdit}
+                      linkTitles={linkTitles}
                     />
                   </Suspense>
                   <p className={s.editorHint}>
-                    Markdown · saves {SAVE_IDLE} ms after you stop typing · <kbd>Esc</kbd> leaves the
-                    editor
+                    Markdown · saves {SAVE_IDLE} ms after you stop typing · type <kbd>[[</kbd> to link
+                    a note · <kbd>Esc</kbd> leaves the editor
                   </p>
                 </>
               ) : (
-                <NoteReader note={note} all={all} onOpen={(id) => navigate(routes.note(id))} />
+                <NoteReader
+                  note={note}
+                  all={all}
+                  onOpen={openNote}
+                  onCreate={(title) => addNote(title)}
+                />
               )}
             </article>
           ) : (
             <div className={s.readerEmpty}>
               <EmptyState
-                title="Nothing open"
-                hint="Pick a note from the list, or start one with New. Notes written inside a workspace are the same objects as the ones here — this is a view, not a second library."
+                title={needle ? 'Nothing matches' : 'Nothing open'}
+                hint={
+                  needle
+                    ? `No note matches “${debounced.trim()}”. Clear the search, or widen the scope.`
+                    : 'Pick a note from the list, or start one with New. Notes written inside a workspace are the same objects as the ones here — this is a view, not a second library.'
+                }
               />
             </div>
           )}
         </main>
 
         {panelOpen ? (
-          <ContextPanel ctx="notes" title={note ? 'Scope' : 'Notes'}>
+          <ContextPanel ctx="notes" title={note ? 'Note' : 'Notes'}>
             {note ? (
               <div className={s.panelInner}>
                 <div className={s.panelFields}>
@@ -371,10 +450,63 @@ export function NotesPage() {
                   <Field label="Length">{words} words</Field>
                   <Field label="Version">{note.version}</Field>
                 </div>
-                <p className={s.panelNote}>
-                  One note, one scope. It appears in two places because it has one owner and two
-                  views.
-                </p>
+
+                <div className={s.panelSection}>
+                  <div className={s.panelHead}>Links out ({outgoingNotes.length})</div>
+                  {outgoingNotes.length === 0 ? (
+                    <p className={s.panelNote}>
+                      This note names no other note yet. Type <kbd>[[</kbd> in the editor to link one.
+                    </p>
+                  ) : (
+                    <ul className={s.linkList}>
+                      {outgoingNotes.map((n) => (
+                        <li key={n.id}>
+                          <button type="button" className={s.linkRow} onClick={() => openNote(n.id)}>
+                            <span className={s.linkTitle}>{n.title}</span>
+                            <span className={s.linkMeta}>{scopeLabel(n)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className={s.panelSection}>
+                  <div className={s.panelHead}>Linked from ({incoming.length})</div>
+                  {incoming.length === 0 ? (
+                    <p className={s.panelNote}>Nothing links here yet.</p>
+                  ) : (
+                    <ul className={s.linkList}>
+                      {incoming.map((n) => (
+                        <li key={n.id}>
+                          <button type="button" className={s.linkRow} onClick={() => openNote(n.id)}>
+                            <span className={s.linkTitle}>{n.title}</span>
+                            <span className={s.linkMeta}>{scopeLabel(n)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className={s.panelSection}>
+                  <div className={s.panelHead}>Delete</div>
+                  {confirmDelete ? (
+                    <div className={s.deleteRow}>
+                      <p className={s.panelNote}>This note is removed from this browser. There is no undo.</p>
+                      <Button size="sm" variant="ghost" onClick={deleteNote}>
+                        Delete permanently
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+                        Keep it
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
+                      Delete note…
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
               <p className={s.panelNote}>

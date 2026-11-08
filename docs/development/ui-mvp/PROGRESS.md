@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 19:58 (SP-05a and SP-05b done; SP-10a done).
+Last updated: 2026-11-08 21:10 (SP-05 closed; SP-10a done).
 
 ---
 
@@ -21,7 +21,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-04b File interactions | SP-04 | **Completed** 11-07 | 0.75 | SP-04a | real disclosure, 5-key table, tombstone, honest disabled actions |
 | SP-05a Note model | SP-05 | **Completed** 11-08 | 1.0 | SP-04a | Markdown note + per-note store + link parser + backlinks + seed migration |
 | SP-05b Editor and save | SP-05 | **Completed** 11-08 | 1.75 | SP-05a | CodeMirror 6 on demand, idle save, conflict review, dirty guard |
-| SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list navigation, search, outgoing links and backlinks |
+| SP-05c Note library | SP-05 | **Completed** 11-08 | 1.25 | SP-05b | roving tabindex, body search, `[[` picker, links out and backlinks, delete |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
 | SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | sections, five fills, folds, eight handles, menus, minimap; second pass against the reference |
@@ -34,7 +34,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **3.75 days**. Critical path: SP-05c → SP-09a; SP-08 and the rest of SP-10 are independent.
+Remaining: **2.5 days**. Critical path: SP-09a → SP-09b; SP-08 and the rest of SP-10 are independent. SP-05 is closed.
 
 ---
 
@@ -172,6 +172,12 @@ Remaining: **3.75 days**. Critical path: SP-05c → SP-09a; SP-08 and the rest o
 | 11-08 | Conflict | a write behind a live editor produces `Not saved — this note changed elsewhere` and three actions; Load theirs replaces the document |
 | 11-08 | Bundle | shell 157.1 KB gzip, editor 174.3 KB as a lazy chunk (was 321.3 KB in one file) |
 | 11-08 | Screenshots | `.workbuddy/shots/sp05b-{edit,conflict,dirty}.png` |
+| 11-08 | `npm run e2e` (SP-05c) | 225/225; nine new assertions: body search, empty search naming the term, arrow keys, chip states, both panel directions, dangling create, backlink count, delete confirmation |
+| 11-08 | Search reach | "tokenizer" returns 2 of 6 — one match is in a body, the other in a title |
+| 11-08 | Dangling link | `[[Ghost note]]` renders dashed, and pressing it creates that note and opens it |
+| 11-08 | Backlink | after linking Method → Questions, the target reads `Linked from (1)` naming Method |
+| 11-08 | Delete | inline confirmation, `There is no undo`, then the list returns without the note |
+| 11-08 | Screenshots | `.workbuddy/shots/sp05c-{links,search,backlinks,delete}.png` |
 
 ## Next concrete action
 

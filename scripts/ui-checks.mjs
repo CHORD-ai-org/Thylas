@@ -204,6 +204,16 @@ async function main() {
     const click = (el) => el && el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   `;
 
+  /* The editor is a lazy chunk: waiting a fixed 1.2 s guesses at a network
+     fetch. Poll for the node instead. */
+  const waitForSelector = async (selector, timeout = 6000) => {
+    for (let waited = 0; waited < timeout; waited += 100) {
+      if (await js(`return !!document.querySelector(${JSON.stringify(selector)});`)) return true;
+      await sleep(100);
+    }
+    return false;
+  };
+
   const results = [];
   const check = (name, actual, expected) => {
     const pass = typeof expected === 'function' ? expected(actual) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -478,7 +488,9 @@ async function main() {
     return [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit');
   `), true);
 
-  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1200));`);
+  await js(`${helpers} click(byText('button', 'Edit')); return 1;`);
+  await waitForSelector('.cm-editor');
+  await sleep(300);
   check('notes: the editor mounts with an accessible name', await js(`
     const c = document.querySelector('.cm-content');
     if (!c) return null;
@@ -505,7 +517,8 @@ async function main() {
     return document.body.innerText.includes('A line typed by the check.');
   `), true);
 
-  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1100));`);
+  await js(`${helpers} click(byText('button', 'Edit')); return 1;`);
+  await waitForSelector('.cm-editor');
   await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
   await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
@@ -514,7 +527,8 @@ async function main() {
     return { editor: !!document.querySelector('.cm-editor'), edit: [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit') };
   `), { editor: false, edit: true });
 
-  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1100));`);
+  await js(`${helpers} click(byText('button', 'Edit')); return 1;`);
+  await waitForSelector('.cm-editor');
   await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
   await send('Input.insertText', { text: ' unsaved' });
   await sleep(150);
@@ -541,15 +555,106 @@ async function main() {
      which only exists while a note is selected. */
   await goto('/notes/n-method');
 
+  // ---- SP-05c: search, links, backlinks, delete ----
+  await goto('/notes');
+  const typeSearch = async (text) => js(`
+    const input = document.querySelector('input[aria-label="Search notes"]');
+    input.focus();
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, ${JSON.stringify(text)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 400));
+    return 1;
+  `);
+
+  await typeSearch('tokenizer');
+  check('notes: search reaches the body, not only the titles', await js(`
+    const rows = [...document.querySelectorAll('[data-note-row]')].map(r => r.textContent);
+    return { count: rows.length, method: rows.some(t => t.includes('Method')) };
+  `), (v) => v.count >= 2 && v.method === true);
+
+  await typeSearch('zzzznothing');
+  check('notes: an empty search names the term and the scope', await js(`
+    return document.querySelector('[class*="listEmpty"]')?.textContent.trim();
+  `), (v) => typeof v === 'string' && v.includes('zzzznothing'));
+  await typeSearch('');
+
+  check('notes: arrow keys move between rows', await js(`
+    const rows = [...document.querySelectorAll('[data-note-row]')];
+    rows[0].focus();
+    document.querySelectorAll('[data-note-row]')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await new Promise(r => setTimeout(r, 150));
+    return document.activeElement?.hasAttribute('data-note-row') ? 'row' : document.activeElement?.tagName;
+  `), 'row');
+
+  /* A link written in the editor must become a chip, and a name that does not
+     exist must offer to be written. */
+  await goto('/notes/n-method');
+  await js(`${helpers} click(byText('button', 'Edit')); return 1;`);
+  await waitForSelector('.cm-editor');
+  await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'End', code: 'End', windowsVirtualKeyCode: 35, nativeVirtualKeyCode: 35, modifiers: 2 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'End', code: 'End', windowsVirtualKeyCode: 35, nativeVirtualKeyCode: 35, modifiers: 2 });
+  await sleep(120);
+  await send('Input.insertText', { text: '\n\nSee [[Questions for the WAM team]] and [[Ghost note]].' });
+  await sleep(1400);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await sleep(500);
+
+  check('notes: a written link resolves and an unknown one dangles', await js(`
+    return {
+      resolved: document.querySelectorAll('article button[class*="chip"]:not([class*="chipOff"])').length,
+      dangling: document.querySelectorAll('article button[class*="chipOff"]').length,
+    };
+  `), { resolved: 1, dangling: 1 });
+
+  /* `includes`, not a regex: inside a template literal a backslash is consumed,
+     so `\(` silently becomes a capture group and the test never matches. */
+  check('notes: the panel lists both directions', await js(`
+    const aside = document.querySelector('aside[data-panel-context]');
+    const text = aside ? aside.innerText.toUpperCase() : '';
+    return {
+      has: !!aside,
+      out: text.includes('LINKS OUT (1)'),
+      from: text.includes('LINKED FROM (0)'),
+      head: text.split(String.fromCharCode(10)).join(' ').slice(0, 120),
+    };
+  `), (v) => v.has === true && v.out === true && v.from === true);
+
+  await js(`${helpers} click(byText('article button', 'Ghost note')); await new Promise(r => setTimeout(r, 800));`);
+  check('notes: a dangling link creates the note it names', await js(`
+    return { path: location.pathname, title: document.querySelector('input[aria-label="Note title"]')?.value ?? document.querySelector('article h1')?.textContent };
+  `), (v) => v.path !== '/notes/n-method' && v.title === 'Ghost note');
+
+  const ghostPath = await js(`return location.pathname;`);
+
+  await goto('/notes/n-questions');
+  check('notes: the linked note reports its backlink', await js(`
+    const text = (document.querySelector('aside[data-panel-context]')?.innerText ?? '').toUpperCase();
+    return { from: text.includes('LINKED FROM (1)'), names: text.includes('METHOD') };
+  `), { from: true, names: true });
+
+  await goto(ghostPath);
+  await js(`${helpers} click(byText('button', 'Delete note…')); await new Promise(r => setTimeout(r, 300));`);
+  check('notes: delete asks once before removing', await js(`
+    return { asked: document.body.innerText.includes('There is no undo'), path: location.pathname };
+  `), (v) => v.asked === true && v.path.startsWith('/notes/'));
+  await js(`${helpers} click(byText('button', 'Delete permanently')); await new Promise(r => setTimeout(r, 600));`);
+  check('notes: deleting returns to the list without the note', await js(`
+    const rows = [...document.querySelectorAll('[data-note-row]')].map(r => r.textContent);
+    return { path: location.pathname, ghost: rows.some(t => t.includes('Ghost note')) };
+  `), { path: '/notes', ghost: false });
+
   await js(`window.dispatchEvent(new KeyboardEvent('keydown', {key:'k', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 250));`);
   check('palette: opens on mod+k', await js(`return !!document.querySelector('[role="dialog"]');`), true);
   await js(`document.querySelector('[role="dialog"] input').dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true})); await new Promise(r => setTimeout(r, 200));`);
   check('palette: closes on escape', await js(`return !!document.querySelector('[role="dialog"]');`), false);
 
   await js(`${helpers} window.dispatchEvent(new KeyboardEvent('keydown', {key:'\\\\', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 300));`);
-  check('panel: hidden by shortcut', await js(`return !!document.querySelector('aside[aria-label="Scope"]');`), false);
+  check('panel: hidden by shortcut', await js(`return !!document.querySelector('aside[data-panel-context]');`), false);
   await js(`${helpers} window.dispatchEvent(new KeyboardEvent('keydown', {key:'\\\\', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 300));`);
-  check('panel: restored by shortcut', await js(`return !!document.querySelector('aside[aria-label="Scope"]');`), true);
+  check('panel: restored by shortcut', await js(`return !!document.querySelector('aside[data-panel-context]');`), true);
 
   await js(`${helpers} click(byText('button', 'Onda Lab')); await new Promise(r => setTimeout(r, 700));`);
   check('workspace: switching changes scope', await js(`return location.pathname;`), '/w/ws-onda/files');

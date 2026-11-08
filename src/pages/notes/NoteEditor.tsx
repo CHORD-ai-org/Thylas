@@ -3,6 +3,7 @@ import { EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
+import { autocompletion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 
 export type NoteEditorHandle = {
   /** Replaces the document without emitting a change (used when loading theirs). */
@@ -15,7 +16,38 @@ type Props = {
   onChange: (body: string) => void;
   /** Esc leaves the editor. Without this, Tab indents and the keyboard is trapped. */
   onEscape: () => void;
+  /** Titles this note is allowed to link to; the `[[` picker reads it on demand. */
+  linkTitles: string[];
 };
+
+/**
+ * `[[` opens a picker over the titles in this note's own scope. The closing
+ * brackets are inserted with the title, because a picker that leaves the token
+ * half-written is a picker that makes you finish its job.
+ */
+function wikiCompletion(getTitles: () => string[]) {
+  return (context: CompletionContext): CompletionResult | null => {
+    const before = context.matchBefore(/\[\[([^\]|\n]*)$/);
+    if (!before) return null;
+    const typed = before.text.slice(2).toLowerCase();
+    const options = getTitles()
+      .filter((title) => title.toLowerCase().includes(typed))
+      .slice(0, 8)
+      .map((title) => ({
+        label: title,
+        type: 'text',
+        apply: (view: EditorView, _completion: unknown, from: number, to: number) => {
+          const insert = `${title}]]`;
+          view.dispatch({
+            changes: { from, to, insert },
+            selection: { anchor: from + insert.length },
+          });
+        },
+      }));
+    if (options.length === 0) return null;
+    return { from: before.from + 2, options, filter: false };
+  };
+}
 
 /**
  * Markdown source, in the same measure as the reader so switching does not
@@ -23,7 +55,7 @@ type Props = {
  * single source of truth: no font sizes are written here.
  */
 export const NoteEditor = forwardRef<NoteEditorHandle, Props>(function NoteEditor(
-  { initialBody, onChange, onEscape },
+  { initialBody, onChange, onEscape, linkTitles },
   ref,
 ) {
   const host = useRef<HTMLDivElement | null>(null);
@@ -35,6 +67,8 @@ export const NoteEditor = forwardRef<NoteEditorHandle, Props>(function NoteEdito
   change.current = onChange;
   const escape = useRef(onEscape);
   escape.current = onEscape;
+  const titles = useRef(linkTitles);
+  titles.current = linkTitles;
 
   useEffect(() => {
     if (!host.current) return;
@@ -94,6 +128,11 @@ export const NoteEditor = forwardRef<NoteEditorHandle, Props>(function NoteEdito
             ]),
           ),
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+          autocompletion({
+            override: [wikiCompletion(() => titles.current)],
+            icons: false,
+            activateOnTyping: true,
+          }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) change.current(update.state.doc.toString());
           }),

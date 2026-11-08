@@ -411,3 +411,82 @@
   color: var(--ink-2);
   white-space: pre-wrap;
 }
+
+/* ---- library: search, links, delete ------------------------------------ */
+
+.search {
+  width: 100%;
+  height: 28px;
+  margin: 0 0 var(--s2);
+  padding: 0 var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.search::placeholder {
+  color: var(--ink-3);
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.panelSection {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+
+.panelHead {
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.linkRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  width: 100%;
+  padding: 6px var(--s2);
+  border-radius: var(--r-sm);
+  text-align: left;
+}
+
+.linkRow:hover {
+  background: var(--tint-hover);
+}
+
+.linkTitle {
+  font: var(--t-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkMeta {
+  flex: 0 0 auto;
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+.deleteRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}

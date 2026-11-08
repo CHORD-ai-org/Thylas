@@ -10,7 +10,12 @@ import s from '../notes.module.css';
  * no HTML is ever injected: the document is shown as the lines that were typed.
  */
 
-function inline(text: string, titles: Map<string, string>, onOpen: (id: string) => void): ReactNode {
+function inline(
+  text: string,
+  titles: Map<string, string>,
+  onOpen: (id: string) => void,
+  onCreate: (title: string) => void,
+): ReactNode {
   const links = resolveLinks(text, titles);
   if (links.length === 0) return text;
   const parts: ReactNode[] = [];
@@ -21,9 +26,16 @@ function inline(text: string, titles: Map<string, string>, onOpen: (id: string) 
     const id = link.id;
     parts.push(
       id === null ? (
-        <span key={`d${i}`} className={s.chipOff} title={`No note titled “${link.target}”`}>
+        <button
+          key={`d${i}`}
+          type="button"
+          className={s.chipOff}
+          title={`No note titled “${link.target}” — click to write it`}
+          aria-label={`Create a note titled ${link.target}`}
+          onClick={() => onCreate(link.target)}
+        >
           {label}
-        </span>
+        </button>
       ) : (
         <button key={`l${i}`} type="button" className={s.chip} onClick={() => onOpen(id)}>
           {label}
@@ -40,10 +52,13 @@ export function NoteReader({
   note,
   all,
   onOpen,
+  onCreate,
 }: {
   note: Note;
   all: Note[];
   onOpen: (id: string) => void;
+  /** A dangling chip is not a dead end: it offers to write the note it names. */
+  onCreate: (title: string) => void;
 }) {
   const titles = titlesFor(note, all);
   const blocks = parseBlocks(note.body);
@@ -64,7 +79,7 @@ export function NoteReader({
         if (block.kind === 'quote') {
           return (
             <blockquote key={key} className={s.quote}>
-              {inline(block.text, titles, onOpen)}
+              {inline(block.text, titles, onOpen, onCreate)}
             </blockquote>
           );
         }
@@ -72,7 +87,7 @@ export function NoteReader({
           return (
             <ul key={key} className={s.list2}>
               {block.items.map((item, j) => (
-                <li key={j}>{inline(item, titles, onOpen)}</li>
+                <li key={j}>{inline(item, titles, onOpen, onCreate)}</li>
               ))}
             </ul>
           );
@@ -86,7 +101,7 @@ export function NoteReader({
         }
         return (
           <p key={key} className={s.p}>
-            {inline(block.text, titles, onOpen)}
+            {inline(block.text, titles, onOpen, onCreate)}
           </p>
         );
       })}

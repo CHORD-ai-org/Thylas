@@ -33,7 +33,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-09a](SP-09a-gates.md) | Gates script and e2e expansion | SP-09 | 1.0 | SP-02…SP-08 | Not Started |
 | [SP-09b](SP-09b-visual-audit.md) | Visual, a11y, perf, identity test | SP-09 | 1.0 | SP-09a | Not Started |
 
-Remaining: **3.75 working days** (SP-05, SP-08, SP-09). SP-05a and 05b are done, so SP-05 has 1.25 left; plus **3.5 more** for the visual pass in [SP-10](../SP-10-visual-quality.md), which lands before SP-09b.
+Remaining: **2.5 working days** (SP-08, SP-09). SP-05 is closed; plus **3.5 more** for the visual pass in [SP-10](../SP-10-visual-quality.md), which lands before SP-09b.
 
 ## Rules
 
