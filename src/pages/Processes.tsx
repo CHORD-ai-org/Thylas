@@ -1,132 +1,29 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
+import { STATE_LABEL, STATE_TONE, getProcess, getWorkspace, processesIn } from '../data/selectors';
 import {
-  STATE_LABEL,
-  STATE_TONE,
-  getProcess,
-  getWorkspace,
-  processesIn,
-} from '../data/selectors';
+  FILTER_EMPTY,
+  RUN_FILTERS,
+  actionOutcome,
+  countFor,
+  matchesFilter,
+  nextSimulated,
+  parseFilter,
+  type RunFilter,
+} from '../data/runs';
 import type { Process, RunAction } from '../data/types';
 import { useRegisterTab } from '../state/app';
+import { clearRunState, setRunState, useRunOverrides } from '../state/runs';
 import { Badge, Button, Chip, EmptyState, Field, StatusDot } from '../components/ui';
 import { IconAnswer, IconPause, IconStop, IconChevron } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
+import g from '../styles/grammar.module.css';
 import s from './processes.module.css';
 
-const FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'running', label: 'Running' },
-  { id: 'needs_input', label: 'Needs input' },
-  { id: 'done', label: 'Done' },
-] as const;
-
-function matches(filter: string, run: Process): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'running') return run.state === 'running' || run.state === 'queued';
-  if (filter === 'needs_input') return run.state === 'needs_input';
-  return run.state === 'succeeded' || run.state === 'failed' || run.state === 'stopped';
-}
-
-export function ProcessesPage() {
-  const { wsId = '' } = useParams();
-  const navigate = useNavigate();
-  const ws = getWorkspace(wsId);
-  const all = processesIn(wsId);
-  const [filter, setFilter] = useState<string>('all');
-  const [notice, setNotice] = useState<string | null>(null);
-
-  const rows = useMemo(() => all.filter((r) => matches(filter, r)), [all, filter]);
-
-  if (!ws) return <EmptyState title="Workspace not found" hint="Recently lists what you can still reach." />;
-
-  return (
-    <WorkspaceLayout wsId={wsId}>
-      <div className={s.page}>
-        <div className={s.toolbar}>
-          <div className={s.filters} role="tablist" aria-label="Filter processes">
-            {FILTERS.map((f) => {
-              const count = all.filter((r) => matches(f.id, r)).length;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={filter === f.id}
-                  className={[s.filter, filter === f.id ? s.filterOn : ''].join(' ')}
-                  onClick={() => setFilter(f.id)}
-                >
-                  {f.label}
-                  <span className={s.filterCount}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-          <Button
-            size="sm"
-            onClick={() =>
-              setNotice(
-                'Starting a process submits an intent to WAM. No WAM endpoint is connected in this build, so nothing is sent.',
-              )
-            }
-          >
-            Start a process
-          </Button>
-        </div>
-
-        {notice ? (
-          <div className={s.notice} role="status">
-            {notice}
-            <button type="button" className={s.noticeClose} aria-label="Dismiss" onClick={() => setNotice(null)}>
-              ×
-            </button>
-          </div>
-        ) : null}
-
-        <div className={s.tableWrap} data-scroll-region="processes-table">
-          <div className={s.thead}>
-            <span className={s.colName}>Process</span>
-            <span className={s.colType}>Type</span>
-            <span className={s.colState}>State</span>
-            <span className={s.colActivity}>Activity</span>
-            <span className={s.colCredits}>Credits</span>
-            <span className={s.colOut}>Out</span>
-          </div>
-          <div>
-            {rows.map((run) => (
-              <button
-                key={run.id}
-                type="button"
-                className={s.trow}
-                onClick={() => navigate(routes.run(wsId, run.id))}
-              >
-                <span className={s.colName}>
-                  <IconChevron size={11} />
-                  <span className={s.runName}>{run.name}</span>
-                </span>
-                <span className={[s.colType, s.monoDim].join(' ')}>{run.type}</span>
-                <span className={s.colState}>
-                  <StatusDot tone={STATE_TONE[run.state]} pulse={run.state === 'running'} />
-                  {STATE_LABEL[run.state]}
-                </span>
-                <span className={[s.colActivity, s.mono].join(' ')}>{run.activity}</span>
-                <span className={[s.colCredits, s.mono].join(' ')}>{run.credits || '—'}</span>
-                <span className={[s.colOut, s.mono].join(' ')}>{run.outputs || '—'}</span>
-              </button>
-            ))}
-            {rows.length === 0 ? (
-              <EmptyState
-                title="Nothing in this state"
-                hint="Every process in this workspace is in another state. Switch the filter."
-              />
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </WorkspaceLayout>
-  );
-}
+/* The filter lives in the URL (?state=running), so a filtered view can be sent
+   to someone. `parseFilter` rejects anything else rather than showing an empty
+   list with no reason. */
 
 const ACTION_LABEL: Record<RunAction, string> = {
   pause: 'Pause',
@@ -144,11 +41,164 @@ function actionIcon(action: RunAction) {
   return null;
 }
 
+export function ProcessesPage() {
+  const { wsId = '' } = useParams();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const overrides = useRunOverrides();
+  const [loading, setLoading] = useState(false);
+
+  const ws = getWorkspace(wsId);
+  const all = processesIn(wsId);
+  const filter = parseFilter(params.get('state'));
+  /* `?fail=1` is the only way to see the error band: there is no server to fail.
+     It is a query rather than a hidden flag so the state is a link, not a mood. */
+  const failing = params.get('fail') === '1';
+
+  const stateOf = (run: Process) => overrides[run.id] ?? run.state;
+  const rows = all.filter((run) => matchesFilter(filter, stateOf(run)));
+
+  const setFilter = (id: RunFilter) => {
+    const next = new URLSearchParams(params);
+    if (id === 'all') next.delete('state');
+    else next.set('state', id);
+    setParams(next, { replace: true });
+  };
+
+  const retry = () => {
+    setLoading(true);
+    window.setTimeout(() => {
+      const next = new URLSearchParams(params);
+      next.delete('fail');
+      setParams(next, { replace: true });
+      setLoading(false);
+    }, 700);
+  };
+
+  if (!ws) return <EmptyState title="Workspace not found" hint="Recently lists what you can still reach." />;
+
+  return (
+    <WorkspaceLayout wsId={wsId}>
+      <div className={s.page}>
+        <div className={s.toolbar}>
+          <div className={s.filters} role="tablist" aria-label="Filter processes">
+            {RUN_FILTERS.map((f) => {
+              const count = countFor(f.id, all, stateOf);
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === f.id}
+                  className={[s.filter, filter === f.id ? s.filterOn : ''].join(' ')}
+                  onClick={() => setFilter(f.id)}
+                >
+                  {f.label}
+                  <span className={s.filterCount}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          {/* A Start control used to sit here and answer a click with an apology.
+              No WAM endpoint exists in this build, so the sentence is permanent
+              and there is nothing to press. */}
+          <p className={s.toolbarNote}>
+            Runs start in WAM. No WAM endpoint is connected in this build.
+          </p>
+        </div>
+
+        {loading ? (
+          <div className={s.skeleton} aria-busy="true" aria-label="Reading runs">
+            <i />
+            <i />
+            <i />
+          </div>
+        ) : failing ? (
+          <div className={s.errorBand}>
+            {/* One child on purpose: `grammar.banner` is a flex row for text plus a
+                dismiss control, and a second element would be pushed to the far edge. */}
+            <p className={g.banner} role="alert">
+              <span>
+                The run list could not be read. Nothing in this build talks to WAM — this is the
+                failure <code className={s.code}>?fail=1</code> asks for.
+              </span>
+            </p>
+            <Button size="sm" onClick={retry}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <div className={s.tableWrap} data-scroll-region="processes-table">
+            <div className={s.thead}>
+              <span className={s.colName}>Process</span>
+              <span className={s.colType}>Type</span>
+              <span className={s.colState}>State</span>
+              <span className={s.colActivity}>Activity</span>
+              <span className={s.colCredits}>Credits</span>
+              <span className={s.colOut}>Out</span>
+            </div>
+            <div>
+              {rows.map((run) => {
+                const state = stateOf(run);
+                const local = state !== run.state;
+                return (
+                  <button
+                    key={run.id}
+                    type="button"
+                    className={s.trow}
+                    onClick={() => navigate(routes.run(wsId, run.id))}
+                  >
+                    <span className={s.colName}>
+                      <IconChevron size={11} />
+                      <span className={s.runName}>{run.name}</span>
+                    </span>
+                    <span className={[s.colType, s.monoDim].join(' ')}>{run.type}</span>
+                    <span className={s.colState}>
+                      <StatusDot tone={STATE_TONE[state]} pulse={state === 'running'} />
+                      {STATE_LABEL[state]}
+                    </span>
+                    <span className={[s.colActivity, s.mono].join(' ')}>
+                      {local ? 'simulated · local copy' : run.activity}
+                    </span>
+                    <span className={[s.colCredits, s.mono].join(' ')}>{run.credits || '—'}</span>
+                    <span className={[s.colOut, s.mono].join(' ')}>{run.outputs || '—'}</span>
+                  </button>
+                );
+              })}
+              {rows.length === 0 ? (
+                <EmptyState
+                  title={FILTER_EMPTY[filter]}
+                  hint="The state is in the link. Switch the filter, or show everything in this workspace."
+                  action={
+                    filter === 'all' ? undefined : (
+                      <Button size="sm" onClick={() => setFilter('all')}>
+                        Show all
+                      </Button>
+                    )
+                  }
+                />
+              ) : null}
+            </div>
+          </div>
+        )}
+      </div>
+    </WorkspaceLayout>
+  );
+}
+
 export function RunDetailPage() {
   const { wsId = '', runId = '' } = useParams();
   const navigate = useNavigate();
+  const overrides = useRunOverrides();
+  const [advancing, setAdvancing] = useState(false);
   const run = getProcess(runId);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  /* The state on screen is the local copy when there is one. `simulated` is
+     always drawn next to it: a reader must be able to tell a clicked state from
+     a reported one at a glance. */
+  const state = run ? (overrides[run.id] ?? run.state) : 'queued';
+  const local = run ? state !== run.state : false;
+  const next = run ? nextSimulated(state) : null;
 
   useRegisterTab(
     `ws:${wsId}`,
@@ -157,7 +207,7 @@ export function RunDetailPage() {
           type: 'run',
           label: run.name,
           path: routes.run(wsId, runId),
-          live: run.state === 'running',
+          live: state === 'running',
         }
       : null,
   );
@@ -165,6 +215,16 @@ export function RunDetailPage() {
   if (!run) {
     return <EmptyState title="Run not found" hint="WAM owns run history. This build only knows the sample runs." />;
   }
+
+  const simulate = () => {
+    if (!next || advancing) return;
+    setAdvancing(true);
+    /* 700ms, so the change is seen rather than noticed afterwards. */
+    window.setTimeout(() => {
+      setRunState(run.id, next);
+      setAdvancing(false);
+    }, 700);
+  };
 
   const artifactRoute = (a: Process['artifacts'][number]): string | null => {
     if (!a.id) return null;
@@ -181,9 +241,10 @@ export function RunDetailPage() {
       panel={
         <div className={s.panelInner}>
           <div className={s.panelState}>
-            <StatusDot tone={STATE_TONE[run.state]} pulse={run.state === 'running'} />
-            <span>{STATE_LABEL[run.state]}</span>
+            <StatusDot tone={STATE_TONE[state]} pulse={state === 'running'} />
+            <span>{STATE_LABEL[state]}</span>
             <Badge>{run.type}</Badge>
+            {local ? <Chip tone="idle">simulated</Chip> : null}
           </div>
           <div className={s.panelFields}>
             <Field label="Started">{run.started}</Field>
@@ -217,20 +278,24 @@ export function RunDetailPage() {
                   key={action}
                   size="sm"
                   icon={actionIcon(action)}
-                  onClick={() =>
-                    setNotice(
-                      `“${ACTION_LABEL[action]}” is mirrored from the run's capability list. No WAM connection exists in this build, so the action was not sent.`,
-                    )
-                  }
+                  onClick={() => setRunState(run.id, actionOutcome(action))}
                 >
                   {ACTION_LABEL[action]}
                 </Button>
               ))}
             </div>
+            {/* Said before the click, not after it: these buttons change the
+                browser's copy of the run and nothing else. */}
             <p className={s.panelQuiet}>
-              Only capabilities this run exposes are drawn. A missing capability is an absent button,
-              never a disabled one.
+              Only capabilities this run exposes are drawn — a missing one is an absent button,
+              never a disabled one. Pressing one sets this browser's copy of the run; nothing is
+              sent to WAM in this build.
             </p>
+            {local ? (
+              <Button size="sm" variant="ghost" onClick={() => clearRunState(run.id)}>
+                Restore the sample
+              </Button>
+            ) : null}
           </div>
         </div>
       }
@@ -239,9 +304,25 @@ export function RunDetailPage() {
         <header className={s.runHead}>
           <div className={s.runKicker}>
             <span className={s.kickerType}>{run.type}</span>
-            <Chip tone={STATE_TONE[run.state]}>{STATE_LABEL[run.state]}</Chip>
+            <Chip tone={STATE_TONE[state]}>{STATE_LABEL[state]}</Chip>
             <span className={s.kickerMeta}>
               credits {run.credits || '—'} · started {run.started}
+            </span>
+            <span className={s.simulateGroup}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={simulate}
+                disabled={!next || advancing}
+                title={
+                  next
+                    ? 'Advances a local copy of this run. Nothing is sent to WAM.'
+                    : 'This state has nowhere further to go on the simulated path.'
+                }
+              >
+                {advancing ? 'Simulating…' : next ? 'Simulate next state' : 'No further state'}
+              </Button>
+              <span className={s.simulateLabel}>simulated</span>
             </span>
           </div>
           <h1 className={s.runTitle}>{run.name}</h1>
@@ -250,15 +331,6 @@ export function RunDetailPage() {
             {run.refs.length} references
           </p>
         </header>
-
-        {notice ? (
-          <div className={s.notice} role="status">
-            {notice}
-            <button type="button" className={s.noticeClose} aria-label="Dismiss" onClick={() => setNotice(null)}>
-              ×
-            </button>
-          </div>
-        ) : null}
 
         <section className={s.band}>
           <div className={s.bandHead}>
@@ -301,7 +373,7 @@ export function RunDetailPage() {
           <div className={s.bandHead}>
             <h2>Activity</h2>
             <span className={s.bandMeta}>
-              {run.state === 'running' ? (
+              {state === 'running' ? (
                 <>
                   <StatusDot tone="live" pulse /> live
                 </>
@@ -310,9 +382,9 @@ export function RunDetailPage() {
               )}
             </span>
           </div>
-          {run.events.length === 0 ? (
+          {run.events.length === 0 && !local ? (
             <p className={s.bandEmpty}>
-              Nothing has happened yet. {run.state === 'queued' ? 'The run is queued.' : ''}
+              Nothing has happened yet. {state === 'queued' ? 'The run is queued.' : ''}
             </p>
           ) : (
             <ol className={s.events}>
@@ -334,6 +406,16 @@ export function RunDetailPage() {
                   </span>
                 </li>
               ))}
+              {local ? (
+                <li className={s.eventRow}>
+                  <span className={s.eventT}>now</span>
+                  <span className={[s.eventMark, s.markState].join(' ')}>•</span>
+                  <span className={s.eventText}>
+                    State set to “{STATE_LABEL[state]}” in this browser. The run itself did not move.
+                  </span>
+                  <span className={[s.eventMeta, s.eventLive].join(' ')}>simulated</span>
+                </li>
+              ) : null}
             </ol>
           )}
         </section>

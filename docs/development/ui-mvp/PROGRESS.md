@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 09:00 (SP-07b complete).
+Last updated: 2026-11-08 09:35 (SP-07c complete).
 
 ---
 
@@ -28,12 +28,12 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-06d Edges | SP-06 | **Completed** 11-07 | 1.5 | SP-06c | anchors, connect, bend, elbow, arrows, labels, 24px target at any zoom |
 | SP-07a AI endpoint | SP-07 | **Completed** 11-08 | 1.0 | SP-03b | `POST /api/ai` in dev *and* preview, seven error kinds, key never leaves the server, 35 offline assertions |
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
-| SP-07c Process states | SP-07 | Not Started | 0.75 | SP-03b | filters, controls, labelled simulator |
+| SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **7.25 days**. Critical path: SP-07c → SP-09a; SP-05 stays blocked on Q-1, SP-08 is independent.
+Remaining: **6.5 days**. Critical path: SP-09a → SP-09b; SP-05 stays blocked on Q-1, SP-08 is independent.
 
 ---
 
@@ -66,12 +66,12 @@ Remaining: **7.25 days**. Critical path: SP-07c → SP-09a; SP-05 stays blocked 
 
 | # | Defect | Where | Owner SP |
 | --- | --- | --- | --- |
-| K1 | Other surfaces still accept a click then apologise (Overview, Files and Boards are clean) | Processes, Notes, Account | SP-07 / SP-08 |
+| K1 | Account's `Create key` still accepts a click, then explains it cannot | `src/pages/Account.tsx` | SP-08 |
 | K3 | Reader title 32px but list meta still mixed sizes | `src/pages/notes.module.css` | SP-05 |
 | K5 | Density preference does not persist | `src/pages/Account.tsx` | SP-08 |
 | K6 | Two page-local `.notice` recipes remain (down from six) | `account/processes.module.css` | SP-07 / SP-08 |
 | K7 | Roaming tabindex in the rail not implemented (arrows only) | `src/shell/Rail.tsx` | SP-09 |
-| K9 | No loading state language anywhere | all surfaces | SP-07 |
+| K9 | Only Processes has a loading state (three static rows); the rest still have none | Files, Notes | SP-09 |
 
 ## Validation log
 
@@ -144,11 +144,19 @@ Remaining: **7.25 days**. Critical path: SP-07c → SP-09a; SP-05 stays blocked 
 | 11-08 | No-execution claim | panel text returns false for `\b(started|is running|process is)\b` |
 | 11-08 | `npm run build` (SP-07b) | CSS 67.5 KB / JS 483.7 KB (151.5 KB gzip) |
 | 11-08 | Screenshots | `.workbuddy/shots/sp07b-{idle,sending,answer,error}.png` |
+| 11-08 | `npm test` (SP-07c) | 159/159; 17 cases over the process vocabulary, 6 over the override store |
+| 11-08 | `npm run e2e` (SP-07c) | 209/209; 14 new assertions on filters, capability sets, the simulator, its restore, and the source grep |
+| 11-08 | Filter is a link | `?state=needs_input` survives a reload and selects its own tab; `Running 0` still shows its count |
+| 11-08 | Capability rule | `run-baseline` draws `[Stop, Pause]`, `run-lit` draws `[Answer, Stop]` — the list drives the buttons |
+| 11-08 | Simulated path | `Simulating…` for 700 ms, then `done`; the list row reads `done · simulated · local copy` |
+| 11-08 | Apology grep | `grep -rn "Nothing was sent" src` → 0, asserted by reading the source in the run |
+| 11-08 | `npm run build` (SP-07c) | CSS 68.2 KB / JS 487.4 KB (153.0 KB gzip) |
+| 11-08 | Screenshots | `.workbuddy/shots/sp07c-{all,empty,fail,detail,simulated,advanced}.png` |
 
 ## Next concrete action
 
-1. **SP-07c Process states** (0.75 day): filters, five states, capability-gated controls, the labelled simulator. It is the last unit before the gates.
-2. **SP-08 Account** (0.5 day) is independent; density persistence and the zero-accent rule.
+1. **SP-09a Gates** (1 day): `scripts/gates.mjs` with eleven rules (R11 already exists inside `scripts/ai-checks.mjs`), plus the e2e surface coverage. SP-07 is now closed, so every rule has something to check.
+2. **SP-08 Account** (0.5 day) is independent; density persistence and the last post-click apology.
 3. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved

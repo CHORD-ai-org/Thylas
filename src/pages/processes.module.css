@@ -475,3 +475,66 @@
   line-height: 16px;
   color: var(--ink-3);
 }
+
+/* The permanent sentence that replaced a Start button: there is no WAM
+   endpoint in this build, so there is nothing to press and nothing to explain
+   after a click. */
+.toolbarNote {
+  max-width: 58ch;
+  font: var(--t-caption);
+  color: var(--ink-3);
+  text-align: right;
+}
+
+/* Loading is three static rows at the real row height, so the table does not
+   jump when they are replaced. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--s2) var(--s4);
+  flex: 1;
+  min-height: 0;
+}
+
+.skeleton i {
+  height: 38px;
+  background: var(--line);
+  opacity: 0.55;
+}
+
+/* The banner is a band, not a note: it stretches, the retry stays left. */
+.errorBand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s4);
+  flex: 1;
+  min-height: 0;
+}
+
+.errorBand > [role='alert'] {
+  align-self: stretch;
+}
+
+.code {
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+/* The simulator sits at the right end of the kicker row, in the quiet variant:
+   it is a demonstration, not the surface's primary action. */
+.simulateGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.simulateLabel {
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}

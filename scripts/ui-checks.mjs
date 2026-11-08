@@ -14,6 +14,7 @@ import { createServer } from 'node:http';
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /* 5180 rather than Vite's 5173: the run owns its server, so the AI stub below
    can be guaranteed to be the upstream. Reusing a server someone left running
@@ -486,7 +487,7 @@ async function main() {
   check('workspace: switching changes scope', await js(`return location.pathname;`), '/w/ws-onda/files');
 
   await js(`${helpers} click(byText('button', 'Processes')); await new Promise(r => setTimeout(r, 600));`);
-  await js(`${helpers} click(byText('[role="tab"]', 'Needs input')); await new Promise(r => setTimeout(r, 300));`);
+  await js(`${helpers} click(byText('[aria-label="Filter processes"] [role="tab"]', 'Needs you')); await new Promise(r => setTimeout(r, 300));`);
   check('processes: filter narrows the table', await js(`return document.querySelectorAll('button[class*="trow"]').length;`), 1);
 
   await js(`${helpers} click(byText('button', 'Collapse sidebar')); await new Promise(r => setTimeout(r, 400));`);
@@ -497,6 +498,133 @@ async function main() {
 
   await goto('/w/ws-research/processes/run-baseline');
   check('run: detail renders its bands', await js(`return document.body.innerText.includes('GIVEN TO WAM');`), true);
+
+  // ---- SP-07c: the filter is a link, the controls are capabilities, the simulator says so ----
+  await goto('/w/ws-research/processes?state=needs_input');
+  check('processes: the filter comes from the URL', await js(`
+    const rows = [...document.querySelectorAll('button[class*="trow"]')];
+    const on = [...document.querySelectorAll('[aria-label="Filter processes"] [role="tab"]')].find(t => t.getAttribute('aria-selected') === 'true');
+    return {
+      rows: rows.length,
+      states: rows.map(r => r.children[2].textContent.trim()),
+      selected: on ? on.textContent.replace(/\\d+/g, '').trim() : null,
+    };
+  `), { rows: 1, states: ['needs you'], selected: 'Needs you' });
+
+  await send('Page.reload');
+  await sleep(1300);
+  check('processes: a reload keeps the filtered view', await js(`
+    return { q: location.search, rows: document.querySelectorAll('button[class*="trow"]').length };
+  `), { q: '?state=needs_input', rows: 1 });
+
+  await goto('/w/ws-onda/processes?state=running');
+  check('processes: an empty filter names itself and offers a way out', await js(`
+    const main = document.querySelector('main');
+    return {
+      rows: document.querySelectorAll('button[class*="trow"]').length,
+      names: main.innerText.includes('No run in this workspace is running.'),
+      showAll: [...main.querySelectorAll('button')].some(b => b.textContent.trim() === 'Show all'),
+      counts: [...document.querySelectorAll('[aria-label="Filter processes"] [role="tab"]')].map(t => t.textContent.trim()).join('|'),
+    };
+  `), (v) => v.rows === 0 && v.names === true && v.showAll === true && v.counts.includes('Running0'));
+
+  await js(`${helpers} click(byText('button', 'Show all')); await new Promise(r => setTimeout(r, 450));`);
+  check('processes: Show all clears the filter and the link', await js(`
+    return { q: location.search, rows: document.querySelectorAll('button[class*="trow"]').length };
+  `), { q: '', rows: 2 });
+
+  await goto('/w/ws-research/processes?fail=1');
+  check('processes: the failure band offers a retry', await js(`
+    const alert = document.querySelector('[role="alert"]');
+    return {
+      alert: !!alert,
+      typed: alert ? alert.textContent.includes('?fail=1') : false,
+      retry: [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Try again'),
+    };
+  `), { alert: true, typed: true, retry: true });
+
+  await js(`${helpers} click(byText('button', 'Try again')); return 1;`);
+  check('processes: the retry draws three static rows while it reads', await js(`
+    return document.querySelectorAll('[class*="skeleton"] i').length;
+  `), 3);
+  await sleep(1100);
+  check('processes: the retry clears the failure', await js(`
+    return {
+      alert: !!document.querySelector('[role="alert"]'),
+      rows: document.querySelectorAll('button[class*="trow"]').length,
+      q: location.search,
+    };
+  `), (v) => v.alert === false && v.rows >= 5 && v.q === '');
+
+  await goto('/w/ws-research/processes/run-baseline');
+  check('run: controls mirror the capability list', await js(`
+    const labels = [...document.querySelectorAll('aside[data-panel-context] button')].map(b => b.textContent.trim());
+    return labels.filter(l => ['Pause', 'Stop', 'Answer', 'Approve', 'Re-run', 'Resume'].includes(l));
+  `), ['Stop', 'Pause']);
+  await goto('/w/ws-research/processes/run-lit');
+  check('run: a run without pause does not draw a Pause button', await js(`
+    const labels = [...document.querySelectorAll('aside[data-panel-context] button')].map(b => b.textContent.trim());
+    return labels.filter(l => ['Pause', 'Stop', 'Answer', 'Approve', 'Re-run', 'Resume'].includes(l));
+  `), ['Answer', 'Stop']);
+
+  await send('Page.navigate', { url: `${BASE}/w/ws-research/processes/run-baseline` });
+  await sleep(1200);
+  await js(`${helpers} click(byText('aside[data-panel-context] button', 'Pause')); await new Promise(r => setTimeout(r, 400));`);
+  check('run: a control changes the local copy and says so', await js(`
+    const kicker = document.querySelector('header [class*="runKicker"]');
+    return {
+      kicker: kicker ? kicker.innerText.replace(/\\s+/g, ' ').trim() : '',
+      simulated: document.body.innerText.includes('simulated'),
+      event: document.body.innerText.includes('did not move'),
+    };
+  `), (v) => v.kicker.includes('queued') && v.simulated === true && v.event === true);
+
+  await js(`${helpers} click(byText('button', 'Restore the sample')); await new Promise(r => setTimeout(r, 400));`);
+  check('run: a changed run can be restored to the sample', await js(`
+    const kicker = document.querySelector('header [class*="runKicker"]');
+    return {
+      kicker: kicker ? kicker.innerText.replace(/\\s+/g, ' ').trim() : '',
+      restore: [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Restore the sample'),
+      event: document.body.innerText.includes('did not move'),
+    };
+  `), (v) => v.kicker.includes('running') && v.restore === false && v.event === false);
+
+  await goto('/w/ws-research/processes/run-lit');
+  await js(`${helpers} click(byText('button', 'Simulate next state')); await new Promise(r => setTimeout(r, 250));`);
+  check('run: the simulator shows that it is working', await js(`
+    return document.body.innerText.includes('Simulating');
+  `), true);
+  await sleep(900);
+  check('run: the simulator advances and keeps the label', await js(`
+    const kicker = document.querySelector('header [class*="runKicker"]');
+    return {
+      kicker: kicker ? kicker.innerText.replace(/\\s+/g, ' ').trim() : '',
+      label: document.body.innerText.includes('simulated'),
+    };
+  `), (v) => v.kicker.includes('done') && v.label === true);
+
+  await js(`${helpers} click(byText('button', 'Processes')); await new Promise(r => setTimeout(r, 700));`);
+  check('processes: the list reflects a simulated state without a reload', await js(`
+    const row = [...document.querySelectorAll('button[class*="trow"]')].find(r => r.textContent.includes('lit-review'));
+    return row ? row.innerText.replace(/\\s+/g, ' ').trim() : null;
+  `), (v) => typeof v === 'string' && v.includes('done') && v.includes('simulated'));
+
+  /* Acceptance 5 is a property of the source, not of a rendered frame: the only
+     honest way to check it is to read the source. */
+  const srcFiles = [];
+  const walkSrc = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walkSrc(full);
+      else srcFiles.push(full);
+    }
+  };
+  walkSrc(fileURLToPath(new URL('../src/', import.meta.url)));
+  check(
+    'processes: no post-click apology survives in src/',
+    srcFiles.filter((f) => readFileSync(f, 'utf8').includes('Nothing was sent')).length,
+    0,
+  );
 
   // ---- SP-02: every Overview row opens the object it names, in its own workspace ----
   await goto('/overview');

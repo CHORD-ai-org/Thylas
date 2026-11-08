@@ -315,6 +315,14 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** always enable, let the first request carry the bad news. Rejected: it spends a round trip to say what the server already knows, and the disabled state is the honest one.
 **Consequence:** one more endpoint for the eventual host to mount (Q-2). It states whether a key exists and nothing about the key.
 
+## D-040 · A process control changes a local copy, and `pause` becomes `queued`
+
+**Status:** accepted in force (SP-07c).
+**Context:** This unit wants capability-gated controls *and* forbids post-click apologies. Those two together leave no honest option for what a press does: the old behaviour was a notice explaining that nothing had been sent, which is exactly the pattern the acceptance list bans.
+**Decision:** every control writes to a local override map (`thylas:runs:v1`), shared by the list and the detail through a `useSyncExternalStore` store. The surface says `simulated` wherever the result is drawn — header label, panel chip, activity line, list column — and `Restore the sample` removes the override. `pause` maps to `queued`.
+**Alternative:** add a seventh `paused` state. Rejected: one button would introduce a word the run model does not have and that WAM may never emit; `queued` already says "not moving, waiting to run".
+**Consequence:** a clicked state survives a reload, which is what makes "the list reflects it without a reload" a testable claim — and is why the restore control is mandatory rather than decorative.
+
 ---
 
 ## Open questions (need a human, not a default)

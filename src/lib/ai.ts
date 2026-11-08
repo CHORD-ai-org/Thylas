@@ -29,7 +29,7 @@ export const AI_MAX_PROMPT = 8000;
 export const AI_TIMEOUT_MS = 30_000;
 
 export type AiErrorKind =
-  /** No key on the server. Nothing was sent upstream. */
+  /** No key on the server, so no upstream call is attempted. */
   | 'not_configured'
   /** Upstream rejected the key (401/403). Retrying keeps it rejected. */
   | 'unauthorized'
