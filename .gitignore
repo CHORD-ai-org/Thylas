@@ -24,6 +24,11 @@ Thumbs.db
 # Local agent workspace data (session memory, scratch state)
 .workbuddy/
 
+# Secrets. `.env.example` is committed and documents the names; these hold values.
+.env
+.env.local
+.env.*.local
+
 # Scratch files
 *.log
 *.tmp
