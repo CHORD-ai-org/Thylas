@@ -19,7 +19,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-03b Panel and restore | SP-03 | **Completed** 11-07 | 0.5 | SP-03a | per-context widths, named-region scroll restore, room-preserving switch, settings deleted |
 | SP-04a Table grammar | SP-04 | **Completed** 11-07 | 0.75 | SP-03b | grammar adoption, measured 3-width budgets, no truncation |
 | SP-04b File interactions | SP-04 | **Completed** 11-07 | 0.75 | SP-04a | real disclosure, 5-key table, tombstone, honest disabled actions |
-| SP-05a Note model | SP-05 | **Blocked** (Q-1) | 1.0 | SP-04a | store, link parser, backlinks |
+| SP-05a Note model | SP-05 | Not Started | 1.0 | SP-04a | store, link parser, backlinks — Q-1 does not block it |
 | SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
@@ -30,7 +30,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
-| SP-10 Visual quality | — | **In progress** — 10a done 11-08 | 3.0 | SP-07 | radius scale shipped; typeface, icons and states remain |
+| SP-10 Visual quality | — | **In progress** — 10a done 11-08 | 3.5 | SP-07 | radius shipped; typeface, icons, surface and accessibility remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 

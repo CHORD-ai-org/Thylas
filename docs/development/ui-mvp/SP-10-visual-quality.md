@@ -83,6 +83,19 @@ Exit: a script scans `.tsx` for a one-character text node outside `kbd` and retu
 
 Exit: four states photographed per control class; the palette, the board and the reader all still fit 1440×900 without scroll.
 
+### 10e · Accessibility pass (0.5 day)
+
+From `interaction-audit.md`, the four findings that do not change a single pixel and still matter more than the rest of this file:
+
+| # | Problem | Fix |
+| --- | --- | --- |
+| A1 | The palette is `aria-modal` with no focus trap; six Tabs walk out into the rail | a trap on `Tab`/`Shift+Tab` over the dialog's focusables |
+| A2 | Closing it drops focus to `<body>` | remember the opener and restore it |
+| A3 | The palette input has no name and no `aria-activedescendant` | `aria-label="Search"`, active option mirrored on the input |
+| A4, A9 | Rail rows announce `"ResearchPERSONAL"`; two buttons share `Collapse sidebar` | explicit `aria-label` per row; unique names |
+
+Exit: Tab six times from an open palette stays inside it; Esc returns focus to the button that opened it; no control shares an accessible name.
+
 ## D. Order and cost
 
 | Phase | Days | Why this order |
@@ -91,8 +104,9 @@ Exit: four states photographed per control class; the palette, the board and the
 | 10c icons | 0.5 | Independent of type; unblocks clean screenshots for 10b |
 | 10b type | 1.0 | Every measurement after this one is against the final face |
 | 10d surface | 1.0 | Needs the final radius and type to judge spacing |
+| 10e accessibility | 0.5 | Blocking findings from the interaction audit; no pixel changes, so it can go first |
 
-Total 3 days, before SP-09a (gates) and SP-09b (audit). SP-09b then re-runs the audit and closes A3, A10, I6, I7, K9.
+Total 3.5 days, before SP-09a (gates) and SP-09b (audit). SP-09b then re-runs the audit and closes A3, A10, I6, I7, K9.
 
 ## E. Parent acceptance
 

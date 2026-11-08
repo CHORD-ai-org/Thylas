@@ -1,6 +1,6 @@
 # SP-05a · Note model, local store, link parser, backlinks
 
-**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.0 · **Status:** Blocked on Q-1 · **Depends:** SP-04a
+**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.0 · **Status:** Not Started · **Depends:** SP-04a
 
 ## Objective
 

@@ -18,7 +18,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-03b](SP-03b-panel-and-restore.md) | Panel widths, scroll restore, workspace semantics | SP-03 | 0.5 | SP-03a | **Completed 11-07** |
 | [SP-04a](SP-04a-table-grammar.md) | Table grammar and column budgets | SP-04 | 0.75 | SP-03b | **Completed 11-07** |
 | [SP-04b](SP-04b-file-interactions.md) | Disclosure, keyboard, tombstone, honest actions | SP-04 | 0.75 | SP-04a | **Completed 11-07** |
-| [SP-05a](SP-05a-note-model.md) | Note model, local store, link parser, backlinks | SP-05 | 1.0 | SP-04a | Blocked (Q-1) |
+| [SP-05a](SP-05a-note-model.md) | Note model, local store, link parser, backlinks | SP-05 | 1.0 | SP-04a | Not Started — Q-1 does not block it |
 | [SP-05b](SP-05b-editor-and-save.md) | Editor, save loop, conflict, dirty guard | SP-05 | 1.75 | SP-05a | Blocked (Q-1) |
 | [SP-05c](SP-05c-note-library.md) | Library list, search, panel | SP-05 | 1.25 | SP-05b | Not Started |
 | [SP-06a](SP-06a-scene-model.md) | Scene model, geometry, persistence schema | SP-06 | 0.75 | SP-04a | **Completed 11-07** |
@@ -29,11 +29,11 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-07b](SP-07b-ai-panel.md) | Overview AI panel and its states | SP-07 | 0.75 | SP-07a, SP-02 | **Completed** 11-08 |
 | [SP-07c](SP-07c-process-states.md) | Process states, controls, labelled simulator | SP-07 | 0.75 | SP-03b | **Completed** 11-08 |
 | [SP-08](SP-08-account-and-settings.md) | Account and settings | — | 0.5 | SP-01 | Not Started |
-| [SP-10](SP-10-visual-quality.md) | Radius scale, typeface, icons, surface states | — | 3.0 | SP-07 | **In progress** — 10a done 11-08 |
+| [SP-10](SP-10-visual-quality.md) | Radius, typeface, icons, surface, accessibility | — | 3.5 | SP-07 | **In progress** — 10a done 11-08 |
 | [SP-09a](SP-09a-gates.md) | Gates script and e2e expansion | SP-09 | 1.0 | SP-02…SP-08 | Not Started |
 | [SP-09b](SP-09b-visual-audit.md) | Visual, a11y, perf, identity test | SP-09 | 1.0 | SP-09a | Not Started |
 
-Remaining: **6.5 working days** (SP-05, SP-08, SP-09), of which SP-05 is 4 and stays blocked on Q-1; plus **3 more** for the visual pass in [SP-10](../SP-10-visual-quality.md), which lands before SP-09b.
+Remaining: **6.5 working days** (SP-05, SP-08, SP-09), of which SP-05 is 4 and stays blocked on Q-1; plus **3.5 more** for the visual pass in [SP-10](../SP-10-visual-quality.md), which lands before SP-09b.
 
 ## Rules
 
