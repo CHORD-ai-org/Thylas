@@ -48,16 +48,18 @@
   flex: 0 0 auto;
 }
 
+/* The mark is the glyph, not a box around it: a bordered 20px square reads as
+   a button that does nothing. Removing the frame lets the τ sit at its own
+   optical size, one step up from where it sat inside the frame. */
 .brandMark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
+  width: 14px;
   height: 20px;
-  border: 1px solid var(--ink-3);
-  border-radius: var(--r-chip);
   font-family: var(--ui);
-  font-size: 12px;
+  font-size: 16px;
+  line-height: 1;
   color: var(--ink);
   flex: 0 0 auto;
 }
