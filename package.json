@@ -9,9 +9,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "lint": "eslint src",
+    "lint": "eslint src server",
     "test": "vitest run",
-    "e2e": "node scripts/ui-checks.mjs"
+    "e2e": "node scripts/ui-checks.mjs",
+    "ai": "node scripts/ai-checks.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",

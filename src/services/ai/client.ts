@@ -1,4 +1,4 @@
-import { AI_PATH, failure } from '../../lib/ai';
+import { AI_MAX_PROMPT, AI_PATH, failure } from '../../lib/ai';
 import { toAnswer } from './map';
 import type { AskResult } from './types';
 
@@ -8,6 +8,18 @@ import type { AskResult } from './types';
  * throws — every failure is a value the UI can render with a retry decision.
  */
 export async function ask(prompt: string, signal?: AbortSignal): Promise<AskResult> {
+  /* Refused here rather than at the server so the reader is not charged a round
+     trip for a request that cannot succeed. The same numbers, one message. */
+  if (prompt.trim().length > AI_MAX_PROMPT) {
+    return {
+      ok: false,
+      error: failure(
+        'contract',
+        `The question is ${prompt.trim().length} characters; the limit is ${AI_MAX_PROMPT}.`,
+      ),
+    };
+  }
+
   let res: Response;
   try {
     res = await fetch(AI_PATH, {

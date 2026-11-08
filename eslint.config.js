@@ -18,7 +18,7 @@ export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**', 'design/**', 'scripts/**'] },
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'server/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],

@@ -291,6 +291,22 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** collapse the selection to the clicked object. Rejected: a right-click inside a set is how a reader asks "what can I do with these".
 **Consequence:** the menu has three items on a set, five on a single card, four on a frame; the e2e asserts the set case and the single case.
 
+## D-037 · The AI endpoint answers with gateway statuses, not 4xx
+
+**Status:** accepted in force (SP-07a).
+**Context:** A rejected key, an unreachable host and a 500 from DeepSeek are all failures *behind* the endpoint. Passing 401/403/500 through would tell a browser its own request was unauthorised or malformed, and any generic fetch wrapper would branch on the wrong thing.
+**Decision:** only `contract` is a 4xx (400; 405 for a non-POST). `not_configured` is 503, `rate_limited` is 429 — the caller really is being throttled, just not by us — `timeout` is 504, and `unauthorized` / `network` / `upstream` are 502.
+**Alternative:** mirror the upstream status. Rejected: a server-side key problem would then look like a client authorisation problem, and the reader would be pointed at the wrong fix.
+**Consequence:** a proxy in front sees a gateway error, which is accurate. The `kind` field, not the status, is what a surface branches on.
+
+## D-038 · The upstream timeout can be shortened by an env var, for checks only
+
+**Status:** accepted in force (SP-07a).
+**Context:** The timeout branch has to be proven over the wire, but waiting 30 s for it makes the check something nobody runs. A unit test with a fake clock proves the mapping, not the wiring.
+**Decision:** `DEEPSEEK_TIMEOUT_MS` overrides the 30 s default. `.env.example` documents it as a check-time knob; `scripts/ai-checks.mjs` sets 1500 and asserts the answer lands between 1.3 s and 6 s.
+**Alternative:** inject a clock into the middleware. Rejected: that edits the thing under test and would never exercise `AbortSignal.timeout`.
+**Consequence:** one more variable that could be mis-set and cut real answers short. It only affects the local server, and the default stands when it is absent.
+
 ---
 
 ## Open questions (need a human, not a default)

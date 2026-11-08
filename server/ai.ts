@@ -51,21 +51,28 @@ function sendJson(res: ServerResponse, status: number, body: AiBody): void {
   res.end(payload);
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
+/**
+ * Resolves with the body, or with `null` when it exceeded MAX_BODY_BYTES. It
+ * keeps draining past the cap so the response can still be written: destroying
+ * the socket mid-upload turns a readable 413 into a reset connection.
+ */
+function readBody(req: IncomingMessage): Promise<string | null> {
   return new Promise((resolve, reject) => {
     const chunks: string[] = [];
     let size = 0;
+    let tooLarge = false;
     req.setEncoding('utf8');
     req.on('data', (chunk: string) => {
       size += Buffer.byteLength(chunk);
       if (size > MAX_BODY_BYTES) {
-        reject(new Error('body-too-large'));
-        req.destroy();
+        tooLarge = true;
+        /* Keep reading and discard: a caller that keeps sending cannot hold the
+           process, and the refusal below is still delivered. */
         return;
       }
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(chunks.join('')));
+    req.on('end', () => resolve(tooLarge ? null : chunks.join('')));
     req.on('error', reject);
   });
 }
@@ -86,8 +93,14 @@ async function safeJson(res: Response): Promise<unknown> {
   }
 }
 
-function upstreamMessage(kind: AiErrorKind, status: number, detail: string): string {
-  const tail = detail ? ` — ${detail.slice(0, 200)}` : '';
+/** The contract's only input. Anything else in the body is ignored, not echoed. */
+function promptFrom(parsed: unknown): string {
+  if (typeof parsed !== 'object' || parsed === null) return '';
+  const value = (parsed as { prompt?: unknown }).prompt;
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function upstreamMessage(kind: AiErrorKind, status: number, detail: string): string {  const tail = detail ? ` — ${detail.slice(0, 200)}` : '';
   if (kind === 'unauthorized') {
     return `The model rejected the key (${status}). Check DEEPSEEK_API_KEY.${tail}`;
   }
@@ -123,19 +136,20 @@ export async function handleAiRequest(
     return;
   }
 
-  let raw: string;
+  let raw: string | null;
   try {
     raw = await readBody(req);
-  } catch (err) {
-    const tooLarge = err instanceof Error && err.message === 'body-too-large';
+  } catch {
+    sendJson(res, 400, failure('contract', 'The request body could not be read.'));
+    return;
+  }
+  if (raw === null) {
     sendJson(
       res,
-      tooLarge ? statusFor('contract') : 400,
+      statusFor('contract'),
       failure(
         'contract',
-        tooLarge
-          ? `The request body is over ${MAX_BODY_BYTES / 1024} KB. A prompt is capped at ${AI_MAX_PROMPT} characters.`
-          : 'The request body could not be read.',
+        `The request body is over ${MAX_BODY_BYTES / 1024} KB. A prompt is capped at ${AI_MAX_PROMPT} characters.`,
       ),
     );
     return;
@@ -149,12 +163,7 @@ export async function handleAiRequest(
     return;
   }
 
-  const prompt =
-    typeof parsed === 'object' && parsed !== null && 'prompt' in parsed
-      ? typeof (parsed as { prompt: unknown }).prompt === 'string'
-        ? ((parsed as { prompt: string }).prompt as string).trim()
-        : ''
-      : '';
+  const prompt = promptFrom(parsed);
 
   if (!prompt) {
     sendJson(res, statusFor('contract'), failure('contract', 'The request needs a non-empty "prompt" string.'));

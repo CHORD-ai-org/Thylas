@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-07 20:10 (SP-06c second pass, SP-06d complete).
+Last updated: 2026-11-08 08:20 (SP-07a complete).
 
 ---
 
@@ -26,14 +26,14 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
 | SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | sections, five fills, folds, eight handles, menus, minimap; second pass against the reference |
 | SP-06d Edges | SP-06 | **Completed** 11-07 | 1.5 | SP-06c | anchors, connect, bend, elbow, arrows, labels, 24px target at any zoom |
-| SP-07a AI endpoint | SP-07 | Not Started | 1.0 | SP-03b | middleware + error taxonomy |
+| SP-07a AI endpoint | SP-07 | **Completed** 11-08 | 1.0 | SP-03b | `POST /api/ai` in dev *and* preview, seven error kinds, key never leaves the server, 35 offline assertions |
 | SP-07b AI panel | SP-07 | Not Started | 0.75 | SP-07a, SP-02 | four states, footer meta |
 | SP-07c Process states | SP-07 | Not Started | 0.75 | SP-03b | filters, controls, labelled simulator |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **9 days**. Critical path: SP-07a → SP-07b → SP-09a; SP-05 stays blocked on Q-1. SP-06 is closed.
+Remaining: **8 days**. Critical path: SP-07b → SP-09a; SP-05 stays blocked on Q-1, SP-07c and SP-08 are independent.
 
 ---
 
@@ -49,8 +49,10 @@ Remaining: **9 days**. Critical path: SP-07a → SP-07b → SP-09a; SP-05 stays 
 | Data | All mock (`src/data/mock.ts`), no network | — |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
-| Unit tests | Vitest 5, 101 assertions: scene maths, store, history, gestures, tabs, routes, selectors | `src/**/*.test.ts` |
+| Unit tests | Vitest 5, 127 assertions: scene maths, store, history, gestures, tabs, routes, selectors, AI contract | `src/**/*.test.ts` |
 | E2E | 183 assertions, self-starting dev server, fails the run on a page error | `scripts/ui-checks.mjs` |
+| AI endpoint | `POST /api/ai` mounted in `dev` and `preview`; seven failure kinds; the key is read only by the server | `server/ai.ts`, `src/lib/ai.ts` |
+| AI client | `ask(prompt)` returns a typed result, never a raw body; **no surface calls it yet** — SP-07b wires the Overview input. Not in the bundle for that reason | `src/services/ai/`, `scripts/ai-checks.mjs` |
 | Board scene | pure constants + versioned store (v2, v1 migrated) · ref-driven viewport · 2400 × 1600 workspace | `src/pages/boards/` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Board editing | double-click create, drag with one 6px snap on cards *and* frames, marquee, shift-add, multi-drag, eight handles, delete, 1/10px nudge, 40-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
@@ -127,11 +129,19 @@ Remaining: **9 days**. Critical path: SP-07a → SP-07b → SP-09a; SP-05 stays 
 | 11-07 | Edge bar hand-off | clicking a card title with an edge selected leaves `Selected · …` and no bar |
 | 11-07 | `npm run build` (SP-06d) | CSS 65.6 KB / JS 478.1 KB (149.4 KB gzip) |
 | 11-07 | Screenshots | `.workbuddy/tmp/0{1..9}-*.png`: fit, 100%, marquee, menu, edge, zoomed grips |
+| 11-08 | `npm test` (SP-07a) | 127/127; 26 new cases: completion parsing, the shape guard, the status table, body → answer |
+| 11-08 | `npm run ai` (SP-07a) | 35/35 over HTTP: dev and preview mounts, no-key 503 with zero upstream hits, 401 / 429 / 500 / garbage / timeout, the 8000-character boundary, GET 405 |
+| 11-08 | Key containment | key-shaped string in `src/` 0 and in `dist/` 0; no file under `src/` names the variable — the message that names it is built on the server |
+| 11-08 | Timeout branch | 504 after ~1.5 s with `DEEPSEEK_TIMEOUT_MS=1500`; the default stays 30 s |
+| 11-08 | Upstream priority | shell env wins over `.env.local` (measured: the check's own key beats the file) |
+| 11-08 | `npm run e2e` (SP-07a) | 183/183, unchanged — the middleware does not touch a rendered surface |
+| 11-08 | `npm run build` (SP-07a) | CSS 66.1 KB / JS 478.2 KB (149.5 KB gzip) |
 
 ## Next concrete action
 
-1. **SP-07a AI endpoint** (1 day): the middleware and its error taxonomy. It is the only remaining unit on the critical path that is not blocked.
-2. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
+1. **SP-07b AI panel** (0.75 day): the Overview ask flow, its four states, and the footer `deepseek-chat · dev endpoint · 812 ms`. It is the only unit left on the critical path.
+2. **SP-07c Process states** (0.75 day) is independent of SP-07b and can be taken first if the process surface is the more useful demo.
+3. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved
 

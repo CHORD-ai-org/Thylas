@@ -35,7 +35,12 @@ R7  scene constants only in boards/scene.ts
 R8  no post-click apology strings
 R9  `.notice {` blocks in src/pages <= 3
 R10 interactive classes have hover/focus-visible/disabled
+R11 no key-shaped string (`sk-[A-Za-z0-9]{16,}`) in src/ or dist/
 ```
+
+R11 is already implemented in `scripts/ai-checks.mjs` (SP-07a) — reuse that
+regular expression rather than writing a second one, and keep the
+"key-shaped, not the two characters" comment: `task-` and `risk-` contain `sk-`.
 
 e2e additions: overview AI states (stub), files disclosure/keyboard/tombstone, notes create-link-reload-conflict, board create-drag-connect-undo, processes filter deep link, account density persistence, reduced-motion screenshot.
 

@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const WITH_KEY = 5199;
 const NO_KEY = 5198;
+const PREVIEW = 5200;
 const STUB = 8799;
 
 const results = [];
@@ -66,10 +67,10 @@ const stub = createServer((req, res) => {
 const viteBin = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
 const servers = [];
 
-function startDev(port, extraEnv) {
+function startVite(command, port, extraEnv) {
   const child = spawn(
     process.execPath,
-    [viteBin, 'dev', '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
+    [viteBin, command, '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
     {
       cwd: ROOT,
       env: { ...process.env, ...extraEnv },
@@ -123,16 +124,13 @@ async function call(port, body, init = {}) {
 
 async function main() {
   await new Promise((r) => stub.listen(STUB, '127.0.0.1', r));
-  startDev(
-    WITH_KEY,
-    {
-      DEEPSEEK_API_KEY: 'sk-stub-not-a-real-key',
-      DEEPSEEK_BASE_URL: `http://127.0.0.1:${STUB}`,
-      /* Short so the `hang` branch costs 1.5 s instead of 30. */
-      DEEPSEEK_TIMEOUT_MS: '1500',
-    },
-  );
-  startDev(NO_KEY, {
+  startVite('dev', WITH_KEY, {
+    DEEPSEEK_API_KEY: 'sk-stub-not-a-real-key',
+    DEEPSEEK_BASE_URL: `http://127.0.0.1:${STUB}`,
+    /* Short so the `hang` branch costs 1.5 s instead of 30. */
+    DEEPSEEK_TIMEOUT_MS: '1500',
+  });
+  startVite('dev', NO_KEY, {
     DEEPSEEK_API_KEY: '',
     DEEPSEEK_BASE_URL: `http://127.0.0.1:${STUB}`,
   });
@@ -209,12 +207,44 @@ async function main() {
   const atLimit = await call(WITH_KEY, { prompt: 'x'.repeat(8000) });
   check('8000 characters is allowed', atLimit.status, 200);
 
+  /* Over the 64 KB wire cap, so the refusal comes from the body reader rather
+     than the character count — a caller sending a megabyte must be stopped
+     before it is buffered, not after. */
+  const huge = await call(WITH_KEY, { prompt: 'x'.repeat(70_000) });
+  check('a 70 KB body → kind contract', huge.json?.kind, 'contract');
+  checkThat(
+    'a 70 KB body → the byte cap is named',
+    huge.json?.message,
+    (m) => typeof m === 'string' && m.includes('KB'),
+    '(expected the KB cap in the message)',
+  );
+
   const notJson = await call(WITH_KEY, '{oops');
   check('a body that is not JSON → kind contract', notJson.json?.kind, 'contract');
   const empty = await call(WITH_KEY, { prompt: '   ' });
   check('a blank prompt → kind contract', empty.json?.kind, 'contract');
   const get = await fetch(`http://127.0.0.1:${WITH_KEY}/api/ai`);
   check('GET → 405', get.status, 405);
+
+  // ---- preview mounts the same handler, not just dev ----
+  let hasDist = true;
+  try {
+    statSync(join(ROOT, 'dist', 'index.html'));
+  } catch {
+    hasDist = false;
+  }
+  if (hasDist) {
+    startVite('preview', PREVIEW, {
+      DEEPSEEK_API_KEY: '',
+      DEEPSEEK_BASE_URL: `http://127.0.0.1:${STUB}`,
+    });
+    await waitFor(PREVIEW, 'preview server');
+    const prev = await call(PREVIEW, { prompt: 'hi' });
+    check('preview → the middleware is mounted', prev.json?.kind, 'not_configured');
+    check('preview → 503', prev.status, 503);
+  } else {
+    console.log('…  dist/ is absent; the preview mount is unchecked');
+  }
 
   // ---- the key never comes back ----
   checkThat(
