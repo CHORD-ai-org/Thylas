@@ -10,11 +10,20 @@
  * Exit code: 0 = all assertions pass, 1 = assertion failure, 2 = harness error.
  */
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const BASE = process.env.E2E_BASE ?? 'http://localhost:5173';
+/* 5180 rather than Vite's 5173: the run owns its server, so the AI stub below
+   can be guaranteed to be the upstream. Reusing a server someone left running
+   would put the AI checks in front of an endpoint with no stub and no key. */
+const BASE = process.env.E2E_BASE ?? 'http://localhost:5180';
+const AI_STUB_PORT = 8798;
+
+/** Long enough to see three bars, short enough not to slow the run. */
+const ANSWER_TEXT =
+  'A boundary is where one thing stops being itself and another begins.\n\n```\nconst edge = 1;\n```';
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -40,6 +49,43 @@ async function up() {
   }
 }
 
+/**
+ * A local stand-in for DeepSeek. The AI surface is real code against a real
+ * middleware; only the far end is fake, and it is fake in a way the checks can
+ * steer (`aiMode`) without a key or a network.
+ */
+let aiMode = 'ok';
+const aiCalls = [];
+
+function startAiStub() {
+  const stub = createServer((req, res) => {
+    req.resume();
+    if (!req.url?.endsWith('/chat/completions')) {
+      res.statusCode = 404;
+      res.end('{}');
+      return;
+    }
+    const mode = aiMode;
+    aiCalls.push(mode);
+    const reply = (code, body) => {
+      res.statusCode = code;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify(body));
+    };
+    setTimeout(
+      () => {
+        if (mode === 'ratelimit') {
+          reply(429, { error: { message: 'stub rate limit' } });
+          return;
+        }
+        reply(200, { model: 'deepseek-chat', choices: [{ message: { content: ANSWER_TEXT } }] });
+      },
+      mode === 'slow' ? 3000 : 320,
+    );
+  });
+  return new Promise((resolve) => stub.listen(AI_STUB_PORT, '127.0.0.1', () => resolve(stub)));
+}
+
 async function main() {
   const chromePath = findChrome();
   if (!chromePath) {
@@ -48,13 +94,26 @@ async function main() {
   }
 
   let server = null;
+  const aiStub = await startAiStub();
   if (!(await up())) {
     console.log('starting dev server…');
-    server = spawn('npm', ['run', 'dev'], { stdio: 'ignore', shell: process.platform === 'win32' });
+    server = spawn('npm', ['run', 'dev', '--', '--port', '5180', '--strictPort'], {
+      stdio: 'ignore',
+      shell: process.platform === 'win32',
+      env: {
+        ...process.env,
+        /* A stub key, so the endpoint is configured and the surface is live; the
+           upstream is the local stub, so nothing leaves the machine. */
+        DEEPSEEK_API_KEY: 'sk-e2e-stub',
+        DEEPSEEK_BASE_URL: `http://127.0.0.1:${AI_STUB_PORT}`,
+        DEEPSEEK_TIMEOUT_MS: '5000',
+      },
+    });
     for (let i = 0; i < 60 && !(await up()); i++) await sleep(500);
     if (!(await up())) {
       console.error('Dev server did not start.');
       server.kill();
+      aiStub.close();
       process.exit(2);
     }
   }
@@ -71,9 +130,12 @@ async function main() {
     'about:blank',
   ], { stdio: 'ignore' });
 
+  let keylessServer = null;
   const cleanup = () => {
     chrome.kill();
     server?.kill();
+    keylessServer?.kill();
+    aiStub.close();
   };
   process.on('exit', cleanup);
 
@@ -165,9 +227,9 @@ async function main() {
   );
   check('overview: lede is computed from the sample', await js(`return document.querySelector('main header p')?.textContent.trim();`),
     (v) => typeof v === 'string' && /^\d+ process(es)? (needs|need) a decision/.test(v));
-  check('overview: reason is visible before any click', await js(`
+  check('overview: the field states what it will not do', await js(`
     const el = document.getElementById('intent-reason');
-    return !!el && el.offsetParent !== null && el.textContent.includes('not connected');
+    return !!el && el.offsetParent !== null && el.textContent.includes('Nothing is started');
   `), true);
   check('overview: no New workspace affordance', await js(`return !document.body.innerText.includes('New workspace');`), true);
   check('overview: no small text outside glyph tiles', await js(`
@@ -178,22 +240,159 @@ async function main() {
   const overviewCss = readFileSync(new URL('../src/pages/overview.module.css', import.meta.url), 'utf8');
   check('overview: accent confined to shared primitives', (overviewCss.match(/var\(--accent/g) ?? []).length, 0);
 
-  await js(`${helpers}
-    const input = document.querySelector('input[aria-label="Describe what you want to work on"]');
+  // ---- SP-07b: one answer, and no claim that work started ----
+  const setField = async (value) => js(`
+    const input = document.querySelector('input[aria-label="Ask one question"]');
+    input.focus();
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-    set.call(input, 'compare the papers');
+    set.call(input, ${JSON.stringify(value)});
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 120));
-    click(byText('button', 'Start'));
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 100));
+    return input.value.length;
   `);
-  check('overview: intent does not claim to have been sent', await js(`return document.body.innerText.includes('Nothing was sent') || document.body.innerText.includes('not connected');`), true);
-  check('overview: Start stays disabled with text', await js(`
-    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Start');
-    return !!btn && btn.disabled && btn.getAttribute('aria-describedby') === 'intent-reason';
+  const sendKey = async (key, code, keyCode, modifiers = 0) => {
+    const base = {
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+      nativeVirtualKeyCode: keyCode,
+      modifiers,
+    };
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', ...base });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
+  };
+
+  check('ask: the panel is absent until the field is used', await js(`
+    return !!document.querySelector('aside[data-panel-context] [class*="askIdle"]');
+  `), false);
+  /* A real click, not `.focus()`: focus is what the surface listens for, and a
+     scripted focus in a headless window does not always arrive as an event. */
+  const fieldBox = await js(`
+    const r = document.querySelector('input[aria-label="Ask one question"]').getBoundingClientRect();
+    return { x: Math.round(r.left + 40), y: Math.round(r.top + r.height / 2) };
+  `);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: fieldBox.x, y: fieldBox.y, button: 'left', buttons: 1, clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: fieldBox.x, y: fieldBox.y, button: 'left', buttons: 0, clickCount: 1 });
+  await sleep(250);
+  check('ask: using the field opens a panel that says what it is', await js(`
+    const el = document.querySelector('aside[data-panel-context]');
+    return {
+      active: document.activeElement ? document.activeElement.tagName + '/' + (document.activeElement.getAttribute('aria-label') ?? '') : 'none',
+      panel: el ? el.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120) : null,
+    };
+  `), (v) => typeof v.panel === 'string' && v.panel.includes('Answers one question with DeepSeek') && v.panel.includes('does not start a process'));
+  check('ask: Ask is disabled while the field is empty', await js(`
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    return { disabled: btn ? btn.disabled : 'missing', described: btn ? btn.getAttribute('aria-describedby') : '' };
+  `), { disabled: true, described: 'intent-reason' });
+
+  aiMode = 'ok';
+  await setField('What is a boundary?');
+  await sendKey('Enter', 'Enter', 13, 2);
+  check('ask: three bars appear while the answer is in flight', await js(`
+    return document.querySelectorAll('aside[data-panel-context] [class*="askBars"] i').length;
+  `), 3);
+  await sleep(1000);
+  check('ask: the answer arrives in the panel', await js(`
+    const el = document.querySelector('aside[data-panel-context]');
+    return el ? el.textContent.includes('A boundary is where') : false;
   `), true);
-  check('overview: no post-click apology appears', await js(`return !document.body.innerText.includes('Nothing was sent');`), true);
-  check('overview: typed text stays in the field', await js(`return document.querySelector('input[aria-label="Describe what you want to work on"]').value;`), 'compare the papers');
+  check('ask: fenced code is set in mono', await js(`
+    const pre = document.querySelector('aside[data-panel-context] pre[class*="codeBlock"]');
+    if (!pre) return 'no pre';
+    return getComputedStyle(pre).fontFamily.toLowerCase().includes('mono');
+  `), true);
+  check('ask: the footer states model, endpoint kind and latency', await js(`
+    const el = document.querySelector('aside[data-panel-context] [class*="answerFoot"]');
+    return el ? el.textContent.trim() : null;
+  `), (v) => typeof v === 'string' && /^deepseek-chat · dev endpoint · \d+ ms$/.test(v));
+  check('ask: the latency is the stub delay, not a constant', await js(`
+    const el = document.querySelector('aside[data-panel-context] [class*="answerFoot"]');
+    return parseInt((el ? el.textContent : '').split('·').pop(), 10);
+  `), (v) => typeof v === 'number' && v >= 250 && v <= 2000);
+  check('ask: the panel never claims a run started', await js(`
+    const el = document.querySelector('aside[data-panel-context]');
+    return /\\b(started|is running|process is)\\b/i.test(el ? el.textContent : '');
+  `), false);
+
+  aiMode = 'slow';
+  await setField('What is a boundary?');
+  await sendKey('Enter', 'Enter', 13, 2);
+  await sleep(450);
+  check('ask: Stop is offered while a request is in flight', await js(`
+    return [...document.querySelectorAll('aside[data-panel-context] button')].some(b => b.textContent.trim() === 'Stop');
+  `), true);
+  await js(`
+    [...document.querySelectorAll('aside[data-panel-context] button')].find(b => b.textContent.trim() === 'Stop')?.click();
+    await new Promise(r => setTimeout(r, 300));
+    return 1;
+  `);
+  check('ask: Stop leaves the panel idle, with neither answer nor error', await js(`
+    const el = document.querySelector('aside[data-panel-context]');
+    return {
+      idle: !!el.querySelector('[class*="askIdle"]'),
+      answer: !!el.querySelector('[class*="askAnswer"]'),
+      banner: !!el.querySelector('[role="alert"]'),
+    };
+  `), { idle: true, answer: false, banner: false });
+
+  await setField('something to clear');
+  await sendKey('Escape', 'Escape', 27);
+  check('ask: esc clears the field', await js(`
+    return document.querySelector('input[aria-label="Ask one question"]').value;
+  `), '');
+
+  aiMode = 'ratelimit';
+  await setField('What is a boundary?');
+  await sendKey('Enter', 'Enter', 13, 2);
+  await sleep(1000);
+  check('ask: a rate limit becomes a banner with a retry', await js(`
+    const el = document.querySelector('aside[data-panel-context]');
+    const alert = el ? el.querySelector('[role="alert"]') : null;
+    return {
+      alert: !!alert,
+      text: alert ? alert.textContent.trim() : '',
+      retry: [...(el ? el.querySelectorAll('button') : [])].some(b => b.textContent.trim() === 'Ask again'),
+    };
+  `), (v) => v.alert === true && /rate limiting/i.test(v.text) && v.retry === true);
+
+  await setField('x'.repeat(8001));
+  check('ask: an over-long question is refused with the limit stated', await js(`
+    const reason = document.getElementById('intent-reason');
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    return { text: reason.textContent.trim(), disabled: btn ? btn.disabled : 'missing' };
+  `), (v) => v.disabled === true && /8001 characters; the limit is 8000/.test(v.text));
+  await setField('');
+
+  // ---- SP-07b acceptance 2: no key disables the control before the click ----
+  keylessServer = spawn('npm', ['run', 'dev', '--', '--port', '5179', '--strictPort'], {
+    stdio: 'ignore',
+    shell: process.platform === 'win32',
+    env: { ...process.env, DEEPSEEK_API_KEY: '', DEEPSEEK_BASE_URL: `http://127.0.0.1:${AI_STUB_PORT}` },
+  });
+  const keylessUp = async () => {
+    try {
+      const res = await fetch('http://localhost:5179/overview', { signal: AbortSignal.timeout(1200) });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+  for (let i = 0; i < 40 && !(await keylessUp()); i++) await sleep(500);
+  await send('Page.navigate', { url: 'http://localhost:5179/overview' });
+  await sleep(1300);
+  check('ask: without a key the control is disabled and names the variable', await js(`
+    await new Promise(r => setTimeout(r, 200));
+    const reason = document.getElementById('intent-reason');
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    return {
+      disabled: btn ? btn.disabled : 'missing',
+      names: reason ? reason.textContent.includes('DEEPSEEK_API_KEY') : false,
+    };
+  `), (v) => v.disabled === true && v.names === true);
+  keylessServer.kill();
+  keylessServer = null;
+  await goto('/overview');
 
   await js(`${helpers} click(byText('button', 'Research')); await new Promise(r => setTimeout(r, 700));`);
   check('rail: opens workspace files', await js(`return location.pathname;`), '/w/ws-research/files');

@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 08:20 (SP-07a complete).
+Last updated: 2026-11-08 09:00 (SP-07b complete).
 
 ---
 
@@ -27,13 +27,13 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | sections, five fills, folds, eight handles, menus, minimap; second pass against the reference |
 | SP-06d Edges | SP-06 | **Completed** 11-07 | 1.5 | SP-06c | anchors, connect, bend, elbow, arrows, labels, 24px target at any zoom |
 | SP-07a AI endpoint | SP-07 | **Completed** 11-08 | 1.0 | SP-03b | `POST /api/ai` in dev *and* preview, seven error kinds, key never leaves the server, 35 offline assertions |
-| SP-07b AI panel | SP-07 | Not Started | 0.75 | SP-07a, SP-02 | four states, footer meta |
+| SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | Not Started | 0.75 | SP-03b | filters, controls, labelled simulator |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **8 days**. Critical path: SP-07b → SP-09a; SP-05 stays blocked on Q-1, SP-07c and SP-08 are independent.
+Remaining: **7.25 days**. Critical path: SP-07c → SP-09a; SP-05 stays blocked on Q-1, SP-08 is independent.
 
 ---
 
@@ -52,7 +52,8 @@ Remaining: **8 days**. Critical path: SP-07b → SP-09a; SP-05 stays blocked on 
 | Unit tests | Vitest 5, 127 assertions: scene maths, store, history, gestures, tabs, routes, selectors, AI contract | `src/**/*.test.ts` |
 | E2E | 183 assertions, self-starting dev server, fails the run on a page error | `scripts/ui-checks.mjs` |
 | AI endpoint | `POST /api/ai` mounted in `dev` and `preview`; seven failure kinds; the key is read only by the server | `server/ai.ts`, `src/lib/ai.ts` |
-| AI client | `ask(prompt)` returns a typed result, never a raw body; **no surface calls it yet** — SP-07b wires the Overview input. Not in the bundle for that reason | `src/services/ai/`, `scripts/ai-checks.mjs` |
+| AI client | `ask(prompt)` returns a typed result, never a raw body; `probe()` reports whether the endpoint is configured | `src/services/ai/` |
+| AI surface | the Overview field asks; panel draws idle / three bars / answer / error; footer `model · dev endpoint · ms`; `⌘↵` asks, `Stop`/`esc` abort | `src/pages/Overview.tsx`, `SP-07b` |
 | Board scene | pure constants + versioned store (v2, v1 migrated) · ref-driven viewport · 2400 × 1600 workspace | `src/pages/boards/` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Board editing | double-click create, drag with one 6px snap on cards *and* frames, marquee, shift-add, multi-drag, eight handles, delete, 1/10px nudge, 40-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
@@ -136,11 +137,18 @@ Remaining: **8 days**. Critical path: SP-07b → SP-09a; SP-05 stays blocked on 
 | 11-08 | Upstream priority | shell env wins over `.env.local` (measured: the check's own key beats the file) |
 | 11-08 | `npm run e2e` (SP-07a) | 183/183, unchanged — the middleware does not touch a rendered surface |
 | 11-08 | `npm run build` (SP-07a) | CSS 66.1 KB / JS 478.2 KB (149.5 KB gzip) |
+| 11-08 | `npm test` (SP-07b) | 136/136; 4 new `probe()` cases incl. unreachable → `null` |
+| 11-08 | `npm run ai` (SP-07a/07b) | 38/38; the 429 body is reduced to its sentence, not pasted as JSON |
+| 11-08 | `npm run e2e` (SP-07b) | 194/194; 15 new AI-surface assertions, incl. a second dev server with no key |
+| 11-08 | Answer latency | 384 ms against a 350 ms stub (+10%); the check bounds it at 250–2000 ms |
+| 11-08 | No-execution claim | panel text returns false for `\b(started|is running|process is)\b` |
+| 11-08 | `npm run build` (SP-07b) | CSS 67.5 KB / JS 483.7 KB (151.5 KB gzip) |
+| 11-08 | Screenshots | `.workbuddy/shots/sp07b-{idle,sending,answer,error}.png` |
 
 ## Next concrete action
 
-1. **SP-07b AI panel** (0.75 day): the Overview ask flow, its four states, and the footer `deepseek-chat · dev endpoint · 812 ms`. It is the only unit left on the critical path.
-2. **SP-07c Process states** (0.75 day) is independent of SP-07b and can be taken first if the process surface is the more useful demo.
+1. **SP-07c Process states** (0.75 day): filters, five states, capability-gated controls, the labelled simulator. It is the last unit before the gates.
+2. **SP-08 Account** (0.5 day) is independent; density persistence and the zero-accent rule.
 3. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved

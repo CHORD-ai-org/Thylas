@@ -171,6 +171,12 @@ async function main() {
   check('429 → kind rate_limited', limited.json?.kind, 'rate_limited');
   check('429 → retryable', limited.json?.retryable, true);
   check('429 → 429', limited.status, 429);
+  checkThat(
+    '429 → the upstream JSON is reduced to its sentence',
+    limited.json?.message,
+    (m) => typeof m === 'string' && m.includes('stub 429') && !m.includes('{"error"'),
+    '(expected the message, not the envelope)',
+  );
 
   mode = '500';
   const broken = await call(WITH_KEY, { prompt: 'hi' });

@@ -4,11 +4,33 @@ import { TabStrip } from './TabStrip';
 import { ContextPanel } from './ContextPanel';
 import s from './shell.module.css';
 
-export function PlainLayout({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+export function PlainLayout({
+  children,
+  wide = false,
+  panel,
+  panelTitle = 'Panel',
+  panelMeta,
+}: {
+  children: ReactNode;
+  wide?: boolean;
+  /** A right-hand region that only exists when the surface has something to put there. */
+  panel?: ReactNode;
+  panelTitle?: string;
+  panelMeta?: string;
+}) {
+  const { panelOpen } = useApp();
+
   return (
-    <main className={s.plain} data-scroll-region="page">
-      <div className={[s.plainInner, wide ? s.plainWide : ''].join(' ')}>{children}</div>
-    </main>
+    <div className={s.body}>
+      <main className={s.plain} data-scroll-region="page">
+        <div className={[s.plainInner, wide ? s.plainWide : ''].join(' ')}>{children}</div>
+      </main>
+      {panel && panelOpen ? (
+        <ContextPanel ctx="ask" title={panelTitle} meta={panelMeta}>
+          {panel}
+        </ContextPanel>
+      ) : null}
+    </div>
   );
 }
 

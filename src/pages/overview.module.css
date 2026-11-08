@@ -61,6 +61,11 @@
   color: var(--ink-3);
 }
 
+/* The field is read-only while an answer is in flight; it has to look it. */
+.intentInput:disabled {
+  color: var(--ink-3);
+}
+
 .startBtn {
   height: 32px;
   padding: 0 16px;
@@ -300,4 +305,111 @@
     grid-template-columns: minmax(0, 1fr);
     gap: var(--s8);
   }
+}
+
+/* ---- the answer panel -------------------------------------------------- */
+
+/* The field says what it does before it does it. `data-over` marks the only
+   refusal the reader causes themselves, so it is the only one drawn in the
+   field rather than under it. */
+.intentBox[data-over] {
+  border-color: var(--ink-3);
+}
+
+.askIdle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.askLede {
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+.askNote {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+/* Three static bars, not a spinner: a spinner claims progress, and a single
+   completion has none to report. */
+.askSending {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s4);
+}
+
+.askBars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.askBars i {
+  height: 10px;
+  background: var(--line);
+}
+
+.askBars i:nth-child(1) {
+  width: 100%;
+}
+
+.askBars i:nth-child(2) {
+  width: 82%;
+}
+
+.askBars i:nth-child(3) {
+  width: 58%;
+}
+
+.askError {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+/* The footer follows the answer instead of being pinned to the panel floor: a
+   short answer with 400px of empty space under it reads as a missing half. */
+.askAnswer {
+  display: flex;
+  flex-direction: column;
+}
+
+.answerBody {
+  min-width: 0;
+}
+
+.answerPara {
+  font: var(--t-read);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.answerPara + .answerPara {
+  margin-top: 14px;
+}
+
+.codeBlock {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--line-strong);
+  background: var(--bg-app);
+  font: var(--t-mono);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.answerFoot {
+  flex: 0 0 auto;
+  margin-top: var(--s4);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }

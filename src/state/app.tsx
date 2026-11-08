@@ -30,7 +30,7 @@ type ObjectTabSeed = {
   live?: boolean;
 };
 
-export type PanelContext = 'workspace' | 'notes';
+export type PanelContext = 'workspace' | 'notes' | 'ask';
 type UiState = {
   version: 2;
   railCollapsed: boolean;
@@ -39,7 +39,7 @@ type UiState = {
 
 export const PANEL_MIN = 280;
 export const PANEL_MAX = 480;
-const DEFAULT_WIDTH: Record<PanelContext, number> = { workspace: 340, notes: 300 };
+const DEFAULT_WIDTH: Record<PanelContext, number> = { workspace: 340, notes: 300, ask: 360 };
 const clampWidth = (n: number): number => Math.min(PANEL_MAX, Math.max(PANEL_MIN, Math.round(n)));
 
 type AppState = {
@@ -98,6 +98,7 @@ function loadUi(): UiState {
         panelWidth: {
           workspace: clampWidth(candidate.panelWidth.workspace ?? DEFAULT_WIDTH.workspace),
           notes: clampWidth(candidate.panelWidth.notes ?? DEFAULT_WIDTH.notes),
+          ask: clampWidth(candidate.panelWidth.ask ?? DEFAULT_WIDTH.ask),
         },
       };
     }
@@ -111,6 +112,7 @@ function loadUi(): UiState {
     panelWidth: {
       workspace: clampWidth(v1?.panelWidth ?? DEFAULT_WIDTH.workspace),
       notes: DEFAULT_WIDTH.notes,
+      ask: DEFAULT_WIDTH.ask,
     },
   };
 }
@@ -194,7 +196,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setPanelWidthFor = useCallback((ctx: PanelContext, w: number) => {
     setUi((v) => ({ ...v, panelWidth: { ...v.panelWidth, [ctx]: clampWidth(w) } }));
   }, []);
-  const panelWidthFor = useCallback((ctx: PanelContext) => ui.panelWidth[ctx], [ui]);
+  const panelWidthFor = useCallback(
+    (ctx: PanelContext) => ui.panelWidth[ctx] ?? DEFAULT_WIDTH[ctx],
+    [ui],
+  );
 
   const openObjectTab = useCallback((ctx: string, seed: ObjectTabSeed) => {
     setTabs((prev) => openTab(prev, ctx, makeObjectTab(seed)));

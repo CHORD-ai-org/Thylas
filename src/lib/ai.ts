@@ -11,6 +11,17 @@
 
 export const AI_PATH = '/api/ai';
 
+/**
+ * A read-only answer to "is this endpoint able to work at all". It exists
+ * because the alternative is worse: either the send control is always enabled
+ * and every reader learns about a missing key by failing, or the browser is
+ * told something about the key. This says `configured: true|false` and nothing
+ * else — no key, no length, no prefix.
+ */
+export const AI_STATUS_PATH = '/api/ai/status';
+
+export type AiStatusBody = { configured: boolean; model: string };
+
 /** Characters, not bytes: this is the number the answer's message states. */
 export const AI_MAX_PROMPT = 8000;
 
@@ -96,6 +107,15 @@ const KINDS: readonly AiErrorKind[] = [
 
 export function isAiErrorKind(value: unknown): value is AiErrorKind {
   return typeof value === 'string' && (KINDS as readonly string[]).includes(value);
+}
+
+export function isAiStatusBody(value: unknown): value is AiStatusBody {
+  return (
+    isRecord(value) &&
+    typeof value.configured === 'boolean' &&
+    typeof value.model === 'string' &&
+    value.model !== ''
+  );
 }
 
 /** Shape check, not a schema: enough that the client never renders a raw body. */

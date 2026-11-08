@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ask } from './client';
+import { ask, probe } from './client';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -69,5 +69,34 @@ describe('ask', () => {
       expect(result.error.kind).toBe('upstream');
       expect(result.error.retryable).toBe(true);
     }
+  });
+});
+
+describe('probe', () => {
+  it('reads the configuration state', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(200, { configured: true, model: 'deepseek-chat' })));
+
+    expect(await probe()).toEqual({ configured: true, model: 'deepseek-chat' });
+  });
+
+  it('returns null for a body that is not a status', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(200, { ok: true })));
+
+    expect(await probe()).toBeNull();
+  });
+
+  it('returns null when the endpoint refuses', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 500 })));
+
+    expect(await probe()).toBeNull();
+  });
+
+  /* `null` means "cannot tell", and the caller keeps the control enabled: a
+     button that can never be pressed for an invisible reason is worse than a
+     request that fails with a message. */
+  it('returns null rather than throwing when nothing is listening', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('failed to fetch'))));
+
+    expect(await probe()).toBeNull();
   });
 });

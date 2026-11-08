@@ -597,6 +597,8 @@
 
 .plain {
   flex: 1;
+  /* Without this a long answer in the panel squeezes the column instead of scrolling itself. */
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   background: var(--bg-app);

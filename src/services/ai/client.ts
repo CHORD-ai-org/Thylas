@@ -1,6 +1,33 @@
-import { AI_MAX_PROMPT, AI_PATH, failure } from '../../lib/ai';
+import {
+  AI_MAX_PROMPT,
+  AI_PATH,
+  AI_STATUS_PATH,
+  failure,
+  isAiStatusBody,
+  type AiStatusBody,
+} from '../../lib/ai';
 import { toAnswer } from './map';
 import type { AskResult } from './types';
+
+/**
+ * Asks whether the endpoint is configured, so the send control can be disabled
+ * before a click instead of apologising after one.
+ *
+ * `null` means "could not tell" — a static host with no middleware, an offline
+ * machine. That case deliberately leaves the control enabled: a request that
+ * fails with `network` is a better experience than a button that can never be
+ * pressed for a reason the reader cannot see.
+ */
+export async function probe(): Promise<AiStatusBody | null> {
+  try {
+    const res = await fetch(AI_STATUS_PATH, { headers: { accept: 'application/json' } });
+    if (!res.ok) return null;
+    const body: unknown = await res.json();
+    return isAiStatusBody(body) ? body : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The client half of `POST /api/ai` (D-006). It sends a prompt and returns a

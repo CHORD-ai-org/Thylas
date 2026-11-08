@@ -13,12 +13,14 @@ import type { Plugin, PreviewServer, ViteDevServer } from 'vite';
 import {
   AI_MAX_PROMPT,
   AI_PATH,
+  AI_STATUS_PATH,
   AI_TIMEOUT_MS,
   failure,
   readCompletion,
   statusFor,
   type AiBody,
   type AiErrorKind,
+  type AiStatusBody,
 } from '../src/lib/ai';
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
@@ -98,6 +100,23 @@ function promptFrom(parsed: unknown): string {
   if (typeof parsed !== 'object' || parsed === null) return '';
   const value = (parsed as { prompt?: unknown }).prompt;
   return typeof value === 'string' ? value.trim() : '';
+}
+
+/**
+ * An upstream error body is JSON, and pasting `{"error":{"message":"…"}}` into a
+ * banner is noise. Take the sentence if there is one, keep the rest as-is.
+ */
+function readableDetail(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{')) return trimmed;
+  try {
+    const parsed = JSON.parse(trimmed) as { error?: { message?: unknown } };
+    const message = parsed.error?.message;
+    if (typeof message === 'string' && message.trim() !== '') return message.trim();
+  } catch {
+    /* not JSON after all */
+  }
+  return trimmed;
 }
 
 function upstreamMessage(kind: AiErrorKind, status: number, detail: string): string {  const tail = detail ? ` — ${detail.slice(0, 200)}` : '';
@@ -212,7 +231,7 @@ export async function handleAiRequest(
   }
 
   if (!upstream.ok) {
-    const detail = scrub(await safeText(upstream), key);
+    const detail = scrub(readableDetail(await safeText(upstream)), key);
     const kind: AiErrorKind =
       upstream.status === 401 || upstream.status === 403
         ? 'unauthorized'
@@ -254,6 +273,26 @@ export async function handleAiRequest(
 export function aiMiddleware(overrides: Env = {}): Plugin {
   const env: Env = { ...overrides, ...process.env };
 
+  /* Answers "can this endpoint work" without a request to the model and without
+     saying anything about the key beyond whether it exists (SP-07b). */
+  const statusHandler = (req: IncomingMessage, res: ServerResponse): void => {
+    if ((req.method ?? 'GET').toUpperCase() !== 'GET') {
+      res.setHeader('allow', 'GET');
+      sendJson(res, 405, failure('contract', 'GET only.'));
+      return;
+    }
+    const body: AiStatusBody = {
+      configured: (env.DEEPSEEK_API_KEY ?? '').trim() !== '',
+      model: env.DEEPSEEK_MODEL ?? DEFAULT_MODEL,
+    };
+    const payload = JSON.stringify(body);
+    res.statusCode = 200;
+    res.setHeader('content-type', 'application/json; charset=utf-8');
+    res.setHeader('content-length', Buffer.byteLength(payload));
+    res.setHeader('cache-control', 'no-store');
+    res.end(payload);
+  };
+
   const handler = (req: IncomingMessage, res: ServerResponse): void => {
     handleAiRequest(req, res, env).catch(() => {
       if (res.headersSent) {
@@ -267,9 +306,13 @@ export function aiMiddleware(overrides: Env = {}): Plugin {
   return {
     name: 'thylas-ai-endpoint',
     configureServer(server: ViteDevServer) {
+      /* Registered first: `/api/ai` is a prefix of `/api/ai/status`, so the
+         longer path has to win the match. */
+      server.middlewares.use(AI_STATUS_PATH, statusHandler);
       server.middlewares.use(AI_PATH, handler);
     },
     configurePreviewServer(server: PreviewServer) {
+      server.middlewares.use(AI_STATUS_PATH, statusHandler);
       server.middlewares.use(AI_PATH, handler);
     },
   };

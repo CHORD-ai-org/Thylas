@@ -307,6 +307,14 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** inject a clock into the middleware. Rejected: that edits the thing under test and would never exercise `AbortSignal.timeout`.
 **Consequence:** one more variable that could be mis-set and cut real answers short. It only affects the local server, and the default stands when it is absent.
 
+## D-039 · The ask surface learns the configuration before it offers to ask
+
+**Status:** accepted in force (SP-07b).
+**Context:** Acceptance 2 wants the send control disabled with the variable named. The browser cannot read `DEEPSEEK_API_KEY`, and the only other way to learn it is to fail a request — which is the "click, then apologise" pattern the earlier defects are about.
+**Decision:** `GET /api/ai/status` returns `{ configured, model }`; the page reads it once on mount. A `null` answer — no middleware, offline, a static host — means "cannot tell" and leaves the control **enabled**, so the reader gets a network error with a message instead of a button that can never be pressed.
+**Alternative:** always enable, let the first request carry the bad news. Rejected: it spends a round trip to say what the server already knows, and the disabled state is the honest one.
+**Consequence:** one more endpoint for the eventual host to mount (Q-2). It states whether a key exists and nothing about the key.
+
 ---
 
 ## Open questions (need a human, not a default)
