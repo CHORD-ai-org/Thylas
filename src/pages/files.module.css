@@ -199,6 +199,7 @@
 }
 
 .trow {
+  composes: rowState from '../styles/grammar.module.css';
   display: grid;
   grid-template-columns: minmax(140px, 1fr) 58px 74px 100px 56px;
   align-items: center;
@@ -211,13 +212,14 @@
   text-align: left;
 }
 
-.trow:hover {
-  background: var(--tint-hover);
-}
 
 .trowActive {
-  background: var(--accent-weak);
   color: var(--ink);
+}
+
+/* The selected row keeps its state on the inset, like the hover. */
+.trowActive::before {
+  background: var(--accent-weak);
 }
 
 /* A deleted file whose tab is still open. The tab owns dismissal, so the row

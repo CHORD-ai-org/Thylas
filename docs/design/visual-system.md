@@ -17,7 +17,7 @@ A surface is on-brand if all five are true. They are used in review, not as deco
 | 1 | Exactly one accent-coloured element per region | Three terracotta buttons and no hierarchy |
 | 2 | Every separation is a 1px hairline or a tone step | Cards floating on shadows |
 | 3 | ~~The largest type on the surface is serif~~ → the largest type comes from the display step and occurs once per screen | An all-Inter dashboard (superseded by `typography.md`; no serif remains) |
-| 4 | No corner radius above 4px except overlays | 12px pills everywhere |
+| 4 | A radius comes from the four-step scale, and only on something you can point at — pages, tables, bands and dividers stay square | 12px pills everywhere, or a 90° corner that was meant to be rounded |
 | 5 | Nothing moves unless its state changed | Entrance animations on tab switch |
 
 ## 2. Colour: hue is state

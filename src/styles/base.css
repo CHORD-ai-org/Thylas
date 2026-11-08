@@ -105,7 +105,7 @@ svg {
   background: var(--line-strong);
   border: 3px solid transparent;
   background-clip: content-box;
-  border-radius: 6px;
+  border-radius: var(--r-pill);
 }
 
 *::-webkit-scrollbar-track {

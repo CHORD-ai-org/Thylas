@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 09:35 (SP-07c complete).
+Last updated: 2026-11-08 09:52 (SP-10a shipped; 10b–10d proposed).
 
 ---
 
@@ -30,6 +30,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
+| SP-10 Visual quality | — | **In progress** — 10a done 11-08 | 3.0 | SP-07 | radius scale shipped; typeface, icons and states remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
@@ -152,12 +153,18 @@ Remaining: **6.5 days**. Critical path: SP-09a → SP-09b; SP-05 stays blocked o
 | 11-08 | Apology grep | `grep -rn "Nothing was sent" src` → 0, asserted by reading the source in the run |
 | 11-08 | `npm run build` (SP-07c) | CSS 68.2 KB / JS 487.4 KB (153.0 KB gzip) |
 | 11-08 | Screenshots | `.workbuddy/shots/sp07c-{all,empty,fail,detail,simulated,advanced}.png` |
+| 11-08 | Radius scale (SP-10a) | `grep -rn "border-radius: [0-9]" src` → 0; four steps + pill, declared over the archive's names |
+| 11-08 | Radius reach | 40 token call sites moved by changing 3 values; 18 raw values mapped to a step |
+| 11-08 | `npm run e2e` (SP-10a) | 209/209 unchanged — a radius is paint, not layout |
+| 11-08 | Live DeepSeek call | 200 in 1.98 s, `model: deepseek-flash`; the id `deepseek-chat` now resolves to that model |
+| 11-08 | Screenshots | `.workbuddy/shots/sp10a-{overview,files,processes,run,board,notes,account}.png` |
 
 ## Next concrete action
 
-1. **SP-09a Gates** (1 day): `scripts/gates.mjs` with eleven rules (R11 already exists inside `scripts/ai-checks.mjs`), plus the e2e surface coverage. SP-07 is now closed, so every rule has something to check.
-2. **SP-08 Account** (0.5 day) is independent; density persistence and the last post-click apology.
-3. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
+1. **SP-10b Typeface** (1 day) and **10c Icons** (0.5 day): Inter in, eight characters out. Then **10d**.
+2. **SP-09a Gates** (1 day): `scripts/gates.mjs` with eleven rules (R11 already exists inside `scripts/ai-checks.mjs`), plus the e2e surface coverage. SP-07 is now closed, so every rule has something to check.
+3. **SP-08 Account** (0.5 day) is independent; density persistence and the last post-click apology.
+4. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved
 

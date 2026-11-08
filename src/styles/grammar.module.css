@@ -45,6 +45,27 @@
   color: var(--ink-3);
 }
 
+/* A row's hover/active state is drawn inside the row, never across it. A
+   full-bleed background makes a table read as a spreadsheet with no edges; the
+   inset keeps the columns aligned while giving the state a visible corner. */
+.rowState {
+  position: relative;
+}
+
+.rowState::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--s2) 1px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease);
+  pointer-events: none;
+}
+
+.rowState:hover::before {
+  background: var(--tint-hover);
+}
+
 /* Inline banner: the reason sits next to the thing that cannot act. */
 .banner {
   display: flex;

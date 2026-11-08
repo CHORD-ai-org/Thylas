@@ -131,6 +131,7 @@
 }
 
 .row {
+  composes: rowState from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
   gap: 10px;
@@ -142,9 +143,6 @@
 
 /* Hover is a tint, never a colour change on the text. Focus comes from the
    global :focus-visible rule in base.css, so every row shares one ring. */
-.row:hover {
-  background: var(--tint-hover);
-}
 
 .row:active {
   background: var(--bg-paper);

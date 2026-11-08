@@ -95,6 +95,7 @@
 }
 
 .trow {
+  composes: rowState from '../styles/grammar.module.css';
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 108px 128px 96px 72px 52px;
   align-items: center;
@@ -107,9 +108,6 @@
   text-align: left;
 }
 
-.trow:hover {
-  background: var(--tint-hover);
-}
 
 .trow:hover .runName {
   color: var(--accent);

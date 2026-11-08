@@ -323,6 +323,22 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** add a seventh `paused` state. Rejected: one button would introduce a word the run model does not have and that WAM may never emit; `queued` already says "not moving, waiting to run".
 **Consequence:** a clicked state survives a reload, which is what makes "the list reflects it without a reload" a testable claim — and is why the restore control is mandatory rather than decorative.
 
+## D-041 · One radius scale replaces eleven values, and a page is still square
+
+**Status:** accepted in force (SP-10a).
+**Context:** The archive said "no corner radius above 4px except overlays" and the audit counted eleven values instead — 1, 2, 3, 4, 6, 8, 9, 11px and 50 % (A10). A 2px corner on a 38px row is not a decision; it is a rounding that failed. The reader asked for rounded corners and a product-grade surface.
+**Decision:** four steps and a pill — `--r-xs: 4`, `--r-sm: 8`, `--r-md: 12`, `--r-lg: 16`, `--r-pill: 999`. They are declared in `src/styles/tokens.css` **over the archive's names**, so the forty existing `--r-chip` / `--r-surface` / `--r-overlay` call sites moved without being found and edited one by one. A radius belongs to something you can point at: cards, panels, menus, buttons, inputs, row states. Pages, tables, bands and dividers stay square.
+**Alternative:** round everything, table rows and page sheets included. Rejected: a rounded page is a card, and this layout's one strong idea is that content is not a stack of cards.
+**Consequence:** `grep -rn "border-radius: [0-9]" src` is 0. Row hover and selection are drawn inset through `grammar.rowState`, so a row gains a corner without losing column alignment.
+
+## D-042 · Inter for the UI, Plex Mono and Noto SC kept
+
+**Status:** accepted (SP-10b), **not yet implemented**.
+**Context:** The type contract chose IBM Plex Sans for good reasons (same superfamily as the mono, calm at 13px). Two things it does not give: a wide weight range and the optical quality a product-grade surface needs at 13–16px. The reader asked for better type.
+**Decision:** Inter Variable 400–700 for Latin UI and display. IBM Plex Mono stays — its tabular figures are better than Inter's — and Noto Sans SC stays, because it is already subset and its vertical metrics were matched to Plex.
+**Alternative:** keep Plex and only re-cut the ramp. Cheaper and lower risk, but it fixes legibility without changing how the product reads.
+**Consequence:** Inter's x-height is roughly 4 % taller than Plex, so every mixed-script line shifts unless `size-adjust` on the CJK face is tuned against it. SP-10b measures that before shipping, and the exit criterion is a side-by-side at 13/16/24 rather than a screenshot that "looks fine".
+
 ---
 
 ## Open questions (need a human, not a default)

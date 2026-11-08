@@ -56,7 +56,7 @@ type AiErr = { ok: false; kind: 'not_configured' | 'unauthorized' | 'rate_limite
 
 **Deviations:** (1) The kind list is seven, not six: the spec prose counted `not_configured` outside the upstream failures, but it is a distinct `kind` in the type and gets its own status. (2) `DEEPSEEK_TIMEOUT_MS` exists so the timeout branch costs 1.5 s in the check rather than 30 (D-038). (3) Failures the *endpoint* detects return gateway statuses, never 4xx (D-037).
 
-**Not verified:** a live completion from DeepSeek. This machine has no key, so the contract is proven against a stub and the live call is recorded as **unverified** — not as working.
+**Live call, verified 11-08 09:47.** With a key in `.env.local`, `POST /api/ai` returned 200 in 1.98 s: `{"ok":true,"model":"deepseek-flash","ms":1974}`. Two facts worth keeping: the id `deepseek-chat` now resolves to `deepseek-flash` upstream, and the body reports what the model says it is rather than what was requested — the footer is not a guess.
 
 ## Acceptance
 

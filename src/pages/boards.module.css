@@ -125,7 +125,7 @@
 .section {
   position: absolute;
   z-index: 1;
-  border-radius: 3px;
+  border-radius: var(--r-md);
   background: color-mix(in oklab, var(--spine) 8%, var(--bg-paper));
   /* The body is scenery: a click inside a section belongs to the canvas, so a
      marquee can start there. The capsule and the handles take the pointer. */
@@ -146,7 +146,7 @@
   max-width: 100%;
   height: 22px;
   padding: 0 9px;
-  border-radius: 11px;
+  border-radius: var(--r-pill);
   background: var(--spine);
   color: #fdfbf6;
   font: 500 11.5px/1 var(--ui);
@@ -171,7 +171,7 @@
   min-width: 15px;
   height: 15px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.26);
   font: var(--t-mono-s);
   font-variant-numeric: tabular-nums;
@@ -182,7 +182,7 @@
   border: 0;
   outline: none;
   background: rgba(255, 255, 255, 0.18);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: #fdfbf6;
   font: inherit;
   padding: 1px 3px;
@@ -306,7 +306,7 @@
   background: var(--fill);
   border: 1px solid color-mix(in oklab, var(--spine) 34%, var(--bg-paper));
   border-top: 3px solid var(--spine);
-  border-radius: 2px;
+  border-radius: var(--r-md);
   text-align: left;
   cursor: grab;
   box-shadow: var(--e1);
@@ -477,7 +477,7 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  border-radius: 1px;
+  border-radius: calc(var(--r-xs) / 2);
   background: var(--bg-surface);
   box-shadow: inset 0 0 0 1.5px var(--accent);
   pointer-events: auto;
@@ -564,7 +564,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink-2);
 }
 
@@ -632,7 +632,7 @@
 .minimapCard {
   position: absolute;
   background: color-mix(in oklab, var(--spine) 62%, transparent);
-  border-radius: 0.5px;
+  border-radius: calc(var(--r-xs) / 8);
 }
 
 .minimapView {
@@ -665,7 +665,7 @@
   min-width: 22px;
   height: 22px;
   padding: 0 4px;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink-2);
   font: var(--t-mono-s);
 }
@@ -781,7 +781,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink-2);
 }
 
@@ -799,13 +799,13 @@
   gap: 1px;
   padding: 1px;
   background: var(--bg-app);
-  border-radius: 2px;
+  border-radius: var(--r-md);
 }
 
 .segmented button {
   height: 22px;
   padding: 0 7px;
-  border-radius: 2px;
+  border-radius: calc(var(--r-md) - 4px);
   font: var(--t-caption);
   color: var(--ink-2);
 }
@@ -855,7 +855,7 @@
   width: 100%;
   height: 28px;
   padding: 0 8px;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   font: var(--t-ui);
   color: var(--ink);
   text-align: left;
@@ -960,7 +960,7 @@
   height: 28px;
   padding: 0 8px;
   border: 1px solid var(--line-strong);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   background: var(--bg-surface);
   font: var(--t-ui);
   color: var(--ink);
@@ -994,7 +994,7 @@
   justify-content: center;
   height: 26px;
   border: 1px solid var(--line);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink-2);
 }
 
@@ -1017,7 +1017,7 @@
   min-width: 16px;
   padding: 0 3px;
   border: 1px solid var(--line-strong);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   background: var(--bg-app);
   font: var(--t-mono-s);
   color: var(--ink);

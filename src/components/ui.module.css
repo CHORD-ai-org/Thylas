@@ -98,7 +98,7 @@
   height: 18px;
   padding: 0 6px;
   border: 1px solid var(--line-strong);
-  border-radius: 9px;
+  border-radius: var(--r-pill);
   font: var(--t-caption);
   letter-spacing: var(--track-caption);
   color: var(--ink-2);

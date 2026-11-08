@@ -10,6 +10,21 @@
 @import './typography.css';
 
 :root {
+  /* Radius: one scale, four steps and a pill (D-041). The archive's 2/4/6 are
+     overridden here rather than edited there, so `design/tokens.css` stays the
+     frozen record of the prototype and the running app owns its own step. */
+  --r-xs: 4px; /* kbd, 8–10px markers, anything too small to show a curve */
+  --r-sm: 8px; /* buttons, inputs, menu rows, table hover */
+  --r-md: 12px; /* cards, panels, popovers, code blocks */
+  --r-lg: 16px; /* command palette, dialogs */
+  --r-pill: 999px; /* section capsules, tabs, status chips, meters */
+
+  /* The archive's names, each pointed at the step it was trying to be. Sixty
+     call sites keep working; nothing had to be found and edited. */
+  --r-chip: var(--r-sm);
+  --r-surface: var(--r-md);
+  --r-overlay: var(--r-lg);
+
   /* tints derived from the palette; no new hues */
   --tint-sel: rgba(181, 111, 80, 0.09);
   --tint-hover: rgba(73, 54, 38, 0.035);

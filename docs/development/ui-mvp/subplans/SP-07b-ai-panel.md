@@ -55,7 +55,7 @@ Panel content in `--t-read`; footer `--t-mono-s` `--ink-3`; error uses `grammar.
 
 **Deviations:** (1) The panel exists once the field is *used* (clicked or typed into), not only after a question is submitted — the spec wants the idle explanation visible before the first ask, and an always-present panel would put 360px of empty column on every visit. (2) Retry follows the contract's `retryable` field, so an `upstream` 5xx also offers `Ask again`; the spec's list named three kinds, the field knows better than a hard-coded list. (3) The check runs a stub *upstream* behind the real middleware instead of a `VITE_AI_MODE` branch inside it — the surface is then tested against the code that ships, with no test-only path in `src/`.
 
-**Not verified:** a live answer from DeepSeek. The stub proves the surface, the middleware and the error taxonomy; it does not prove the model.
+**Live answer, verified 11-08 09:47.** A real key in `.env.local` produced a real completion through the same surface (1.98 s, `deepseek-flash`); the stub remains the way the error branches are exercised, because none of them should depend on a live quota.
 
 ## Acceptance
 
