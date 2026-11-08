@@ -1,6 +1,6 @@
 # SP-05b · Editor, save loop, conflict, dirty guard
 
-**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.75 · **Status:** Blocked on Q-1 · **Depends:** SP-05a
+**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.75 · **Status:** Completed 11-08 · **Depends:** SP-05a
 
 ## Objective
 
@@ -43,6 +43,24 @@ Editor and reader share the same measure so toggling does not reflow: 660px colu
 | T4 | Dirty registry + tab close | Save/discard/cancel |
 | T5 | Error surface | Failed save is visible and retryable |
 | T6 | `beforeunload` | One prompt, only when dirty |
+
+## Result
+
+| # | Task | Result |
+| --- | --- | --- |
+| T1 | CM6 mount, markdown, theme | done — five packages, loaded on demand; 16/26 at the reader's measure, caret in `--accent`, no syntax rainbow |
+| T2 | Keyboard escape | done — Tab indents, `Esc` returns to reading mode, and a line under the body says so; asserted in e2e |
+| T3 | Save loop | done — 800 ms idle; silent on success (`Saved · 178 words · v2`), inline banner on failure |
+| T4 | Conflict review | done — banner with Keep mine / Load theirs / Show both; the note is never overwritten without a press |
+| T5 | Dirty registry + tab close | done — `state/app` holds a set keyed by tab path; the close control turns into "click again to discard" and resets after 4 s |
+| T6 | `beforeunload` | done — one prompt while the body differs from storage |
+| T7 | Accessible editor | done — `role=textbox`, `aria-label="Note body, Markdown"`, `aria-multiline=true`, measured in e2e |
+
+**Beyond the plan, present:** the title is editable in place (input replacing the h1, one type step down so a long title is not cut in half); the editor is a lazy chunk, so a reader never pays for CodeMirror; `resetNotes()` still restores the six samples.
+
+**Deviations:** (1) CodeMirror is 174 KB gzip on its own — shipped as a dynamic import, so the shell stays at 157 KB and the editor loads on the first **Edit**. The plan's 300 KB ceiling is met by the shell, not by the total. (2) The conflict review shows theirs in one scrollable pane under the banner rather than two side-by-side panes; both panes in a 660 column would each be too narrow to read. (3) There is no focus ring on the editor: an outline around a 600 px document reads as a panel, and the caret plus selection already say where focus is.
+
+**Fixed during the work:** the conflict detector first compared against the *latest* stored version, which always matches — a silent overwrite wearing a version check. It now compares against the version the edit began from (D-043), and a second writer is caught.
 
 ## Acceptance
 

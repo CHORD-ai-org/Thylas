@@ -90,7 +90,7 @@ Pure code, no UI, no storage. Everything below is a function with a table of cas
 
 **Exit:** `npm test` covers round-trip `legacy → markdown → parseBlocks` for all six notes (block count and text equal); a reload keeps an edit; `resetNotes()` restores the six.
 
-### Step 3 · Editor (1.75 days)
+### Step 3 · Editor (1.75 days) — **done 11-08**
 
 Packages: `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`, `@codemirror/lang-markdown`, `@codemirror/language`.
 

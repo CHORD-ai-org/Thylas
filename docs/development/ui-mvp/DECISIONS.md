@@ -339,6 +339,15 @@ Format: **status · context · decision · alternative · consequence**.
 **Alternative:** keep Plex and only re-cut the ramp. Cheaper and lower risk, but it fixes legibility without changing how the product reads.
 **Consequence:** Inter's x-height is roughly 4 % taller than Plex, so every mixed-script line shifts unless `size-adjust` on the CJK face is tuned against it. SP-10b measures that before shipping, and the exit criterion is a side-by-side at 13/16/24 rather than a screenshot that "looks fine".
 
+
+## D-043 · The editor is a lazy chunk, and a conflict compares against the version the edit began from
+
+**Status:** accepted in force (SP-05b).
+**Context:** CodeMirror 6 is 174 KB gzip. Imported statically it pushed the shell from 155 to 321 KB, for a surface most visits only read. Separately, the first conflict implementation compared a save against the *latest* stored version — which always matches, so the guard became a silent overwrite wearing a version check.
+**Decision:** the editor is `lazy(() => import(...))` behind a `Suspense` boundary and loads on the first **Edit**; `baseVersion` is captured when editing starts and advanced only on a successful save or an explicit Keep mine / Load theirs.
+**Alternative:** ship statically and raise the budget. Rejected: a reader would pay 166 KB for a button they may never press.
+**Consequence:** the first Edit costs a ~150 ms chunk fetch (a one-line fallback covers it) and the shell stays at 157 KB. A second writer is now actually caught — measured by writing to the store behind a live editor, which then reports `Not saved — this note changed elsewhere`.
+
 ---
 
 ## Open questions (need a human, not a default)

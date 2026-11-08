@@ -681,3 +681,9 @@
     padding: 48px var(--s6) var(--s12);
   }
 }
+
+/* The close control turns into a second press: same size, different meaning. */
+.tabClose[data-unsaved] {
+  color: var(--accent);
+  background: var(--tint-sel);
+}

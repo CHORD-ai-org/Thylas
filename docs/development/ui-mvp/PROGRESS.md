@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 11:40 (SP-05a done; SP-10a done).
+Last updated: 2026-11-08 19:58 (SP-05a and SP-05b done; SP-10a done).
 
 ---
 
@@ -20,8 +20,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-04a Table grammar | SP-04 | **Completed** 11-07 | 0.75 | SP-03b | grammar adoption, measured 3-width budgets, no truncation |
 | SP-04b File interactions | SP-04 | **Completed** 11-07 | 0.75 | SP-04a | real disclosure, 5-key table, tombstone, honest disabled actions |
 | SP-05a Note model | SP-05 | **Completed** 11-08 | 1.0 | SP-04a | Markdown note + per-note store + link parser + backlinks + seed migration |
-| SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard; 05a no longer blocks anything but this |
-| SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
+| SP-05b Editor and save | SP-05 | **Completed** 11-08 | 1.75 | SP-05a | CodeMirror 6 on demand, idle save, conflict review, dirty guard |
+| SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list navigation, search, outgoing links and backlinks |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
 | SP-06c Cards | SP-06 | **Completed** 11-07 | 1.5 | SP-06b | sections, five fills, folds, eight handles, menus, minimap; second pass against the reference |
@@ -34,7 +34,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **5.5 days**. Critical path: SP-05b (one Q-1 answer away) → SP-05c → SP-09a; SP-08 is independent.
+Remaining: **3.75 days**. Critical path: SP-05c → SP-09a; SP-08 and the rest of SP-10 are independent.
 
 ---
 
@@ -55,6 +55,7 @@ Remaining: **5.5 days**. Critical path: SP-05b (one Q-1 answer away) → SP-05c 
 | AI endpoint | `POST /api/ai` mounted in `dev` and `preview`; seven failure kinds; the key is read only by the server | `server/ai.ts`, `src/lib/ai.ts` |
 | AI client | `ask(prompt)` returns a typed result, never a raw body; `probe()` reports whether the endpoint is configured | `src/services/ai/` |
 | AI surface | the Overview field asks; panel draws idle / three bars / answer / error; footer `model · dev endpoint · ms`; `⌘↵` asks, `Stop`/`esc` abort | `src/pages/Overview.tsx`, `SP-07b` |
+| Note writing | read mode by default; `Edit` mounts CodeMirror as a separate chunk; 800 ms idle save; conflict review; dirty-tab guard; `Esc` leaves the editor | `src/pages/notes/`, `SP-05b` |
 | Board scene | pure constants + versioned store (v2, v1 migrated) · ref-driven viewport · 2400 × 1600 workspace | `src/pages/boards/` |
 | Files | shared table grammar, keyboard table, tombstones, disabled actions | `659cb2f`, `0eab7c1` |
 | Board editing | double-click create, drag with one 6px snap on cards *and* frames, marquee, shift-add, multi-drag, eight handles, delete, 1/10px nudge, 40-step undo | `gestures.ts`, `history.ts`, `useBoardEditor.ts` |
@@ -165,6 +166,12 @@ Remaining: **5.5 days**. Critical path: SP-05b (one Q-1 answer away) → SP-05c 
 | 11-08 | `npm run e2e` (SP-05a) | 209/209 unchanged — the notes rewrite did not touch the shell |
 | 11-08 | `npm run build` (SP-05a) | CSS 69.1 KB / JS 492.1 KB (155.0 KB gzip) |
 | 11-08 | Screenshots | `.workbuddy/shots/sp05a-{list,reader,links}.png` |
+| 11-08 | `npm test` (SP-05b) | 211/211 unchanged — the editor has no pure logic to unit-test; its behaviour is asserted in the browser |
+| 11-08 | `npm run e2e` (SP-05b) | 216/216; seven new assertions: editor mounts with a name, typing saves, reload keeps it, Esc exits, a dirty tab asks, the second press closes |
+| 11-08 | Editor accessibility | `role=textbox`, `aria-label="Note body, Markdown"`, `aria-multiline=true`, line box measured at 16px/26px |
+| 11-08 | Conflict | a write behind a live editor produces `Not saved — this note changed elsewhere` and three actions; Load theirs replaces the document |
+| 11-08 | Bundle | shell 157.1 KB gzip, editor 174.3 KB as a lazy chunk (was 321.3 KB in one file) |
+| 11-08 | Screenshots | `.workbuddy/shots/sp05b-{edit,conflict,dirty}.png` |
 
 ## Next concrete action
 

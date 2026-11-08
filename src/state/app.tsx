@@ -50,6 +50,9 @@ type AppState = {
   tabs: TabsState;
   toggleRail: () => void;
   togglePanel: () => void;
+  /** Tabs whose content differs from what is stored. Keyed by tab id (its path). */
+  isDirty: (id: string) => boolean;
+  markDirty: (id: string, on: boolean) => void;
   panelWidthFor: (ctx: PanelContext) => number;
   setPanelWidthFor: (ctx: PanelContext, w: number) => void;
   openPalette: () => void;
@@ -194,6 +197,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
   const togglePanel = useCallback(() => setPanelOpen((v) => !v), []);
+
+  /* A set, not a flag on the tab: tabs are persisted to sessionStorage, and an
+     `unsaved` flag would survive a reload whose edits did not. */
+  const [dirty, setDirty] = useState<Set<string>>(() => new Set());
+  const markDirty = useCallback((id: string, on: boolean) => {
+    setDirty((prev) => {
+      if (prev.has(id) === on) return prev;
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+  const isDirty = useCallback((id: string) => dirty.has(id), [dirty]);
   const setPanelWidthFor = useCallback((ctx: PanelContext, w: number) => {
     setUi((v) => ({ ...v, panelWidth: { ...v.panelWidth, [ctx]: clampWidth(w) } }));
   }, []);
@@ -233,6 +250,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       tabs,
       toggleRail,
       togglePanel,
+      isDirty,
+      markDirty,
       panelWidthFor,
       setPanelWidthFor,
       openPalette: () => setPaletteOpen(true),
@@ -240,7 +259,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       openObjectTab,
       closeObjectTab,
     }),
-    [ui, panelOpen, paletteOpen, tabs, toggleRail, togglePanel, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab],
+    [ui, panelOpen, paletteOpen, tabs, dirty, toggleRail, togglePanel, isDirty, markDirty, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

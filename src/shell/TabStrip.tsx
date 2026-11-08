@@ -36,8 +36,10 @@ function TabGlyph({ type }: { type: Tab['type'] }) {
 export function TabStrip({ ctx, wsId, variant }: Props) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { tabs, closeObjectTab, panelOpen, togglePanel, openPalette } = useApp();
+  const { tabs, closeObjectTab, panelOpen, togglePanel, openPalette, isDirty, markDirty } =
+    useApp();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingClose, setPendingClose] = useState<string | null>(null);
   const [limit, setLimit] = useState(TAB_CEILING);
   const menuRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -87,11 +89,26 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
         ]
       : [];
 
+  /* Unsaved work is asked about before it is destroyed, and asked about in the
+     strip rather than in a modal: the tab is the thing being closed. Two
+     presses, no dialog, and the control says which press does what. */
   const close = (tab: Tab) => {
+    if (isDirty(tab.id) && pendingClose !== tab.id) {
+      setPendingClose(tab.id);
+      return;
+    }
+    setPendingClose(null);
+    markDirty(tab.id, false);
     const wasActive = pathname === tab.path;
     closeObjectTab(ctx, tab.id);
     if (wasActive) navigate(roomPath(tab));
   };
+
+  useEffect(() => {
+    if (!pendingClose) return;
+    const timer = window.setTimeout(() => setPendingClose(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [pendingClose]);
 
   return (
     <div className={s.strip}>
@@ -157,7 +174,15 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
               <button
                 type="button"
                 className={s.tabClose}
-                aria-label={`Close ${tab.label}`}
+                data-unsaved={pendingClose === tab.id || undefined}
+                aria-label={
+                  pendingClose === tab.id
+                    ? `Discard unsaved changes in ${tab.label}`
+                    : `Close ${tab.label}`
+                }
+                title={
+                  pendingClose === tab.id ? 'Click again to discard the changes' : undefined
+                }
                 onClick={() => close(tab)}
               >
                 <IconClose size={11} />

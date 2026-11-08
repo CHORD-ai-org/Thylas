@@ -473,6 +473,74 @@ async function main() {
   check('notes: opens the reader', await js(`return location.pathname;`), (v) => /^\/notes\/n-/.test(v));
   check('notes: tab carries the title', await js(`${helpers} return !!byText('[role="tab"]', 'Method');`), true);
 
+  // ---- SP-05b: writing ----
+  check('notes: reading mode offers an edit control', await js(`
+    return [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit');
+  `), true);
+
+  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1200));`);
+  check('notes: the editor mounts with an accessible name', await js(`
+    const c = document.querySelector('.cm-content');
+    if (!c) return null;
+    const line = document.querySelector('.cm-line');
+    const cs = line ? getComputedStyle(line) : null;
+    return {
+      role: c.getAttribute('role'),
+      label: c.getAttribute('aria-label'),
+      multiline: c.getAttribute('aria-multiline'),
+      fontSize: cs ? cs.fontSize : null,
+    };
+  `), { role: 'textbox', label: 'Note body, Markdown', multiline: 'true', fontSize: '16px' });
+
+  await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
+  await send('Input.insertText', { text: '\n\nA line typed by the check.' });
+  await sleep(1400);
+  check('notes: typing is saved after the idle delay', await js(`
+    return document.body.innerText.includes('Saved');
+  `), true);
+
+  await send('Page.reload');
+  await sleep(1600);
+  check('notes: the edit survives a reload', await js(`
+    return document.body.innerText.includes('A line typed by the check.');
+  `), true);
+
+  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1100));`);
+  await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await sleep(500);
+  check('notes: Esc leaves the editor instead of trapping the keyboard', await js(`
+    return { editor: !!document.querySelector('.cm-editor'), edit: [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit') };
+  `), { editor: false, edit: true });
+
+  await js(`${helpers} click(byText('button', 'Edit')); await new Promise(r => setTimeout(r, 1100));`);
+  await js(`document.querySelector('.cm-content')?.focus(); return 1;`);
+  await send('Input.insertText', { text: ' unsaved' });
+  await sleep(150);
+  check('notes: closing a dirty tab asks before discarding', await js(`
+    const close = [...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || '').startsWith('Close Method'));
+    close.click();
+    await new Promise(r => setTimeout(r, 250));
+    const warn = [...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || '').startsWith('Discard unsaved'));
+    return { open: !!document.querySelector('.cm-editor'), warning: !!warn };
+  `), { open: true, warning: true });
+
+  /* Discard, so the rest of the run sees the shell it expects. */
+  await js(`
+    const warn = [...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || '').startsWith('Discard unsaved'));
+    warn.click();
+    await new Promise(r => setTimeout(r, 600));
+    return 1;
+  `);
+  check('notes: a second press closes the tab', await js(`
+    return { path: location.pathname, editor: !!document.querySelector('.cm-editor') };
+  `), { path: '/notes', editor: false });
+
+  /* Reopen a note: the panel assertions below look for `aside[aria-label="Scope"]`,
+     which only exists while a note is selected. */
+  await goto('/notes/n-method');
+
   await js(`window.dispatchEvent(new KeyboardEvent('keydown', {key:'k', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 250));`);
   check('palette: opens on mod+k', await js(`return !!document.querySelector('[role="dialog"]');`), true);
   await js(`document.querySelector('[role="dialog"] input').dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true})); await new Promise(r => setTimeout(r, 200));`);
