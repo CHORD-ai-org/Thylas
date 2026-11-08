@@ -23,7 +23,7 @@
 | A5 | high | Text below 4.5:1 on every route — the two smallest steps of the ink ramp | `11px label 2.0:1`, `13px nav 3.2:1` (needs 4.5) | SP-10b |
 | A6 | high | 8px type survives in four places: workspace initials, file-kind badges | `PQ` `CSV` `PDF` `MD` at 8px | SP-10b |
 | A7 | medium | Tap targets under 24×24: tab close, zoom, filter chips | `18×18` ×4, `22×22` ×3, `22` high chips | SP-10d |
-| A8 | medium | The note list is 18 buttons with no arrow-key model | ArrowDown leaves focus in place | SP-05c |
+| A8 | medium | The note list is six buttons with no arrow-key model | ArrowDown leaves focus in place (an earlier count of 18 was the row's three spans being counted per row) | SP-05c |
 | A9 | medium | Two controls share the name `Collapse sidebar`, so neither is unique to a screen reader | appears at stop 2 and stop 9 | SP-10e |
 | A10 | medium | Empty states carry no next action where one exists | Overview's four blocks leave a third of the fold blank; Processes is empty on the right; Notes shows "Nothing open" above a list of 18 | SP-10d |
 

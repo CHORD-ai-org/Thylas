@@ -1,99 +1,156 @@
 # SP-05 execution plan
 
-**Date:** 2026-11-08 · **Status:** plan, not started · **Supersedes** the "Blocked on Q-1" status of SP-05a.
+**Date:** 11-08 · **Status:** ready to start · **Supersedes** the "Blocked on Q-1" status of SP-05a
+**Reader's decision:** editor = **A, CodeMirror 6** (unless countermanded; the fallback is written into step 3).
 
-## 1. The dependency was drawn wrong
+## 1. What exists, measured
 
-SP-05a is blocked on Q-1 in the index. It should not be. Q-1 asks *which editor*; SP-05a is a note type, a per-note store, a link parser and a backlink index. None of those four touch a DOM node, and none changes if the editor is CodeMirror, Tiptap or a `<textarea>`.
-
-Correct order:
-
-| Unit | Days | Blocked by Q-1? |
+| Thing | Today | Consequence for this plan |
 | --- | --- | --- |
-| 05a model, store, links, backlinks, migration | 1.0 | **no** — pure logic, testable today |
-| 05b editor, save loop, conflict, dirty guard | 1.75 | yes, but only the mount |
-| 05c library, search, panel, link rendering | 1.25 | no |
+| Notes | 6 notes, 18 blocks (`p` 9, `h2` 3, `quote` 2, `list` 4, `code` 0) in `data/mock.ts` | small enough to migrate by conversion, not by hand |
+| `Note` type | `body: NoteBlock[]`, `minutes`, `updated: string`, `refs` | replaced by a Markdown `body`; `refs` and `minutes` move out of the type |
+| Surface | read-only reader + 6-row list; **New** apologises after the click | this plan replaces both |
+| Storage | none | new: per-note key + index |
+| Editor deps | none | +5 packages, +105–120 KB gzip (budget 300 KB) |
 
-So: start 05a now, decide the editor while 05a is being written.
+The word "18" counts blocks; the list has **six** rows.
 
-## 2. Editor: pick one, with a number attached
+## 2. Data contract
 
-| | A · CodeMirror 6 (recommended) | B · textarea + preview | C · Tiptap |
-| --- | --- | --- | --- |
-| Packages | `state`, `view`, `commands`, `lang-markdown`, `language` (+ `autocomplete` in 05c) | none | `@tiptap/react`, `starter-kit`, `markdown` |
-| Bundle, gzip (est.) | +105–120 KB | +0 | +140–160 KB |
-| Markdown | native, the document *is* Markdown | native | second-class; HTML is the model, MD is an import/export |
-| `[[` autocomplete | a source function, position known | manual caret arithmetic | needs a custom node |
-| Keyboard escape | **must be added**: Tab indents, so Esc has to leave | free | free |
-| Cost | 1.75 d | 1.0 d | 2.0 d |
+```ts
+// src/data/types.ts  (replaces the current Note)
+export type Note = {
+  id: string;              // 'n-method' … stable, never derived from the title
+  title: string;           // unique per scope, trimmed
+  scope: 'personal' | 'workspace';
+  wsId?: string;           // required when scope === 'workspace'
+  body: string;            // Markdown; the source of truth
+  version: number;         // +1 on every successful save
+  updatedAt: number;       // epoch ms
+};
 
-**Recommendation: A.** The product is Markdown-first (SP-05 §A), the link syntax is text, and 05c needs caret-aware autocomplete that B cannot do without re-implementing an editor. Budget: JS goes 153 → ≈ 270 KB gzip; if it exceeds 300 KB, ship B and record the reversal.
+export type NoteIndexEntry = { id: string; title: string; scope: 'personal' | 'workspace'; wsId?: string; updatedAt: number };
+```
 
-Q-1 needs one line from the reader: *A, B or C*. Everything below assumes A.
-
-## 3. Phases
-
-### 05a · Model (1.0 day, no UI)
-
-| # | Task | Exit |
+| Key | Shape | Written by |
 | --- | --- | --- |
-| 1 | `Note` type: `id, title, scope, wsId?, body (Markdown), version, updatedAt` | compiles |
-| 2 | Store `thylas:note:v1:<id>` per note + `thylas:notes:v1` index; `save(id, body, expectedVersion)` returns `{ok}` or `{conflict, theirs}` | a save survives a reload |
-| 3 | `lib/markdown/links.ts` — `[[Target]]`, `[[Target|alias]]`, offset, dangling | 8 cases |
-| 4 | `lib/markdown/backlinks.ts` — reverse map per scope, ignores dangling, survives rename | 6 cases |
-| 5 | Migrate the 18 existing mock notes to Markdown seeds; write them on first run; `Reset` restores them | count matches, bodies round-trip |
-| 6 | `useNotes()` hook: `list, get, search, save, create, remove, links, backlinks` | no component imports the store directly |
+| `thylas:note:v1:<id>` | `Note` | one save |
+| `thylas:notes:v1` | `{ version: 1, entries: NoteIndexEntry[] }` | every create/rename/delete, never on body save |
 
-Pure and tested before a keystroke is possible. This is the unit that makes the rest safe to build.
+Per-note keys, not one blob: a save rewrites 4 KB, not the whole library. `version` is the conflict detector, not a timestamp — two saves in the same millisecond must still collide.
 
-### 05b · Editor (1.75 days)
+**Markdown is the storage format.** No block array is persisted; blocks exist only while rendering (`parseBlocks`), so the reader and the editor agree by construction.
 
-| # | Task | Exit |
+## 3. Files
+
+| File | New/changed | Exports |
 | --- | --- | --- |
-| 1 | CM6 mount, Markdown language, theme from CSS variables | 660 measure, 16/26, caret in `--accent` |
-| 2 | **Keyboard escape** — Tab indents; `Esc` moves focus to the title; a persistent line under the body says so | Tab cannot trap |
-| 3 | Save on idle 800 ms; silent on success, inline error under the title on failure | typing never shows a spinner |
-| 4 | Conflict review: banner with keep mine / load theirs / both panes | second tab cannot silently overwrite |
-| 5 | Dirty registry + tab-close interception (save / discard / cancel, in the strip) | closing a dirty tab asks once |
-| 6 | `beforeunload` once | reload with edits warns |
-| 7 | `aria-label` on the editor, `aria-multiline`, readable with a screen reader | not a `contenteditable` mystery |
+| `src/data/types.ts` | changed | `Note`, `NoteIndexEntry`; `NoteBlock` kept as `LegacyBlock` for seeds only |
+| `src/data/mock.ts` | changed | `LEGACY_NOTES: LegacyNote[]` — content untouched, 6 entries |
+| `src/data/note-seed.ts` | new | `legacyToMarkdown(n): string`, `NOTE_SEEDS: Note[]` |
+| `src/lib/markdown/blocks.ts` | new | `parseBlocks(md: string): Block[]`, `Block = {kind:'p'\|'h2'\|'quote'\|'list'\|'code', text?, items?}` |
+| `src/lib/markdown/links.ts` | new | `parseLinks(md): {target, alias, start, end}[]`, `resolveLinks(md, titles): ResolvedLink[]` |
+| `src/lib/markdown/backlinks.ts` | new | `buildBacklinks(notes): Map<id, id[]>`, `outgoing(note, notes): id[]` |
+| `src/state/notes.ts` | new | `loadNotes()`, `saveNote(id, body, expectedVersion)`, `createNote(input)`, `renameNote(id, title)`, `removeNote(id)`, `resetNotes()`; `useNotes()` via `useSyncExternalStore` |
+| `src/state/app.tsx` | changed | `dirty: Set<string>`, `markDirty(id, bool)` — the tab strip consults it |
+| `src/pages/Notes.tsx` | rewritten | list + reader/editor + panel |
+| `src/pages/notes/NoteEditor.tsx` | new | CM6 mount, theme, keymap, idle save, error surface |
+| `src/pages/notes/NoteReader.tsx` | new | `parseBlocks` + chip rendering; no `dangerouslySetInnerHTML` |
 
-### 05c · Library (1.25 days)
+## 4. Steps
 
-| # | Task | Exit |
-| --- | --- | --- |
-| 1 | List rows 44 px with a **roving tabindex** and ↑/↓ (audit A8) | arrows move between notes |
-| 2 | Scope filter in the URL, like Processes | `?scope=personal` is a link |
-| 3 | Search over title and body, 200 ms debounce, empty result names the scope | finds a note by a body phrase |
-| 4 | Reader renderer: `p, h2, quote, list, code, [[link]]` — hand-written, no markdown library, no `dangerouslySetInnerHTML` | chips render resolved vs dashed dangling |
-| 5 | `[[` autocomplete in the editor | typing `[[` lists titles |
-| 6 | Panel: outgoing + backlinks ("linked from 3 notes"), each row openable | matches 05a's index exactly |
-| 7 | New / rename / delete with confirmation; title uniqueness per scope refused inline | no silent dedupe |
+### Step 1 · Types, blocks, links, backlinks (0.5 day)
 
-## 4. Acceptance (inherits SP-05 §H, plus what the audit added)
+Pure code, no UI, no storage. Everything below is a function with a table of cases.
 
-1. Create → type → reload: text identical, `[[links]]` included.
-2. A note linked from two others shows exactly those two, and no others.
-3. Two tabs, one note: the second save offers review, never overwrites.
-4. Closing a dirty tab offers save/discard/cancel; `beforeunload` warns once.
-5. Editor and reader share 660 / 16-26 — toggling does not reflow.
-6. **Keyboard: from the list, Tab reaches the body, Tab indents, Esc leaves the editor, and the next Tab reaches the panel.** No focus trap (audit A1).
-7. **The list is navigable with ↑/↓** and announces the note title, not the concatenated row (audit A4, A8).
-8. `npm test` covers links and backlinks; `npm run e2e` covers create → link → reload → conflict.
+`parseLinks` rules, all tested:
 
-## 5. Sequence against the visual pass
-
-| Order | Why |
+| Input | Expected |
 | --- | --- |
-| SP-10b type first | The editor's measure (660 / 16-26) is a typographic decision; measuring it against a face that is about to change wastes the work |
-| SP-10c icons | Independent; do it before the 05c screenshots |
-| 05a | Can run in parallel with 10b — it has no UI |
-| 05b, 05c | After 10b, before SP-09b (which audits the result) |
+| `[[Method]]` | one link, target `Method`, alias `null` |
+| `[[method]]` | resolves to `Method` — case-insensitive match |
+| `[[Method\|the method]]` | alias `the method`, target `Method` |
+| `[[ Missing ]]` | target `Missing` (trimmed) |
+| `[[A]] and [[B]]` | two links, offsets in order |
+| `[[A\|B\|C]]` | one link, alias `B\|C` (split on the first `\|` only) |
+| `[[]]` | no link (empty target is not a link) |
+| `[[A]]` inside a fenced code block | **still a link in v1** — recorded as a known limitation, not silently dropped |
 
-## 6. Risks
+`buildBacklinks` rules: resolve per scope (a personal note cannot link into a workspace), ignore dangling targets, and stay correct after a rename because resolution is by current title at call time.
 
-- **The editor is the first write path.** Data loss is the only unrecoverable failure in this program; hence 05a's store and conflict handling come before any UI. If time is short, cut 05c's search, never 05b's guards.
-- **CM6 keyboard trap** is the single most likely accessibility regression, and the fix is a document-level keymap, not a CSS change.
-- **Bundle**: 153 → ~270 KB gzip. Acceptable for an internal tool; not for a marketing page.
-- **Markdown renderer** is hand-written on purpose. A library would add 30 KB and an XSS surface for six block types.
-- **Seeds vs edits**: the 18 mock notes become seeds; if a reader edits one and resets, their edit is lost. The reset control must say that.
+**Exit:** `npm test` with ≥ 14 new cases; `npx tsc --noEmit` clean.
+
+### Step 2 · Store and migration (0.5 day)
+
+`saveNote(id, body, expectedVersion)` returns `{ ok: true, note } | { ok: false, conflict: true, theirs: Note }`. It reads the stored note, compares `version`, and only then writes. No timers, no debounce here — that is the editor's job.
+
+`loadNotes()` seeds on first run: if `thylas:notes:v1` is absent, write `NOTE_SEEDS` (the six legacy notes converted by `legacyToMarkdown`). `resetNotes()` rewrites the seeds and clears every per-note key.
+
+`legacyToMarkdown` mapping: `p` → paragraph, `h2` → `## text`, `quote` → `> text`, `list` → `- item` per line, `code` → fenced with no language. One blank line between blocks.
+
+**Exit:** `npm test` covers round-trip `legacy → markdown → parseBlocks` for all six notes (block count and text equal); a reload keeps an edit; `resetNotes()` restores the six.
+
+### Step 3 · Editor (1.75 days)
+
+Packages: `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`, `@codemirror/lang-markdown`, `@codemirror/language`.
+
+| # | Requirement | Implementation detail |
+| --- | --- | --- |
+| 1 | 660 measure, 16/26 | `EditorView.theme` reading the same CSS variables as the reader; `line-height: 26px`, `max-width: 660px`, `margin: auto` |
+| 2 | Caret and selection in `--accent` | theme, no syntax rainbow |
+| 3 | **Esc leaves the editor** | highest-precedence keymap binding `Escape` → `onEscape()` → focus the title input; a persistent line under the body says `Esc leaves the editor` |
+| 4 | Tab indents, never traps | default `indentMore`; the only exit is Esc — documented, and asserted in e2e |
+| 5 | Idle save | 800 ms after the last change, unless a save is in flight; a second edit during a save queues exactly one retry |
+| 6 | Silent on success | no spinner; failure shows an inline banner under the title with the reason and a retry |
+| 7 | Conflict | banner with keep mine / load theirs / show both (two scrollable panes); never auto-resolve |
+| 8 | Dirty registry | `markDirty(id, true)` on first change, cleared on successful save |
+| 9 | Tab close | `TabStrip` calls `confirmClose(id)` → save / discard / cancel, inline in the strip |
+| 10 | `beforeunload` | one prompt while `dirty.size > 0` |
+| 11 | Accessible | `aria-label="Note body"`, `aria-multiline="true"`; the editor is not a `contenteditable` mystery |
+
+**Fallback if the bundle passes 300 KB gzip:** drop CM6 for a `<textarea>` + preview toggle (step 1's functions still apply; `[[` autocomplete moves to step 4 and becomes caret arithmetic). Record the reversal in DECISIONS, do not silently shrink 05c.
+
+**Exit:** type → wait 1 s → reload → identical text; two tabs → second save shows the conflict banner; close a dirty tab → the strip asks; `npm run e2e` covers all three.
+
+### Step 4 · Library, search, panel, links (1.25 days)
+
+| # | Requirement | Notes |
+| --- | --- | --- |
+| 1 | List rows 44 px, roving tabindex, ↑/↓ moves focus | fixes audit A8; `role="listbox"` or plain buttons with `aria-current` — pick one and stay consistent |
+| 2 | Scope filter in the URL (`?scope=personal`) | same pattern as Processes |
+| 3 | Search over title and body, 200 ms debounce | empty result names the scope that was searched |
+| 4 | `[[` autocomplete | `@codemirror/autocomplete` source over current titles, triggered on `[[` |
+| 5 | Reader chips | resolved = solid 1px chip; dangling = dashed, click offers "create note named …" |
+| 6 | Panel | outgoing + backlinks ("linked from 2 notes"), each row opens that note |
+| 7 | New / rename / delete | title uniqueness per scope refused inline; delete asks once; nothing silent |
+
+**Exit:** `npm run e2e` covers create → link → reload → conflict → dangling-link create; screenshots of list, reader, editor, conflict.
+
+## 5. Test table (the part that must not be skipped)
+
+| Module | Cases |
+| --- | --- |
+| `links.test.ts` | the eight rows above + offsets + two links on one line |
+| `blocks.test.ts` | each of the five kinds, adjacent lists, blank-line handling, code fence with and without language |
+| `backlinks.test.ts` | two sources → two backlinks; dangling ignored; cross-scope ignored; rename changes resolution without rewriting bodies |
+| `note-store.test.ts` | seed on first run; version bump; stale `expectedVersion` returns the stored note; bad JSON dropped; reset restores the six |
+| `note-seed.test.ts` | round-trip of all six legacy notes |
+
+## 6. Order against the visual pass, and cost
+
+| Order | Days | Reason |
+| --- | --- | --- |
+| SP-10b type | 1.0 | The editor's 660 / 16-26 measure is typographic; measuring against a face that is about to change wastes the work |
+| Step 1 + 2 (05a) | 1.0 | No UI, so it can run beside 10b |
+| Step 3 (05b) | 1.75 | Needs the final type |
+| Step 4 (05c) | 1.25 | Needs the editor and the type |
+| SP-10c, 10d, 10e | 2.0 | Can interleave; 10e first because its findings are blocking |
+
+Total 4.0 days, of which 1.0 is independent of every open decision.
+
+## 7. What this plan refuses to do
+
+- **No Markdown library.** Six block kinds, hand-written: 0 KB and no XSS surface, at the cost of ~120 lines.
+- **No rich text.** The stored document is Markdown, so an export is a copy and a git diff is readable.
+- **No collaboration, attachments, tables, images, tags, graph view, documents preset.** Each is a separate decision, none is in this plan.
+- **No silent dedupe, no silent overwrite, no auto-resolved conflict.** The three ways this product could lose someone's writing are all in step 3 for a reason.
