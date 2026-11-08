@@ -290,3 +290,42 @@
   border-top: 1px solid var(--line);
   padding-top: 6px;
 }
+
+/* ---- reader: links and empty bodies ------------------------------------ */
+
+/* A resolved link is a chip you can press; a dangling one is the same shape
+   with a dashed edge, so the difference is visible before the click. */
+.chip {
+  display: inline;
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font: var(--t-ui);
+  color: var(--ink);
+  background: var(--bg-surface);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--ink-3);
+  background: var(--tint-hover);
+}
+
+.chipOff {
+  display: inline;
+  padding: 1px 5px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  font: var(--t-ui);
+  color: var(--ink-3);
+}
+
+.placeholder {
+  color: var(--ink-3);
+}
+
+.listEmpty {
+  padding: var(--s4) var(--s3);
+  font: var(--t-caption);
+  color: var(--ink-2);
+}

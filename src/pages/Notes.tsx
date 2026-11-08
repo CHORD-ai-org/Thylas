@@ -1,43 +1,54 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
-import { getNote, getWorkspace, notes } from '../data/selectors';
+import { relativeTime } from '../lib/relative';
+import { getWorkspace } from '../data/selectors';
+import { createNote, useNotes } from '../state/notes';
+import type { Note } from '../data/types';
 import { useApp, useRegisterTab } from '../state/app';
 import { Button, EmptyState, Field } from '../components/ui';
 import { IconPlus } from '../components/icons';
 import { TabStrip } from '../shell/TabStrip';
 import { ContextPanel } from '../shell/ContextPanel';
-import g from '../styles/grammar.module.css';
+import { NoteReader } from './notes/NoteReader';
 import s from './notes.module.css';
 
-function scopeLabel(n: ReturnType<typeof notes>[number]): string {
-  if (n.scope === 'personal') return 'Personal';
-  return getWorkspace(n.wsId)?.name ?? 'Workspace';
+function scopeLabel(note: Note): string {
+  return note.scope === 'personal' ? 'Personal' : (getWorkspace(note.wsId)?.name ?? 'Workspace');
 }
+
+const scopeOf = (note: Note): string => (note.scope === 'personal' ? 'personal' : (note.wsId ?? ''));
 
 export function NotesPage() {
   const { noteId } = useParams();
   const navigate = useNavigate();
   const { panelOpen } = useApp();
+  const all = useNotes();
   const [scope, setScope] = useState<string>('all');
-  const [notice, setNotice] = useState<string | null>(null);
-  const note = getNote(noteId);
 
-  useRegisterTab(
-    'notes',
-    note ? { type: 'note', label: note.title, path: routes.note(note.id) } : null,
-  );
+  const note = noteId ? all.find((n) => n.id === noteId) : undefined;
+
+  useRegisterTab('notes', note ? { type: 'note', label: note.title, path: routes.note(note.id) } : null);
 
   const scopes = useMemo(() => {
-    const ids = new Set(notes().map((n) => n.wsId ?? 'personal'));
+    const ids = new Set(all.map(scopeOf));
     return ['all', ...Array.from(ids)];
-  }, []);
+  }, [all]);
 
-  const visible = notes().filter((n) => {
-    if (scope === 'all') return true;
-    if (scope === 'personal') return n.scope === 'personal';
-    return n.wsId === scope;
-  });
+  const visible = all.filter((n) => scope === 'all' || scopeOf(n) === scope);
+
+  /* The capability exists now, so the control does what it says: a note is
+     created in the scope being looked at and opened. */
+  const addNote = () => {
+    const created = createNote(
+      scope === 'all' || scope === 'personal'
+        ? { scope: 'personal' }
+        : { scope: 'workspace', wsId: scope },
+    );
+    navigate(routes.note(created.id));
+  };
+
+  const words = note && note.body.trim() !== '' ? note.body.trim().split(/\s+/).length : 0;
 
   return (
     <>
@@ -50,7 +61,7 @@ export function NotesPage() {
               size="sm"
               variant="ghost"
               icon={<IconPlus size={12} />}
-              onClick={() => setNotice('Note creation needs the notes service. The editor itself is not in this build.')}
+              onClick={addNote}
               aria-label="New note"
             >
               New
@@ -62,73 +73,54 @@ export function NotesPage() {
                 key={id}
                 type="button"
                 className={[s.filter, scope === id ? s.filterOn : ''].join(' ')}
+                aria-pressed={scope === id}
                 onClick={() => setScope(id)}
               >
                 {id === 'all' ? 'All' : id === 'personal' ? 'Personal' : (getWorkspace(id)?.name ?? id)}
               </button>
             ))}
           </div>
-          {notice ? <p className={g.banner}>{notice}</p> : null}
           <ul className={s.noteList}>
             {visible.map((n) => (
               <li key={n.id}>
                 <button
                   type="button"
                   className={[s.noteRow, n.id === noteId ? s.noteRowOn : ''].join(' ')}
+                  aria-current={n.id === noteId ? 'page' : undefined}
                   onClick={() => navigate(routes.note(n.id))}
                 >
                   <span className={s.noteRowTitle}>{n.title}</span>
-                  <span className={s.noteRowMeta}>{scopeLabel(n)} · {n.updated}</span>
+                  <span className={s.noteRowMeta}>
+                    {scopeLabel(n)} · {relativeTime(n.updatedAt)}
+                  </span>
                 </button>
               </li>
             ))}
+            {visible.length === 0 ? (
+              <li className={s.listEmpty}>No note in this scope yet.</li>
+            ) : null}
           </ul>
-          <p className={s.listFoot}>One note, one scope. Notes is a lens over every scope you can read.</p>
+          <p className={s.listFoot}>
+            One note, one scope. Notes is a lens over every scope you can read.
+          </p>
         </nav>
 
         <main className={s.readerWrap} data-scroll-region="notes-reader">
           {note ? (
             <article className={s.reader}>
-              <p className={s.eyebrow}>
-                Note · {scopeLabel(note)}
-              </p>
+              <p className={s.eyebrow}>Note · {scopeLabel(note)}</p>
               <h1 className={s.title}>{note.title}</h1>
               <p className={s.meta}>
-                Ceaser Zhao · edited {note.updated} · {note.minutes} min read · {note.refs.length} references
+                Edited {relativeTime(note.updatedAt)} · {words} words · v{note.version}
               </p>
               <div className={s.rule} />
-              <div className={s.prose}>
-                {note.body.map((block, i) => {
-                  if (block.kind === 'h2') return <h2 key={i} className={s.h2}>{block.text}</h2>;
-                  if (block.kind === 'quote')
-                    return (
-                      <blockquote key={i} className={s.quote}>
-                        {block.text}
-                      </blockquote>
-                    );
-                  if (block.kind === 'list')
-                    return (
-                      <ul key={i} className={s.list2}>
-                        {block.items.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    );
-                  if (block.kind === 'code') return <pre key={i} className={s.code}>{block.text}</pre>;
-                  return (
-                    <p key={i} className={s.p}>
-                      {block.text}
-                    </p>
-                  );
-                })}
-              </div>
-              <p className={s.endMark}>◦</p>
+              <NoteReader note={note} all={all} onOpen={(id) => navigate(routes.note(id))} />
             </article>
           ) : (
             <div className={s.readerEmpty}>
               <EmptyState
                 title="Nothing open"
-                hint="Pick a note from the list. Notes written inside a workspace are the same objects as the ones here — this is a view, not a second library."
+                hint="Pick a note from the list, or start one with New. Notes written inside a workspace are the same objects as the ones here — this is a view, not a second library."
               />
             </div>
           )}
@@ -140,30 +132,14 @@ export function NotesPage() {
               <div className={s.panelInner}>
                 <div className={s.panelFields}>
                   <Field label="Home">{scopeLabel(note)}</Field>
-                  <Field label="Visible in">Notes{note.scope === 'workspace' ? ` · ${scopeLabel(note)}` : ''}</Field>
-                  <Field label="Edited">{note.updated}</Field>
+                  <Field label="Edited">{relativeTime(note.updatedAt)}</Field>
+                  <Field label="Length">{words} words</Field>
+                  <Field label="Version">{note.version}</Field>
                 </div>
                 <p className={s.panelNote}>
-                  One note, one scope. It appears in two places because it has one owner and two views.
+                  One note, one scope. It appears in two places because it has one owner and two
+                  views.
                 </p>
-                <Button size="sm" onClick={() => setNotice('Moving a note between scopes needs the notes service.')}>
-                  Move to…
-                </Button>
-
-                <div className={s.panelSection}>
-                  <div className={s.panelHead}>References</div>
-                  <ul className={s.refList}>
-                    {note.refs.map((ref) => (
-                      <li key={`${ref.kind}-${ref.id}`} className={s.refRow}>
-                        <span className={s.refMark}>{ref.kind === 'file' ? '▤' : '▶'}</span>
-                        <span className={s.refLabel}>{ref.label}</span>
-                        <span className={s.refMeta}>{ref.meta}</span>
-                      </li>
-                    ))}
-                    {note.refs.length === 0 ? <li className={s.panelNote}>No references in this note.</li> : null}
-                  </ul>
-                </div>
-                {notice ? <p className={s.panelNotice}>{notice}</p> : null}
               </div>
             ) : (
               <p className={s.panelNote}>

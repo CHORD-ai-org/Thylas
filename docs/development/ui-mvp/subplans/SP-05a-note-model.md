@@ -1,6 +1,6 @@
 # SP-05a · Note model, local store, link parser, backlinks
 
-**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.0 · **Status:** Not Started · **Depends:** SP-04a
+**Parent:** [SP-05](SP-05-notes-and-documents.md) · **Days:** 1.0 · **Status:** Completed 11-08 · **Depends:** SP-04a
 
 ## Objective
 
@@ -50,6 +50,21 @@ type Note = {
 | T3 | Backlink builder + 4 tests | rename, dangling, cross-scope |
 | T4 | Seed 6 notes from mock | Reader still works |
 | T5 | Boot index rebuild | 200 notes rebuild < 50ms |
+
+## Result
+
+| # | Task | Result |
+| --- | --- | --- |
+| T1 | `Note` type | done — Markdown `body`, `version`, `updatedAt`; the old block array survives as `LegacyBlock`/`LegacyNote` for seeding only |
+| T2 | Per-note store + index | done — `thylas:note:v1:<id>` per note, `thylas:notes:v1` index; `saveNote` compares `version` and returns the stored note on a stale one |
+| T3 | Link parser | done — `[[Target]]`, `[[Target|alias]]` split on the first pipe, offsets kept, empty target rejected |
+| T4 | Backlink index | done — built per call from bodies, scoped (personal cannot reach a workspace), self-links and dangling targets excluded |
+| T5 | Seed and migration | done — six sample notes converted by `legacyToMarkdown`, written on first run, `resetNotes()` restores them |
+| T6 | `useNotes()` | done — `useSyncExternalStore`; components do not touch storage |
+
+**Beyond the plan, present:** links inside a fenced code block are skipped (the plan recorded this as a v1 limitation; it cost ten lines, and without it the backlink index would claim links a reader never sees). `titlesFor()` is exported so the reader and the index cannot disagree about who can link to whom. The Notes "New" control now really creates a note — the last post-click apology outside Account is gone.
+
+**Deviations:** (1) The sample library is six notes, not eighteen — the earlier count was each row's three spans. (2) `refs` and `minutes` left the type: references are a property of a file, and reading minutes are now derived from the body. The panel's References block is replaced in 05c by outgoing links and backlinks.
 
 ## Acceptance
 

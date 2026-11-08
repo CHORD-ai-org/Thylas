@@ -21,7 +21,8 @@ import {
   type TabType,
   type TabsState,
 } from '../lib/tabs';
-import { getBoard, getFile, getNote, getProcess, workspaces } from '../data/selectors';
+import { getBoard, getFile, getProcess, workspaces } from '../data/selectors';
+import { getNoteById } from './notes';
 
 type ObjectTabSeed = {
   type: TabType;
@@ -156,7 +157,7 @@ function loadTabs(): TabsState {
 function objectExists(tab: Tab): boolean {
   const id = tab.path.split('/').pop() ?? '';
   if (tab.type === 'file') return Boolean(getFile(id));
-  if (tab.type === 'note') return Boolean(getNote(id));
+  if (tab.type === 'note') return Boolean(getNoteById(id));
   if (tab.type === 'board') return Boolean(getBoard(id));
   if (tab.type === 'run') return Boolean(getProcess(id));
   return true;

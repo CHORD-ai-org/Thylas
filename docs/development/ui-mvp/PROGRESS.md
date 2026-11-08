@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-08 09:52 (SP-10a shipped; 10b–10d proposed).
+Last updated: 2026-11-08 11:40 (SP-05a done; SP-10a done).
 
 ---
 
@@ -19,8 +19,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-03b Panel and restore | SP-03 | **Completed** 11-07 | 0.5 | SP-03a | per-context widths, named-region scroll restore, room-preserving switch, settings deleted |
 | SP-04a Table grammar | SP-04 | **Completed** 11-07 | 0.75 | SP-03b | grammar adoption, measured 3-width budgets, no truncation |
 | SP-04b File interactions | SP-04 | **Completed** 11-07 | 0.75 | SP-04a | real disclosure, 5-key table, tombstone, honest disabled actions |
-| SP-05a Note model | SP-05 | Not Started | 1.0 | SP-04a | store, link parser, backlinks — Q-1 does not block it |
-| SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard |
+| SP-05a Note model | SP-05 | **Completed** 11-08 | 1.0 | SP-04a | Markdown note + per-note store + link parser + backlinks + seed migration |
+| SP-05b Editor and save | SP-05 | **Blocked** (Q-1) | 1.75 | SP-05a | conflict + dirty guard; 05a no longer blocks anything but this |
 | SP-05c Note library | SP-05 | Not Started | 1.25 | SP-05b | list, search, panel |
 | SP-06a Scene model | SP-06 | **Completed** 11-07 | 0.75 | SP-04a | pure `scene.ts`, versioned `store.ts`, 23 tests, byte-identical render |
 | SP-06b Viewport | SP-06 | **Completed** 11-07 | 1.25 | SP-06a | ref + rAF zoom/pan, 30/30 steps, 150-card P95 16.7ms |
@@ -34,7 +34,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **6.5 days**. Critical path: SP-09a → SP-09b; SP-05 stays blocked on Q-1, SP-08 is independent.
+Remaining: **5.5 days**. Critical path: SP-05b (one Q-1 answer away) → SP-05c → SP-09a; SP-08 is independent.
 
 ---
 
@@ -47,7 +47,7 @@ Remaining: **6.5 days**. Critical path: SP-09a → SP-09b; SP-05 stays blocked o
 | Surfaces | 9 screens render | screenshots in `.workbuddy/shots/` |
 | Tabs | Open/close/persist, rooms pinned | CDP suite 16/16 |
 | Typography | Plex/Noto self-hosted, 7 steps, no serif | `cf01df0`, specimen page |
-| Data | All mock (`src/data/mock.ts`), no network | — |
+| Data | Files, boards and processes are mock; **notes are real** — Markdown, per-note keys, seeded from `mock.ts` on first run | `src/state/notes.ts` |
 | Tests | legacy 16-assertion smoke script, superseded by the committed suite | `.workbuddy/tmp/cdp.mjs` |
 | Lint | ESLint 10 + `typescript-eslint`, layering zones; `npm run lint` clean | `eslint.config.js` |
 | Unit tests | Vitest 5, 127 assertions: scene maths, store, history, gestures, tabs, routes, selectors, AI contract | `src/**/*.test.ts` |
@@ -158,6 +158,13 @@ Remaining: **6.5 days**. Critical path: SP-09a → SP-09b; SP-05 stays blocked o
 | 11-08 | `npm run e2e` (SP-10a) | 209/209 unchanged — a radius is paint, not layout |
 | 11-08 | Live DeepSeek call | 200 in 1.98 s, `model: deepseek-flash`; the id `deepseek-chat` now resolves to that model |
 | 11-08 | Screenshots | `.workbuddy/shots/sp10a-{overview,files,processes,run,board,notes,account}.png` |
+| 11-08 | `npm test` (SP-05a) | 211/211; 33 on the Markdown layer, 14 on seeds and store, 5 on relative time |
+| 11-08 | Link parsing | `[[A\|B\|C]]` → alias `B\|C`; `[[]]` rejected; fenced code excluded from both parsing and backlinks |
+| 11-08 | Backlinks | two sources resolve to two ids; a personal note cannot link into a workspace; self-links excluded |
+| 11-08 | Store | stale `version` returns the stored note; a broken payload costs one note, not the library |
+| 11-08 | `npm run e2e` (SP-05a) | 209/209 unchanged — the notes rewrite did not touch the shell |
+| 11-08 | `npm run build` (SP-05a) | CSS 69.1 KB / JS 492.1 KB (155.0 KB gzip) |
+| 11-08 | Screenshots | `.workbuddy/shots/sp05a-{list,reader,links}.png` |
 
 ## Next concrete action
 

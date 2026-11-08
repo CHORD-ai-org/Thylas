@@ -59,7 +59,7 @@ Per-note keys, not one blob: a save rewrites 4 KB, not the whole library. `versi
 
 ## 4. Steps
 
-### Step 1 · Types, blocks, links, backlinks (0.5 day)
+### Step 1 · Types, blocks, links, backlinks (0.5 day) — **done 11-08**
 
 Pure code, no UI, no storage. Everything below is a function with a table of cases.
 
@@ -74,13 +74,13 @@ Pure code, no UI, no storage. Everything below is a function with a table of cas
 | `[[A]] and [[B]]` | two links, offsets in order |
 | `[[A\|B\|C]]` | one link, alias `B\|C` (split on the first `\|` only) |
 | `[[]]` | no link (empty target is not a link) |
-| `[[A]]` inside a fenced code block | **still a link in v1** — recorded as a known limitation, not silently dropped |
+| `[[A]]` inside a fenced code block | not a link — fenced ranges are excluded, so the index cannot claim a link a reader never sees |
 
 `buildBacklinks` rules: resolve per scope (a personal note cannot link into a workspace), ignore dangling targets, and stay correct after a rename because resolution is by current title at call time.
 
 **Exit:** `npm test` with ≥ 14 new cases; `npx tsc --noEmit` clean.
 
-### Step 2 · Store and migration (0.5 day)
+### Step 2 · Store and migration (0.5 day) — **done 11-08**
 
 `saveNote(id, body, expectedVersion)` returns `{ ok: true, note } | { ok: false, conflict: true, theirs: Note }`. It reads the stored note, compares `version`, and only then writes. No timers, no debounce here — that is the editor's job.
 

@@ -1,5 +1,5 @@
-import { BOARDS, FILES, FOLDERS, NOTES, PROCESSES, RECENT, WORKSPACES } from './mock';
-import type { Board, FileItem, Folder, Note, Process, RunState, Workspace } from './types';
+import { BOARDS, FILES, FOLDERS, PROCESSES, RECENT, WORKSPACES } from './mock';
+import type { Board, FileItem, Folder, Process, RunState, Workspace } from './types';
 import type { Tone } from '../lib/tone';
 
 export const workspaces = (): Workspace[] => WORKSPACES;
@@ -22,18 +22,6 @@ export function filesInFolder(wsId: string, folderId: string | null): FileItem[]
 
 export function getFile(id: string | undefined): FileItem | undefined {
   return FILES.find((f) => f.id === id);
-}
-
-export function notes(): Note[] {
-  return NOTES;
-}
-
-export function getNote(id: string | undefined): Note | undefined {
-  return NOTES.find((n) => n.id === id);
-}
-
-export function notesFor(wsId: string): Note[] {
-  return NOTES.filter((n) => n.wsId === wsId);
 }
 
 export function boardsIn(wsId: string): Board[] {
@@ -93,7 +81,3 @@ export function pendingLede(count: number): string {
   return `${plural(count, 'process', 'processes')} ${count === 1 ? 'needs' : 'need'} a decision. ${tail}`;
 }
 
-/** Distinct note bodies are counted as authored "reading minutes" in the list meta. */
-export function noteMeta(n: Note): string {
-  return `${n.scope === 'personal' ? 'Personal' : (getWorkspace(n.wsId)?.name ?? 'Workspace')} · ${n.updated}`;
-}

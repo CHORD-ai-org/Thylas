@@ -8,7 +8,7 @@ import type {
   Board,
   FileItem,
   Folder,
-  Note,
+  LegacyNote,
   Process,
   RecentItem,
   User,
@@ -177,7 +177,7 @@ export const FILES: FileItem[] = [
   },
 ];
 
-export const NOTES: Note[] = [
+export const LEGACY_NOTES: LegacyNote[] = [
   {
     id: 'n-method',
     title: 'Method — how we measure comparability',

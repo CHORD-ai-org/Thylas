@@ -57,14 +57,39 @@ export type Folder = {
   name: string;
 };
 
-export type NoteBlock =
+/* A note is a Markdown document. Blocks are a rendering artifact, not storage:
+   see lib/markdown/blocks.ts. Keeping one representation means the reader and
+   the editor cannot disagree about what the document is. */
+export type Note = {
+  id: Id;
+  title: string;
+  scope: 'personal' | 'workspace';
+  wsId?: Id;
+  body: string;
+  /** Bumped on every successful save; the conflict detector, not a timestamp. */
+  version: number;
+  updatedAt: number;
+};
+
+export type NoteIndexEntry = {
+  id: Id;
+  title: string;
+  scope: 'personal' | 'workspace';
+  wsId?: Id;
+  updatedAt: number;
+};
+
+/* The shape the six sample notes were authored in, before the store existed.
+   Kept only so they can be converted (data/note-seed.ts) instead of retyped.
+   Nothing writes it and no component reads it. */
+export type LegacyBlock =
   | { kind: 'p'; text: string }
   | { kind: 'h2'; text: string }
   | { kind: 'quote'; text: string }
   | { kind: 'list'; items: string[] }
   | { kind: 'code'; text: string };
 
-export type Note = {
+export type LegacyNote = {
   id: Id;
   title: string;
   scope: 'personal' | 'workspace';
@@ -72,7 +97,7 @@ export type Note = {
   updated: string;
   minutes: number;
   refs: Reference[];
-  body: NoteBlock[];
+  body: LegacyBlock[];
 };
 
 export type RunState =
