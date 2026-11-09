@@ -1,0 +1,457 @@
+/* User — the person's own surface. The layout is the Account layout that
+   preceded it (176px sticky nav, prose-width content): a settings page that
+   turned into a dashboard would stop being one. */
+
+.head {
+  max-width: 620px;
+}
+
+.title {
+  font: var(--t-page);
+  letter-spacing: var(--track-display);
+}
+
+.sub {
+  margin-top: 6px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: var(--s12);
+  margin-top: var(--s8);
+  padding-top: var(--s6);
+  border-top: 1px solid var(--line);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-self: start;
+  position: sticky;
+  top: 0;
+}
+
+.navItem {
+  composes: focusInside from '../../styles/grammar.module.css';
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--r-chip);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+}
+
+.navItem:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.navItem:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+
+.navOn {
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: var(--t-ui-strong);
+}
+
+.content {
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.sectionTitle {
+  font: var(--t-section);
+}
+
+.sectionSub {
+  font: var(--t-ui);
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+
+.notice {
+  margin-bottom: var(--s3);
+  padding: 7px 10px;
+  border-left: 2px solid var(--accent);
+  background: var(--tint-live);
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+/* ---- identity ----------------------------------------------------------- */
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s2) 0 var(--s3);
+}
+
+.avatarBig {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: var(--bg-surface);
+  font: 500 17px/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.identityName {
+  font: var(--t-section);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.identityMeta {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+.identityActions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.reason {
+  font: var(--t-caption);
+  color: var(--ink-3);
+  max-width: 34ch;
+  text-align: right;
+}
+
+.nameForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 340px;
+}
+
+.nameInput {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.nameFormActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  max-width: 440px;
+  margin-top: var(--s2);
+  border-top: 1px solid var(--line);
+}
+
+.planCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s6);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-surface);
+  background: var(--bg-surface);
+  margin-top: var(--s2);
+}
+
+.planName {
+  font: var(--t-section);
+  font-size: 16px;
+}
+
+.planMeta {
+  margin-top: 3px;
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  margin-top: var(--s2);
+  max-width: 440px;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.meterHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.meterValue {
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.meterTrack {
+  height: 4px;
+  background: var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--ink-3);
+}
+
+.meterFoot {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+/* ---- preferences -------------------------------------------------------- */
+
+.prefRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s6);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--line);
+  max-width: var(--w-sheet);
+}
+
+.prefLabel {
+  font: var(--t-ui-strong);
+}
+
+.prefHint {
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--ink-3);
+  max-width: 48ch;
+}
+
+.prefValue {
+  font: var(--t-mono);
+  color: var(--ink-2);
+}
+
+.prefControl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.select {
+  height: 30px;
+  min-width: 150px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.segment {
+  height: 24px;
+  padding: 0 10px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+  background: var(--bg-surface);
+}
+
+.segment:hover {
+  background: var(--bg-paper);
+}
+
+.segmentOn {
+  background: var(--accent-weak);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.segment + .segment {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* A prototype control: the shape of a switch, disabled, with its reason. */
+.prototypeSwitch {
+  height: 22px;
+  padding: 0 22px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-app);
+  font: var(--t-caption);
+  color: var(--ink-3);
+  position: relative;
+}
+
+.prototypeSwitch::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--line-strong);
+}
+
+/* ---- environment -------------------------------------------------------- */
+
+.envList {
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  margin-top: var(--s2);
+  border-top: 1px solid var(--line);
+}
+
+.envRow {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: inherit;
+}
+
+a.envRow:hover {
+  background: var(--tint-hover);
+}
+
+a.envRow:active {
+  background: var(--tint-sel);
+}
+
+.envMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.envTitle {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.envMeta {
+  font: var(--t-caption);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.envAside {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+/* ---- security ------------------------------------------------------------ */
+
+.sessionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s6);
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--line);
+  max-width: var(--w-sheet);
+}
+
+.sessionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessionTitle {
+  font: var(--t-ui-strong);
+}
+
+.sessionMeta {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s6);
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+  }
+}
