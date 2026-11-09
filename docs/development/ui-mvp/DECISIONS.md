@@ -398,6 +398,36 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-049 · User replaces Account, and Connect never says "connected" unless something is
+
+**Status:** accepted in force (User & Connect, 2026-11-09).
+**Context:** the 11-09 brief asks for a User page (identity, preferences, environment, security) and a Connect page (Connected / Discover / Custom). An Account page already exists at `/account` owning part of the first responsibility, and no OAuth client, token store, identity service or integration runtime exists in the build.
+**Decision:** User **replaces** Account — two pages owning "the person" would be two doors to overlapping rooms. Account's honest copy (plan, usage, keys) moves into the four-section IA instead of being deleted; `/account` becomes a redirect. Connect follows the Compute shape: one registry file, one store, four honest tiers (`available · connected · coming soon · unsupported`), and a custom-integrations page whose explainer keeps authorization methods (OAuth, API key) apart from integration kinds (Custom API, MCP server, Webhook). No authorize flow reports success; custom registrations say "Registered · not connected"; User's My Environment reads the compute store and renders no resource rows of its own.
+**Alternatives:** (1) keep Account and add a second User page — duplicated identity surfaces that drift; (2) fake a successful OAuth handshake so Discover feels alive — the class of lie D-048 exists to prevent; (3) fold plan/usage/keys out of User entirely — deletes true sentences to make the IA tidier.
+**Consequence:** the rail reads Overview / Recently / Compute / Connect and Notes / User; the palette follows. Preferences gain two real settings (persisted row density, landing page read by the index route) and one labelled prototype (notifications). The empty cells this costs — "Authorize" explaining itself, sign-out disabled — are the product boundary made visible, recorded in `docs/development/user-connect/MOCKED-AND-FUTURE.md`.
+
+---
+
+## D-050 · Compute v2: execution environments first, machines second, acquisition kept apart
+
+**Status:** accepted in force (Compute redesign, 2026-11-09). Supersedes the Compute parts of D-048's IA (the honesty rules carry over).
+**Context:** the founder's directive reopens Compute at the product level, naming OpenResearch's model — pluggable execution backends (local, SSH, Slurm, Kubernetes, Ray, Modal, HF Jobs, managed GPUs) with compute chosen per run — as the reference. The shipped IA (Resources / Providers / Workloads / Find) conflates "who sells machines" with "how work executes", cannot represent environments without instance semantics (Slurm schedules; Modal provisions), and buries the central interaction ("where should this run?") behind four infrastructure screens.
+**Decision:** four nouns with three visible rules — **Backend** (execution interface; `instances: 'exposed' | 'none'`), **Instance** (a machine; only `exposed` backends have them), **Workload**, **Listing** (Marketplace acquisition, kept separate from execution). IA becomes Overview / Backends / **Run** / Instances / Activity / Marketplace; Run is Compute Selection — describe work, get a deterministic ranked recommendation with arguable reasons, or pick manually from the same list (Hybrid Coordination, D-048's successor rule), and confirming records a queued workload, never a start. Backends gain persistence: config, enable/disable, default, deterministic test-connection. Store bumps to `thylas:compute:v2`.
+**Alternatives:** (1) keep Resources/Providers and bolt on a "backends" filter — leaves both conflations in place; (2) make Slurm/Modal fake machines so the old table survives — the exact class of lie D-048 forbids; (3) auto-schedule on confirm — no executor exists to schedule onto.
+**Consequence:** Overview leads with "usable now", Instances deprioritizes to operations, Providers splits into configuration (Backends) and acquisition (Marketplace, representative prices, labelled). User's My Environment links re-point at Instances. Honesty rules from D-048 survive verbatim: connection ≠ availability, no utilization while unreachable, deterministic failure, queued-not-started.
+
+---
+
+## D-051 · Chat: one conversation model, two surfaces, and streaming added as a sibling contract — never a key in the client
+
+**Status:** accepted in force (Chat, 2026-11-09).
+**Context:** the brief makes streaming a must-have, but SP-07a shipped `/api/ai` deliberately non-streaming with the key server-side (D-006). A naive implementation would either fake typewriter streaming over the non-streaming endpoint or move the key into the browser.
+**Decision:** one `ChatCore` renders both the `/chat` page (conversations sidebar, reading column) and a `ChatDock` beside any route (grip-resized 300–640px, shared store). State is a single `thylas:chat:v1` envelope: conversations, block-based messages (`text | artifact | evidence | status`), context sources, dock. Streaming arrives as a **new sibling endpoint** `POST /api/ai/stream` (SSE) in the same middleware and the same `lib/ai.ts` contract module — same key handling, same seven error kinds — leaving `/api/ai` untouched. Markdown is a small safe renderer (no engine, no HTML injection); "attach" means attaching real workspace materials as context + evidence, never a fake upload; an artifact's honest persistence is **Save as note** through the real notes store.
+**Alternatives:** (1) typewriter animation over a complete answer — a fake progress bar for a done thing; (2) client-held key for real SSE to the provider — the one shortcut D-006 exists to prevent; (3) two chat implementations (page + panel) — drift by construction.
+**Consequence:** the Ask panel keeps its single-turn behavior; Chat adds memory, context declaration (retrieval is *not* implemented and says so), artifacts that persist as notes, and honest failure states (partial text kept, "Stopped before completing"). The e2e stub gains an SSE branch steered by the same `aiMode`.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

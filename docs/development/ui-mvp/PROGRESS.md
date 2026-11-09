@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 21:10 (SP-11 shipped; Compute section added; 10a–10e done except density/loading in 10d).
+Last updated: 2026-11-09 23:40 (Compute v2 shipped — IA replaced by D-050; User & Connect shipped, Account superseded by D-049).
 
 ---
 
@@ -30,8 +30,10 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-11 Workspaces | — | **Completed** 11-09 | 1.0 | SP-02, SP-05a | create + delete, derived counts, tombstones, notes and tabs go with it |
-| Compute | — | **Completed** 11-09 | 2.0 | — | 8 routes, 5 screens, provider registry, add-resource flow, Find compute; 22 unit + 11 e2e. Docs: `docs/development/compute/` |
-| SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
+| Compute | — | **Superseded** by Compute v2 (D-050) | — | — | the Resources/Providers/Find IA lives in git history; honesty rules carried forward |
+| Compute v2 | — | **Completed** 11-09 | 1.5 | D-048, SP-01 | Backend/Instance/Workload/Listing model, Overview/Backends/Run/Instances/Activity/Marketplace; Run = Compute Selection (manual + recommended, queued-not-started); deterministic tests; 27 unit + 17 e2e. Docs: `docs/development/compute-v2/` |
+| User & Connect | — | **Completed** 11-09 | 1.0 | SP-01, Compute | User replaces Account (D-049): identity/preferences/environment/security, real landing + density + default-workspace prefs; Connect: Connected/Discover/Custom, four honest tiers, no fake OAuth; 20 unit + 13 e2e. Docs: `docs/development/user-connect/` |
+| SP-08 Account | — | **Superseded** by User & Connect (D-049) | — | — | density persistence shipped inside User |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
