@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { useApp } from '../state/app';
+import { setDock, useChat } from '../state/chat';
 import { roomPath, rotateIntoView, type Tab } from '../lib/tabs';
-import { IconBoards, IconChevron, IconClose, IconFiles, IconNotes, IconPanel, IconProcesses } from '../components/icons';
+import { IconBoards, IconChat, IconChevron, IconClose, IconFiles, IconNotes, IconPanel, IconProcesses } from '../components/icons';
 import { IconButton } from '../components/ui';
 import s from './shell.module.css';
 
@@ -251,7 +252,24 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
         >
           <IconPanel />
         </IconButton>
+        <ChatDockToggle />
       </div>
     </div>
+  );
+}
+
+/** One control for the embedded surface, in the strip every workspace already
+    has — Chat keeps no navigation system of its own (D-051). */
+function ChatDockToggle() {
+  const { dock } = useChat();
+  return (
+    <IconButton
+      label={dock.open ? 'Hide chat panel' : 'Open chat panel'}
+      active={dock.open}
+      onClick={() => setDock(!dock.open)}
+      data-chat-toggle
+    >
+      <IconChat />
+    </IconButton>
   );
 }

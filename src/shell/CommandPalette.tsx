@@ -29,7 +29,9 @@ export function CommandPalette() {
       { id: 'go-overview', label: 'Overview', group: 'Go', run: () => navigate(routes.overview()) },
       { id: 'go-recently', label: 'Recently', group: 'Go', run: () => navigate(routes.recently()) },
       { id: 'go-notes', label: 'Notes', group: 'Go', run: () => navigate(routes.notes()) },
-      { id: 'go-account', label: 'Account', group: 'Go', run: () => navigate(routes.account()) },
+      { id: 'go-connect', label: 'Connect', group: 'Go', run: () => navigate(routes.connect()) },
+      { id: 'go-chat', label: 'Chat', group: 'Go', run: () => navigate(routes.chat()) },
+      { id: 'go-user', label: 'User', group: 'Go', run: () => navigate(routes.user()) },
     ];
 
     list.push({

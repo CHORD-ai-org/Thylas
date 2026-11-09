@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes, switchWorkspace } from '../lib/routes';
 import { processesIn } from '../data/selectors';
+import { USER } from '../data/mock';
 import { useWorkspaces } from '../state/workspaces';
 import { useCompute } from '../state/compute';
+import { displayNameOf, useUser } from '../state/user';
 import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
 import { Badge, IconButton } from '../components/ui';
 import {
   IconAccount,
   IconBoards,
+  IconChat,
   IconChevron,
   IconCompute,
+  IconConnect,
   IconFiles,
   IconNotes,
   IconOverview,
@@ -63,6 +67,7 @@ export function Rail() {
   const workspaces = useWorkspaces();
   /* Subscribed so the rail follows a machine being added or removed. */
   useCompute();
+  const user = useUser();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState<string[]>([]);
@@ -134,6 +139,20 @@ export function Rail() {
           path={routes.compute()}
           icon={<IconCompute />}
           active={pathname.startsWith('/compute')}
+          collapsed={railCollapsed}
+        />
+        <RailItem
+          label="Connect"
+          path={routes.connect()}
+          icon={<IconConnect />}
+          active={pathname.startsWith('/connect')}
+          collapsed={railCollapsed}
+        />
+        <RailItem
+          label="Chat"
+          path={routes.chat()}
+          icon={<IconChat />}
+          active={pathname.startsWith('/chat')}
           collapsed={railCollapsed}
         />
       </nav>
@@ -243,10 +262,10 @@ export function Rail() {
           collapsed={railCollapsed}
         />
         <RailItem
-          label="Account"
-          path={routes.account()}
+          label="User"
+          path={routes.user()}
           icon={<IconAccount />}
-          active={pathname.startsWith('/account')}
+          active={pathname.startsWith('/user')}
           collapsed={railCollapsed}
         />
       </nav>
@@ -262,12 +281,12 @@ export function Rail() {
             Collapse sidebar
           </button>
         )}
-        <div className={s.profile} title="Ceaser Zhao · Free plan">
-          <span className={s.avatar}>C</span>
+        <div className={s.profile} title={`${displayNameOf(user, USER.name)} · ${USER.plan} plan`}>
+          <span className={s.avatar}>{USER.initials.slice(0, 1)}</span>
           {railCollapsed ? null : (
             <span className={s.profileText}>
-              <span className={s.profileName}>Ceaser Zhao</span>
-              <span className={s.profileMeta}>Personal · Free</span>
+              <span className={s.profileName}>{displayNameOf(user, USER.name)}</span>
+              <span className={s.profileMeta}>Personal · {USER.plan}</span>
             </span>
           )}
         </div>

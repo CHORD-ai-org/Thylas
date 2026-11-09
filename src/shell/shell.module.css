@@ -27,6 +27,21 @@
   background: var(--bg-app);
 }
 
+/* The dock row wraps every route: pages keep their own layout untouched, and
+   the chat dock becomes a sibling column rather than a page-local panel. */
+.dockRow {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.dockMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ---------------- rail ---------------- */
 
 .rail {
