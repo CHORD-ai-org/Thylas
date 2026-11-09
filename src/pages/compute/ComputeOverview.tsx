@@ -1,218 +1,210 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { routes } from '../../lib/routes';
-import { hardwareSummary } from '../../data/compute';
-import { activeCount, allWorkloads, decisions, resourcesView, useCompute } from '../../state/compute';
-import { Badge, Button, EmptyState, StatusDot } from '../../components/ui';
-import { IconArrow, IconPlus } from '../../components/icons';
-import { ComputeShell } from './ComputeShell';
-import { ProviderMark, Section, StatusPair } from './parts';
+import { BACKEND_TYPE_LABEL } from '../../data/compute';
+import { availabilityOf } from '../../data/compute';
+import { backendsView, instancesView, useCompute, workloadsView } from '../../state/compute';
+import { PlainLayout } from '../../shell/layouts';
+import { BackendMark, BackendStatusWord, ComputeShell, Section, StatusPair } from './parts';
 import s from './compute.module.css';
 
-const DECISION_WORD = {
-  reserve: 'Assigned',
-  connect: 'Connected',
-  disconnect: 'Disconnected',
-  add: 'Added',
-} as const;
-
-function clock(iso: string): string {
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return 'just now';
-  const mins = Math.max(0, Math.round((Date.now() - then.getTime()) / 60000));
-  if (mins === 0) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.round(mins / 60);
-  return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`;
-}
-
+/**
+ * Overview answers "what can I use right now" and "what needs me". It is the
+ * entry to the journey, not a dashboard: the primary action is Run, and every
+ * number here leads somewhere or says why it cannot.
+ */
 export function ComputeOverview() {
   useCompute();
+  const backends = backendsView();
+  const instances = instancesView();
+  const workloads = workloadsView();
 
-  const navigate = useNavigate();
-  const resources = resourcesView();
-  const runs = allWorkloads();
-  const running = runs.filter((w) => w.state === 'running');
-  const queued = runs.filter((w) => w.state === 'queued');
-  const available = resources.filter((r) => r.connection === 'connected' && r.availability === 'available');
-  const attention = resources.filter(
-    (r) => r.connection === 'error' || r.connection === 'disconnected' || (r.connection === 'connected' && r.availability === 'offline'),
-  );
-  const log = decisions().slice(0, 4);
+  const readyBackends = backends.filter((b) => b.enabled && b.status === 'ready');
+  const connected = instances.filter((i) => i.connection === 'connected');
+  const usable = instances.filter((i) => availabilityOf(i) === 'available');
+  const running = workloads.filter((w) => w.state === 'running');
+
+  const attention: { name: string; why: string; to: string }[] = [];
+  for (const b of backends) {
+    if (b.status === 'unverified') attention.push({ name: b.name, why: 'configuration saved, never tested', to: routes.computeBackend(b.id) });
+    if (b.status === 'unreachable' || b.status === 'error') attention.push({ name: b.name, why: 'the last test got no answer', to: routes.computeBackend(b.id) });
+  }
+  for (const i of instances) {
+    if (i.connection === 'error') attention.push({ name: i.name, why: 'connection error — no numbers until it is repaired', to: routes.computeInstance(i.id) });
+  }
 
   return (
-    <ComputeShell>
-      <div className={s.stats} role="group" aria-label="Pool summary">
-        <div className={s.stat}>
-          <span className={s.statValue}>{resources.length}</span>
-          <span className={s.statLabel}>Registered</span>
+    <PlainLayout size="console">
+      <ComputeShell
+        sub="Execution environments for computational work. The question Compute answers is where work should run — start with Run, configure Backends when you need a new environment, acquire in the Marketplace when the pool is not enough. Nothing starts or provisions in this build."
+        actions={
+          <Link to={routes.computeRun()} className={s.linkArrow}>
+            Run something
+          </Link>
+        }
+      >
+        <div className={s.stats}>
+          <div className={s.stat}>
+            <span className={s.statValue}>
+              {readyBackends.length}/{backends.length}
+            </span>
+            <span className={s.statLabel}>Backends ready</span>
+          </div>
+          <div className={s.stat}>
+            <span className={s.statValue}>{connected.length}</span>
+            <span className={s.statLabel}>Instances connected</span>
+          </div>
+          <div className={s.stat} data-warn={usable.length === 0 || undefined}>
+            <span className={s.statValue}>{usable.length}</span>
+            <span className={s.statLabel}>Usable now</span>
+          </div>
+          <div className={s.stat}>
+            <span className={s.statValue}>{running.length}</span>
+            <span className={s.statLabel}>Running</span>
+          </div>
         </div>
-        <div className={s.stat}>
-          <span className={s.statValue}>{available.length}</span>
-          <span className={s.statLabel}>Available now</span>
-        </div>
-        <div className={s.stat}>
-          <span className={s.statValue}>{running.length}</span>
-          <span className={s.statLabel}>Active runs</span>
-        </div>
-        <div className={s.stat} data-warn={attention.length > 0 || undefined}>
-          <span className={s.statValue}>{attention.length}</span>
-          <span className={s.statLabel}>Need attention</span>
-        </div>
-      </div>
 
-      {attention.length > 0 ? (
-        <section className={s.attention} aria-label="Needs attention">
-          <p className={s.attentionLine}>
-            <strong>{attention.length} machines cannot be read right now.</strong> Availability is
-            unknown for them, not idle.
-          </p>
-          <ul className={s.attentionList}>
-            {attention.map((r) => (
-              <li key={r.id}>
-                <Link to={routes.computeResource(r.id)} className={s.attentionItem}>
-                  <span className={s.attentionName}>{r.name}</span>
-                  <span className={s.attentionWhy}>
-                    {r.connection === 'error'
-                      ? 'Connection failed — token rejected'
-                      : r.connection === 'disconnected'
-                        ? 'Not connected since 6d ago'
-                        : 'Connected, machine asleep'}
-                  </span>
+        {attention.length > 0 ? (
+          <div className={s.attention}>
+            <p className={s.attentionLine}>Things that need a decision before they are useful:</p>
+            <div className={s.attentionList}>
+              {attention.map((item) => (
+                <Link key={item.name + item.why} to={item.to} className={s.attentionItem}>
                   <span className={s.attentionRing} aria-hidden>
-                    <IconArrow size={12} />
+                    ›
                   </span>
+                  <span className={s.attentionName}>{item.name}</span>
+                  <span className={s.attentionWhy}>{item.why}</span>
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <div className={s.overviewGrid}>
-        <Section
-          title="Resource pool"
-          note="Every machine Thylas can reach, whatever it belongs to. The badge says who owns it."
-          aside={
-            <Link to={routes.computeResources()} className={s.linkArrow}>
-              All {resources.length} resources
-            </Link>
-          }
-          id="pool"
-        >
-          {resources.length === 0 ? (
-            <EmptyState
-              title="No machines yet"
-              hint="A pool starts empty. Add a local machine, an SSH server, or a cloud account."
-              action={<Button onClick={() => navigate(routes.computeNewResource())}>Add a resource</Button>}
-            />
-          ) : (
-            <ul className={s.rows}>
-              {resources.slice(0, 5).map((r) => (
-                <li key={r.id}>
-                  <Link to={routes.computeResource(r.id)} className={s.row}>
-                    <ProviderMark providerId={r.providerId} />
-                    <span className={s.rowMain}>
-                      <span className={s.rowTitle}>
-                        {r.name}
-                        <Badge>{r.scope === 'org' ? `ORG · ${r.owner.toUpperCase()}` : 'PERSONAL'}</Badge>
-                      </span>
-                      <span className={s.rowMeta}>
-                        {hardwareSummary(r.hardware)}
-                      </span>
-                    </span>
-                    <span className={s.rowStatus}>
-                      <StatusPair resource={r} />
-                      <span className={s.rowRuns}>{activeCount(r.id)} runs</span>
-                    </span>
-                  </Link>
-                </li>
               ))}
-            </ul>
-          )}
-        </Section>
+            </div>
+          </div>
+        ) : null}
 
-        <div className={s.side}>
-          <Section
-            title="Active workloads"
-            note={queued.length > 0 ? `${queued.length} queued behind a start signal.` : undefined}
-            aside={
-              <Link to={routes.computeWorkloads()} className={s.linkArrow}>
-                All workloads
-              </Link>
-            }
-            id="active"
-          >
-            {running.length === 0 ? (
-              <p className={s.quiet}>Nothing is running. Queued work waits for an executor that does not exist in this build.</p>
-            ) : (
+        <div className={s.overviewGrid}>
+          <div className={s.detailMain}>
+            <Section
+              title="Execution environments"
+              aside={<Link to={routes.computeBackends()} className={s.linkArrow}>Backends</Link>}
+              note="A backend is how work executes — not a machine. Connecting one creates no instance; Slurm and Kubernetes take work without exposing any."
+            >
               <ul className={s.rows}>
-                {running.slice(0, 4).map((w) => {
-                  const target = resources.find((r) => r.id === w.resourceId);
-                  return (
-                    <li key={w.id}>
-                      <Link to={routes.computeWorkload(w.id)} className={s.row}>
-                        <span className={s.runDot} aria-hidden>
-                          <StatusDot tone="live" />
+                {backends.map((b) => (
+                  <li key={b.id}>
+                    <Link className={s.row} to={routes.computeBackend(b.id)}>
+                      <BackendMark backend={b} />
+                      <span className={s.rowMain}>
+                        <span className={s.rowTitle}>
+                          {b.name}
+                          {b.isDefault ? <span className={s.defaultChip}>· default</span> : null}
+                          {b.instances === 'none' ? <span className={s.defaultChip}>· no instances</span> : null}
                         </span>
-                        <span className={s.rowMain}>
-                          <span className={s.rowTitle}>{w.name}</span>
-                          <span className={s.rowMeta}>
-                            {target?.name ?? 'unassigned'} · {w.startedAt}
-                          </span>
-                        </span>
-                        <span className={s.rowProgress}>
-                          <span className={s.progressTrack}>
-                            <span className={s.progressFill} style={{ width: `${w.progress ?? 0}%` }} />
-                          </span>
-                          <span className={s.progressValue}>{w.progress ?? 0}%</span>
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Section>
-
-          <Section
-            title="Coordination"
-            note="What Thylas did with your choices. It recommends and records; it does not schedule."
-            id="coordination"
-          >
-            {log.length === 0 ? (
-              <p className={s.quiet}>
-                No decisions this session. Choices you make in Find compute or while connecting a machine
-                appear here.
-              </p>
-            ) : (
-              <ul className={s.log}>
-                {log.map((d) => (
-                  <li key={d.id} className={s.logItem}>
-                    <span className={s.logWhen}>{clock(d.at)}</span>
-                    <span className={s.logText}>
-                      <span className={s.logKind}>{DECISION_WORD[d.kind]}</span> {d.text}
-                    </span>
+                        <span className={s.rowMeta}>{b.blurb}</span>
+                      </span>
+                      <span className={s.rowAside}>
+                        <BackendStatusWord status={b.status} />
+                        <span className={s.rowState}>{BACKEND_TYPE_LABEL[b.type]}</span>
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
-            )}
-            <div className={s.coordinationFoot}>
-              <Button size="sm" onClick={() => navigate(routes.computeFind())} icon={<IconArrow size={13} />}>
-                Find compute for a workload
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => navigate(routes.computeNewResource())} icon={<IconPlus size={13} />}>
-                Add a machine
-              </Button>
-            </div>
-          </Section>
-        </div>
-      </div>
+            </Section>
 
-      <p className={s.footNote}>
-        Status is read from each connection when the page loads. Utilization comes from the host's own
-        sampler; where none exists, the column says so instead of showing zero. Nothing on this page can
-        start or move work.
-      </p>
-    </ComputeShell>
+            <Section title="Running now" aside={<Link to={routes.computeActivity()} className={s.linkArrow}>Activity</Link>}>
+              {running.length === 0 ? (
+                <p className={s.quiet}>Nothing is running. Work chosen in Run queues here when it is confirmed.</p>
+              ) : (
+                <ul className={s.rows}>
+                  {running.map((w) => {
+                    const instance = instances.find((i) => i.id === w.instanceId);
+                    return (
+                      <li key={w.id}>
+                        <Link className={s.row} to={routes.computeWorkload(w.id)}>
+                          <span className={s.rowMain}>
+                            <span className={s.rowTitle}>{w.name}</span>
+                            <span className={s.rowMeta}>{instance ? `on ${instance.name}` : 'targeting the environment'}</span>
+                          </span>
+                          {w.progress !== undefined ? (
+                            <span className={s.rowProgress}>
+                              <span className={s.progressTrack}>
+                                <span className={s.progressFill} style={{ width: `${w.progress}%` }} />
+                              </span>
+                              <span className={s.progressValue}>{w.progress}%</span>
+                            </span>
+                          ) : null}
+                          <span className={s.rowState}>{w.duration}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Section>
+          </div>
+
+          <div className={s.side}>
+            <Section
+              title="Usable immediately"
+              aside={<Link to={routes.computeInstances()} className={s.linkArrow}>Instances</Link>}
+              note="Idle machines a run could take right now."
+            >
+              {usable.length === 0 ? (
+                <p className={s.quiet}>No machine is both connected and idle. The Slurm backend takes work anyway — the scheduler waits for its own capacity.</p>
+              ) : (
+                <ul className={s.rows}>
+                  {usable.map((i) => (
+                    <li key={i.id}>
+                      <Link className={s.row} to={routes.computeInstance(i.id)}>
+                        <span className={s.rowMain}>
+                          <span className={s.rowTitle}>{i.name}</span>
+                          <span className={s.rowMeta}>
+                            {i.scope === 'org' ? `shared · ${i.owner}` : 'yours'}
+                          </span>
+                        </span>
+                        <span className={s.rowAside}>
+                          <StatusPair instance={i} />
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
+            <div className={s.marketTeaser}>
+              <p className={s.marketTeaserText}>
+                The pool is not enough? The Marketplace lists GPU capacity from providers at representative sample rates —
+                acquired machines are used through a backend.
+              </p>
+              <Link to={routes.computeMarketplace()} className={s.linkArrow}>
+                Marketplace
+              </Link>
+            </div>
+
+            <Section title="This session's decisions" aside={<span>{''}</span>}>
+              <SessionLog />
+            </Section>
+          </div>
+        </div>
+      </ComputeShell>
+    </PlainLayout>
+  );
+}
+
+function SessionLog() {
+  const { log } = useCompute();
+  const entries = log.slice(0, 5);
+  if (entries.length === 0) {
+    return <p className={s.quiet}>Nothing has been configured, connected or chosen yet. Every decision lands here.</p>;
+  }
+  return (
+    <div className={s.log}>
+      {entries.map((d) => (
+        <div key={d.id} className={s.logItem}>
+          <span className={s.logWhen}>{d.at.slice(11, 19)}</span>
+          <span>{d.text}</span>
+        </div>
+      ))}
+    </div>
   );
 }

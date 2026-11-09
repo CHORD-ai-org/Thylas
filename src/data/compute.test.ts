@@ -1,155 +1,143 @@
 import { describe, expect, it } from 'vitest';
 import {
-  EMPTY_FILTER,
-  PROVIDERS,
-  RESOURCES,
-  WORKLOADS,
+  BACKENDS,
+  EMPTY_REQUIREMENTS,
+  INSTANCES,
+  LISTINGS,
+  EMPTY_LISTING_FILTER,
+  EMPTY_INSTANCE_FILTER,
   availabilityOf,
-  filterResources,
-  hardwareSummary,
+  eligibleTargets,
+  filterInstances,
+  filterListings,
+  hardwareBrief,
   metricsOf,
   noMatchReason,
-  providerOf,
-  rankResources,
+  rankTargets,
   statusLine,
-  type Resource,
+  type Requirements,
 } from './compute';
 
-const byId = (id: string) => RESOURCES.find((r) => r.id === id) as Resource;
+/**
+ * Pure functions only. The store applies session overrides and hands views to
+ * these, so a data case covers everything the UI can compute from seeds.
+ */
 
-describe('connection and availability are different facts', () => {
-  it('reports connected and busy as two words', () => {
-    expect(statusLine(byId('r-lab-01'))).toBe('Connected · Busy');
+const targets = () => eligibleTargets(BACKENDS, INSTANCES);
+
+describe('the three rules, in the data', () => {
+  it('a backend with no instance semantics contributes a backend target, not machines', () => {
+    const all = targets();
+    const slurm = all.filter((t) => t.backendId === 'b-slurm');
+    expect(slurm).toHaveLength(1);
+    expect(slurm[0]!.kind).toBe('backend');
+    expect(slurm[0]!.provisionNote).toBeTruthy();
   });
 
-  it('says availability is unknown when the machine cannot be reached', () => {
-    expect(availabilityOf(byId('r-office'))).toBe('unknown');
-    expect(statusLine(byId('r-office'))).toBe('Disconnected · Availability unknown');
+  it('an unverified backend contributes no targets at all — and a reason is owed elsewhere', () => {
+    expect(targets().some((t) => t.backendId === 'b-kubernetes')).toBe(false);
   });
 
-  it('keeps the stored availability out of the sentence when the connection failed', () => {
-    /* r-tm-h100 is marked available in the seed but its token was rejected. */
-    expect(byId('r-tm-h100').availability).toBe('available');
-    expect(availabilityOf(byId('r-tm-h100'))).toBe('unknown');
-    expect(statusLine(byId('r-tm-h100'))).toBe('Connection error · Availability unknown');
-  });
-
-  it('drops utilization whenever the machine is not connected', () => {
-    expect(metricsOf(byId('r-studio'))?.gpu).toBe(87);
-    expect(metricsOf(byId('r-office'))).toBeUndefined();
-    expect(metricsOf(byId('r-tm-h100'))).toBeUndefined();
-  });
-});
-
-describe('seed data', () => {
-  it('gives every resource a provider that exists', () => {
-    for (const resource of RESOURCES) {
-      expect(providerOf(resource.providerId), resource.id).toBeTruthy();
-    }
-  });
-
-  it('never attaches utilization to a resource that is not connected', () => {
-    for (const resource of RESOURCES) {
-      if (resource.utilization) expect(resource.connection, resource.id).toBe('connected');
-    }
-  });
-
-  it('assigns every workload to a resource that exists', () => {
-    for (const workload of WORKLOADS) {
-      expect(RESOURCES.some((r) => r.id === workload.resourceId), workload.id).toBe(true);
-    }
-  });
-
-  it('describes hardware in one line', () => {
-    expect(hardwareSummary(byId('r-lab-01').hardware)).toBe('64 cores · 2 × A100 40GB 40GB · 512GB');
+  it('an unreachable machine reports no availability and no utilization', () => {
+    const office = INSTANCES.find((i) => i.id === 'r-office')!;
+    expect(availabilityOf(office)).toBe('unknown');
+    expect(metricsOf(office)).toBeUndefined();
+    expect(statusLine(office)).toBe('Disconnected · Availability unknown');
   });
 });
 
-describe('filterResources', () => {
-  it('returns everything for the empty filter', () => {
-    expect(filterResources(RESOURCES, EMPTY_FILTER)).toHaveLength(RESOURCES.length);
+describe('rankTargets', () => {
+  const req = (over: Partial<Requirements> = {}): Requirements => ({ ...EMPTY_REQUIREMENTS, ...over });
+
+  it('is deterministic: same inputs, same order', () => {
+    const a = rankTargets(req(), targets());
+    const b = rankTargets(req(), targets());
+    expect(a.map((r) => r.target.id)).toEqual(b.map((r) => r.target.id));
   });
 
-  it('filters by provider', () => {
-    const out = filterResources(RESOURCES, { ...EMPTY_FILTER, providerId: 'p-ssh' });
-    expect(out.map((r) => r.id).sort()).toEqual(['r-lab-01', 'r-office', 'r-onda-gpu']);
+  it('hard GPU requirements filter instance targets', () => {
+    const ranked = rankTargets(req({ gpu: 'required', minGpuMemoryGb: 80 }), targets());
+    expect(ranked.map((r) => r.target.id)).toEqual(['r-aws-h100']);
+    expect(ranked[0]!.reasons.length).toBeGreaterThan(0);
   });
 
-  it('filters by what the machine can take, not by what it says', () => {
-    const out = filterResources(RESOURCES, { ...EMPTY_FILTER, availability: 'available' });
-    expect(out.map((r) => r.id)).toEqual(['r-onda-gpu', 'r-aws-g5']);
+  it('a GPU requirement excludes backend targets: their GPUs cannot be verified', () => {
+    const ranked = rankTargets(req({ gpu: 'required' }), targets());
+    expect(ranked.some((r) => r.target.kind === 'backend')).toBe(false);
   });
 
-  it('matches a query against name, os, cpu and provider', () => {
-    expect(filterResources(RESOURCES, { ...EMPTY_FILTER, query: 'a100' }).map((r) => r.id)).toEqual(['r-lab-01']);
-    expect(filterResources(RESOURCES, { ...EMPTY_FILTER, query: 'ubuntu' }).map((r) => r.id).sort()).toEqual([
-      'r-lab-01',
-      'r-onda-gpu',
-      'r-tm-h100',
-    ]);
-    expect(filterResources(RESOURCES, { ...EMPTY_FILTER, query: 'aws' }).map((r) => r.id)).toEqual(['r-aws-g5']);
+  it('a datacenter GPU request keeps the acquired H100 above the shared 40GB A100s', () => {
+    const ranked = rankTargets(req({ gpu: 'required', gpuClass: 'datacenter' }), targets());
+    expect(ranked[0]!.target.id).toBe('r-aws-h100');
   });
 
-  it('filters by scope', () => {
-    const out = filterResources(RESOURCES, { ...EMPTY_FILTER, scope: 'org' });
-    expect(out.every((r) => r.scope === 'org')).toBe(true);
-    expect(out).toHaveLength(2);
-  });
-});
-
-describe('rankResources', () => {
-  it('drops machines that fail a hard requirement', () => {
-    const out = rankResources({ name: 'train', kind: 'training', minGpuMemoryGb: 40 });
-    expect(out.every((r) => (r.resource.hardware.gpuMemoryGb ?? 0) >= 40)).toBe(true);
-    expect(out.some((r) => r.resource.id === 'r-studio')).toBe(false);
-  });
-
-  it('puts an idle machine above a busy one of the same class', () => {
-    const out = rankResources({ name: 'eval', kind: 'evaluation', minGpuMemoryGb: 24, gpuClass: 'datacenter' });
-    const order = out.map((r) => r.resource.id);
-    expect(order.indexOf('r-aws-g5')).toBeLessThan(order.indexOf('r-lab-01'));
-  });
-
-  it('explains a caveat for a shared machine', () => {
-    const out = rankResources({ name: 'x', kind: 'y', minGpuMemoryGb: 40 });
-    const lab = out.find((r) => r.resource.id === 'r-lab-01');
-    expect(lab?.caveats.join(' ')).toMatch(/Shared with/);
-  });
-
-  it('never ranks an unreachable machine as available', () => {
-    const out = rankResources({ name: 'x', kind: 'y' });
-    const tm = out.find((r) => r.resource.id === 'r-tm-h100');
-    expect(tm?.caveats.join(' ')).toMatch(/No connection/);
-    expect(tm!.score).toBeLessThan(out[0]!.score);
-  });
-
-  it('warns that a cloud instance cannot show its rate', () => {
-    const out = rankResources({ name: 'x', kind: 'y', minGpuMemoryGb: 16 });
-    const aws = out.find((r) => r.resource.id === 'r-aws-g5');
-    expect(aws?.caveats.join(' ')).toMatch(/bills while it runs/);
-  });
-
-  it('returns nothing when the requirement is larger than the pool', () => {
-    expect(rankResources({ name: 'x', kind: 'y', minGpuMemoryGb: 120 })).toHaveLength(0);
-    expect(noMatchReason({ name: 'x', kind: 'y', minGpuMemoryGb: 120 })).toMatch(/largest is 80GB/);
-  });
-
-  it('respects a provider preference', () => {
-    const out = rankResources({ name: 'x', kind: 'y', providerId: 'p-ssh' });
-    expect(out.every((r) => r.resource.providerId === 'p-ssh')).toBe(true);
-  });
-});
-
-describe('provider registry', () => {
-  it('is data-driven: every provider declares its fields', () => {
-    for (const provider of PROVIDERS) {
-      expect(Array.isArray(provider.fields), provider.id).toBe(true);
+  it('gpu:none keeps CPU-only machines and drops GPU ones', () => {
+    const ranked = rankTargets(req({ gpu: 'none' }), targets());
+    for (const r of ranked) {
+      if (r.target.kind === 'instance') expect(r.target.hardware!.gpuMemoryGb).toBeUndefined();
     }
   });
 
-  it('does not present a planned provider as connected', () => {
-    for (const provider of PROVIDERS.filter((p) => p.integration === 'planned')) {
-      expect(provider.capabilities).toEqual([]);
-    }
+  it('idle beats busy, personal beats shared, and both are stated as reasons', () => {
+    const ranked = rankTargets(req({ gpu: 'required' }), targets());
+    const onda = ranked.find((r) => r.target.id === 'r-onda-gpu')!;
+    const lab = ranked.find((r) => r.target.id === 'r-lab-01')!;
+    expect(onda.score).toBeGreaterThan(lab.score);
+    expect(onda.reasons.join(' ')).toMatch(/[Ii]dle/);
+    expect(lab.caveats.join(' ')).toContain('Shared');
+  });
+
+  it('a backend target is never dropped for availability, but always carries the start-time caveat', () => {
+    const ranked = rankTargets(req({ gpu: 'any' }), targets());
+    const cluster = ranked.find((r) => r.target.kind === 'backend')!;
+    expect(cluster).toBeDefined();
+    expect(cluster.caveats.join(' ')).toContain('Start time');
+  });
+
+  it('scope filters only instance targets; the cluster stays reachable for org work', () => {
+    const ranked = rankTargets(req({ scope: 'personal' }), targets());
+    expect(ranked.some((r) => r.target.id === 'r-lab-01')).toBe(false);
+    expect(ranked.some((r) => r.target.kind === 'backend')).toBe(true);
+  });
+
+  it('an impossible request explains itself instead of returning silence', () => {
+    expect(noMatchReason(req({ minGpuMemoryGb: 200 }))).toContain('Marketplace');
+    expect(noMatchReason(req({ gpu: 'required', gpuClass: 'datacenter', minCores: 512 }))).toContain('Verify');
+  });
+});
+
+describe('instance filtering', () => {
+  it('filters by backend, scope and availability, and searches hardware', () => {
+    const f = { ...EMPTY_INSTANCE_FILTER, backendId: 'b-ssh' };
+    expect(filterInstances(INSTANCES, f, BACKENDS)).toHaveLength(4);
+    expect(filterInstances(INSTANCES, { ...f, scope: 'org' }, BACKENDS).map((i) => i.id)).toEqual(['r-lab-01', 'r-onda-gpu']);
+    expect(filterInstances(INSTANCES, { ...EMPTY_INSTANCE_FILTER, query: 'h100' }, BACKENDS).map((i) => i.id)).toEqual(['r-aws-h100']);
+  });
+
+  it('the availability filter uses the derived value: offline-disconnected is unknown', () => {
+    const unknown = filterInstances(INSTANCES, { ...EMPTY_INSTANCE_FILTER, availability: 'unknown' }, BACKENDS);
+    expect(unknown.map((i) => i.id)).toEqual(['r-office']);
+  });
+});
+
+describe('marketplace filtering', () => {
+  it('filters by class, memory, provider, region, rate and usable-via backend', () => {
+    const base = EMPTY_LISTING_FILTER;
+    expect(filterListings(LISTINGS, { ...base, gpuClass: 'datacenter' })).toHaveLength(3);
+    expect(filterListings(LISTINGS, { ...base, minGpuMemoryGb: 80 }).map((l) => l.id)).toEqual(['l-h100-1', 'l-h100-8']);
+    expect(filterListings(LISTINGS, { ...base, maxRate: 1 })).toHaveLength(3);
+    expect(filterListings(LISTINGS, { ...base, useVia: 'kubernetes' }).map((l) => l.id)).toEqual(['l-h100-8', 'l-a100-1']);
+    expect(filterListings(LISTINGS, { ...base, provider: 'Lambda' })).toHaveLength(1);
+  });
+
+  it('every listing declares which backend would use it', () => {
+    for (const l of LISTINGS) expect(l.useVia.length).toBeGreaterThan(0);
+  });
+});
+
+describe('presentation helpers', () => {
+  it('hardwareBrief drops nothing a row needs and hides nothing behind an ellipsis', () => {
+    const h100 = INSTANCES.find((i) => i.id === 'r-aws-h100')!;
+    expect(hardwareBrief(h100.hardware)).toBe('8 cores · H100 80GB · 64GB');
   });
 });

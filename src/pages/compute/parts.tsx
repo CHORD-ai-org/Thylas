@@ -2,22 +2,30 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { routes } from '../../lib/routes';
 import { Chip, StatusDot } from '../../components/ui';
-import type { Availability, Resource } from '../../data/compute';
-import { availabilityOf, providerOf } from '../../data/compute';
+import {
+  BACKEND_STATUS_WORD,
+  BACKEND_TYPE_LABEL,
+  availabilityOf,
+  type Availability,
+  type Backend,
+  type ExecCapability,
+  type Instance,
+} from '../../data/compute';
+import { backendsView, instancesView, useCompute, workloadsView } from '../../state/compute';
 import type { Tone } from '../../lib/tone';
 import s from './compute.module.css';
 
-/* The pieces every Compute screen shares. Kept in one file so a status word, a
-   provider mark or a utilization bar cannot drift between six pages. */
+/* The pieces every Compute screen shares. One file, so a status word, a type
+   mark or a utilization bar cannot drift between six screens. */
 
-export const CONNECTION_TONE: Record<Resource['connection'], Tone> = {
+export const CONNECTION_TONE: Record<Instance['connection'], Tone> = {
   connected: 'ok',
   connecting: 'live',
   disconnected: 'idle',
   error: 'error',
 };
 
-export const CONNECTION_WORD: Record<Resource['connection'], string> = {
+export const CONNECTION_WORD: Record<Instance['connection'], string> = {
   connected: 'Connected',
   connecting: 'Connecting',
   disconnected: 'Disconnected',
@@ -31,18 +39,26 @@ export const AVAILABILITY_WORD: Record<Availability, string> = {
   unknown: 'Availability unknown',
 };
 
+export const WORKLOAD_STATE_WORD: Record<string, string> = {
+  running: 'running',
+  queued: 'queued',
+  completed: 'completed',
+  failed: 'failed',
+  cancelled: 'cancelled',
+};
+
 /**
- * Connection and availability, side by side and never merged. A reader has to
- * be able to see "Connected · Busy" (fine, it is running something) and
- * "Connection error · Availability unknown" (not fine, we cannot see it).
+ * Connection and availability, side by side and never merged (D-048, kept in
+ * v2): a reader has to see "Connected · Busy" and
+ * "Connection error · Availability unknown" as different situations.
  */
-export function StatusPair({ resource }: { resource: Resource }) {
-  const avail = availabilityOf(resource);
+export function StatusPair({ instance }: { instance: Instance }) {
+  const avail = availabilityOf(instance);
   return (
     <span className={s.status} data-unknown={avail === 'unknown' || undefined}>
       <span className={s.statusConn}>
-        <StatusDot tone={CONNECTION_TONE[resource.connection]} pulse={resource.connection === 'connecting'} />
-        {CONNECTION_WORD[resource.connection]}
+        <StatusDot tone={CONNECTION_TONE[instance.connection]} pulse={instance.connection === 'connecting'} />
+        {CONNECTION_WORD[instance.connection]}
       </span>
       <span className={s.statusSep} aria-hidden>
         ·
@@ -52,35 +68,38 @@ export function StatusPair({ resource }: { resource: Resource }) {
   );
 }
 
-export function AvailabilityChip({ availability }: { availability: Availability }) {
-  const tone: Tone | 'plain' =
-    availability === 'available' ? 'ok' : availability === 'busy' ? 'warn' : 'plain';
-  return <Chip tone={tone}>{AVAILABILITY_WORD[availability]}</Chip>;
+/** A backend's reachability, one word with its own tone. */
+export function BackendStatusWord({ status, pulse }: { status: Backend['status']; pulse?: boolean }) {
+  const tone: Tone =
+    status === 'ready' ? 'ok' : status === 'unverified' ? 'warn' : status === 'error' || status === 'unreachable' ? 'error' : 'idle';
+  return (
+    <span className={s.statusWord} data-status={status}>
+      <StatusDot tone={tone} pulse={pulse} />
+      {BACKEND_STATUS_WORD[status]}
+    </span>
+  );
 }
 
 /**
- * A provider is a name, not a logo. Two letters in a hairline square — the
- * same construction as the file type tiles, so a provider never becomes the
- * loudest colour on the page.
+ * A backend or provider is a name, not a logo: two letters in a hairline
+ * square, the same construction as the file type tiles.
  */
-export function ProviderMark({ providerId, size = 'md' }: { providerId: string; size?: 'sm' | 'md' }) {
-  const provider = providerOf(providerId);
-  const letters = (provider?.name ?? '?')
+export function Mark({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+  const letters = name
     .split(/[\s-]+/)
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
   return (
-    <span className={s.providerMark} data-size={size} aria-hidden title={provider?.name}>
+    <span className={s.mark} data-size={size} aria-hidden title={name}>
       {letters}
     </span>
   );
 }
 
-export function ProviderName({ providerId }: { providerId: string }) {
-  const provider = providerOf(providerId);
-  return <span className={s.providerName}>{provider?.name ?? providerId}</span>;
+export function BackendMark({ backend, size = 'md' }: { backend: Backend; size?: 'sm' | 'md' }) {
+  return <Mark name={BACKEND_TYPE_LABEL[backend.type]} size={size} />;
 }
 
 /** A utilization bar exists only when the number does. No bar, no guess. */
@@ -96,29 +115,12 @@ export function UtilBar({ value, label }: { value: number; label: string }) {
   );
 }
 
-/**
- * Tables get one line per machine, not three stacked bars: a 40px row that grows
- * to 68px because a cell contains a chart stops being a table.
- */
-export function UtilizationInline({ resource }: { resource: Resource }) {
-  const util = resource.connection === 'connected' ? resource.utilization : undefined;
-  if (!util) return <span className={s.utilNone}>—</span>;
-  const hot = (v: number) => v >= 85;
-  return (
-    <span className={s.utilInline}>
-      <span data-hot={hot(util.cpu) || undefined}>CPU {util.cpu}</span>
-      {util.gpu === undefined ? null : <span data-hot={hot(util.gpu) || undefined}>GPU {util.gpu}</span>}
-      <span data-hot={hot(util.memory) || undefined}>MEM {util.memory}</span>
-    </span>
-  );
-}
-
-export function Utilization({ resource }: { resource: Resource }) {
-  const util = resource.connection === 'connected' ? resource.utilization : undefined;
+export function Utilization({ instance }: { instance: Instance }) {
+  const util = instance.connection === 'connected' ? instance.utilization : undefined;
   if (!util) {
     return (
       <span className={s.utilNone}>
-        {resource.connection === 'connected' ? 'No sampler on this host' : 'Not measurable while unreachable'}
+        {instance.connection === 'connected' ? 'No sampler on this host' : 'Not measurable while unreachable'}
       </span>
     );
   }
@@ -127,6 +129,19 @@ export function Utilization({ resource }: { resource: Resource }) {
       <UtilBar label="CPU" value={util.cpu} />
       {util.gpu === undefined ? null : <UtilBar label="GPU" value={util.gpu} />}
       <UtilBar label="MEM" value={util.memory} />
+    </span>
+  );
+}
+
+export function CapabilityChips({ capabilities }: { capabilities: ExecCapability[] }) {
+  if (capabilities.length === 0) return <span className={s.capNone}>no capabilities declared</span>;
+  return (
+    <span className={s.caps}>
+      {capabilities.map((cap) => (
+        <Chip key={cap} tone="plain">
+          {cap}
+        </Chip>
+      ))}
     </span>
   );
 }
@@ -160,14 +175,20 @@ export function Section({
 
 const TABS = [
   { id: 'overview', label: 'Overview', href: routes.compute() },
-  { id: 'resources', label: 'Resources', href: routes.computeResources() },
-  { id: 'providers', label: 'Providers', href: routes.computeProviders() },
-  { id: 'workloads', label: 'Workloads', href: routes.computeWorkloads() },
-  { id: 'find', label: 'Find compute', href: routes.computeFind() },
+  { id: 'backends', label: 'Backends', href: routes.computeBackends() },
+  { id: 'run', label: 'Run', href: routes.computeRun() },
+  { id: 'instances', label: 'Instances', href: routes.computeInstances() },
+  { id: 'activity', label: 'Activity', href: routes.computeActivity() },
+  { id: 'marketplace', label: 'Marketplace', href: routes.computeMarketplace() },
 ];
 
-/** Two counts, because only two of these five tabs have something to count. */
-export function ComputeTabs({ resourceCount, runningCount }: { resourceCount: number; runningCount: number }) {
+/** Only three of these six tabs have something to count. */
+export function ComputeTabs() {
+  useCompute();
+  const backends = backendsView().length;
+  const instances = instancesView().length;
+  const running = workloadsView().filter((w) => w.state === 'running').length;
+
   return (
     <nav className={s.tabs} aria-label="Compute sections">
       {TABS.map((tab) => (
@@ -178,10 +199,49 @@ export function ComputeTabs({ resourceCount, runningCount }: { resourceCount: nu
           className={({ isActive }) => [s.tab, isActive ? s.tabOn : ''].join(' ')}
         >
           {tab.label}
-          {tab.id === 'resources' ? <span className={s.tabCount}>{resourceCount}</span> : null}
-          {tab.id === 'workloads' ? <span className={s.tabCount}>{runningCount}</span> : null}
+          {tab.id === 'backends' ? <span className={s.tabCount}>{backends}</span> : null}
+          {tab.id === 'instances' ? <span className={s.tabCount}>{instances}</span> : null}
+          {tab.id === 'activity' ? <span className={s.tabCount}>{running}</span> : null}
         </NavLink>
       ))}
     </nav>
+  );
+}
+
+/**
+ * The frame every Compute screen sits in: what the section is, the six
+ * screens, and one sentence about what is simulated. The sentence is not
+ * decoration — this pool has no executor behind it, and a reader who finds
+ * that out by pressing something has been lied to.
+ */
+export function ComputeShell({
+  children,
+  title,
+  sub,
+  actions,
+}: {
+  children: ReactNode;
+  title?: string;
+  sub?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <>
+      <header className={s.head}>
+        <div className={s.headText}>
+          <p className={s.eyebrow}>CHORD · Compute</p>
+          <h1 className={s.title}>{title ?? 'Compute'}</h1>
+          <p className={s.sub}>
+            {sub ??
+              'Execution environments for computational work: local machines, SSH servers, clusters and managed services. Configuration, selection and history in one place — nothing starts, provisions or bills in this build.'}
+          </p>
+        </div>
+        {actions ? <div className={s.headActions}>{actions}</div> : null}
+      </header>
+
+      <ComputeTabs />
+
+      <div className={s.body}>{children}</div>
+    </>
   );
 }

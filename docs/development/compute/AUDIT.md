@@ -1,3 +1,5 @@
+> **Superseded 2026-11-09** by Compute v2 (D-050): the IA described here is replaced. See `docs/development/compute-v2/`. Kept as history.
+
 # Compute — repository audit
 
 **Date:** 2026-11-09. **Scope:** the Thylas app as it stands before Compute was added.

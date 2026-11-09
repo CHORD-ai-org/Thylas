@@ -1,3 +1,5 @@
+> **Superseded 2026-11-09** by Compute v2 (D-050): the IA described here is replaced. See `docs/development/compute-v2/`. Kept as history.
+
 # Compute — product and UI plan
 
 **Status:** executed 2026-11-09 (this document describes what was built, in the order it was built).

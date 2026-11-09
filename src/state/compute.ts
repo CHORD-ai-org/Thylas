@@ -1,60 +1,98 @@
 /**
- * The Compute store: what changed since the page loaded.
+ * The Compute v2 store: what changed since the page loaded.
  *
  * Nothing here talks to a provider. The store owns exactly the facts a
- * prototype can own — a connection someone just made, a machine someone just
- * added, a run someone just stopped, a recommendation someone accepted — and
- * keeps the seed data in `data/compute.ts` untouched so the sample is still the
- * sample after a session of clicking.
+ * prototype can own — backend configuration and test results, a default
+ * backend, an instance someone connected, a target someone confirmed in Run —
+ * and keeps the seed data in `data/compute.ts` untouched, so the samples are
+ * still the samples after a session of clicking.
  *
- * Two rules carried over from the rest of the app:
- *   - connection state and availability are separate fields, never merged;
- *   - utilization is dropped the moment a machine stops being reachable.
+ * The key is v2: the shape changed with the model (D-050), and a v1 envelope
+ * is discarded on read rather than half-migrated.
  */
 import { useSyncExternalStore } from 'react';
 import {
-  PROVIDERS,
-  RESOURCES,
+  BACKENDS,
+  BACKEND_TYPE_LABEL,
+  INSTANCES,
   WORKLOADS,
-  type Decision,
-  type Provider,
+  eligibleTargets,
+  type Backend,
+  type BackendStatus,
+  type ConnectionState,
+  type Instance,
   type Requirements,
-  type Resource,
+  type Target,
   type Workload,
   type WorkloadState,
 } from '../data/compute';
 
-const KEY = 'thylas:compute:v1';
+const KEY = 'thylas:compute:v2';
 
-type State = {
-  /** Machines added in this session through the Add Resource flow. */
-  added: Resource[];
-  /** Connection overrides, keyed by resource id. */
-  connections: Record<string, Resource['connection']>;
-  /** Runs the user stopped or queued runs they cancelled. */
-  workloadStates: Record<string, WorkloadState>;
-  /** Runs created by accepting a recommendation. */
-  addedWorkloads: Workload[];
-  decisions: Decision[];
+export type Decision = {
+  id: string;
+  at: string;
+  kind: 'configure' | 'connect' | 'disconnect' | 'add' | 'remove' | 'target';
+  text: string;
+  subjectId?: string;
 };
 
-const EMPTY: State = { added: [], connections: {}, workloadStates: {}, addedWorkloads: [], decisions: [] };
+type State = {
+  /** Saved configuration per backend id, applied over the seeds. */
+  backendConfig: Record<string, Record<string, string>>;
+  /** Test results and manual status overrides per backend id. */
+  backendStatus: Record<string, BackendStatus>;
+  /** Enabled/disabled overrides. */
+  backendEnabled: Record<string, boolean>;
+  /** Default backend chosen in this session (seed default until then). */
+  defaultBackend: string | null;
+  /** Seed backends removed in this session. */
+  removedBackends: string[];
+  /** Backends configured from the catalog in this session. */
+  addedBackends: Backend[];
+  /** Instances added through the Marketplace in this session. */
+  addedInstances: Instance[];
+  /** Removed seed instances (terminated acquired ones are dropped outright). */
+  removedInstances: string[];
+  /** Connection overrides, keyed by instance id. */
+  connections: Record<string, ConnectionState>;
+  /** Workload state overrides. */
+  workloadStates: Record<string, WorkloadState>;
+  /** Workloads created by confirming a target in Run. */
+  addedWorkloads: Workload[];
+  log: Decision[];
+};
 
-const CONNECTIONS: Resource['connection'][] = ['connected', 'connecting', 'disconnected', 'error'];
+const EMPTY: State = {
+  backendConfig: {},
+  backendStatus: {},
+  backendEnabled: {},
+  defaultBackend: null,
+  removedBackends: [],
+  addedBackends: [],
+  addedInstances: [],
+  removedInstances: [],
+  connections: {},
+  workloadStates: {},
+  addedWorkloads: [],
+  log: [],
+};
+
+const STATUSES: BackendStatus[] = ['ready', 'unverified', 'unreachable', 'error'];
+const CONNECTIONS: ConnectionState[] = ['connected', 'connecting', 'disconnected', 'error'];
 const WORKLOAD_STATES: WorkloadState[] = ['running', 'queued', 'completed', 'failed', 'cancelled'];
 
-function isResource(value: unknown): value is Resource {
+function isInstance(value: unknown): value is Instance {
   if (typeof value !== 'object' || value === null) return false;
-  const r = value as Partial<Resource>;
+  const i = value as Partial<Instance>;
   return (
-    typeof r.id === 'string' &&
-    typeof r.name === 'string' &&
-    typeof r.providerId === 'string' &&
-    typeof r.scope === 'string' &&
-    typeof r.connection === 'string' &&
-    CONNECTIONS.includes(r.connection) &&
-    typeof r.hardware === 'object' &&
-    r.hardware !== null
+    typeof i.id === 'string' &&
+    typeof i.name === 'string' &&
+    typeof i.backendId === 'string' &&
+    typeof i.connection === 'string' &&
+    CONNECTIONS.includes(i.connection as ConnectionState) &&
+    typeof i.hardware === 'object' &&
+    i.hardware !== null
   );
 }
 
@@ -64,9 +102,23 @@ function isWorkload(value: unknown): value is Workload {
   return (
     typeof w.id === 'string' &&
     typeof w.name === 'string' &&
-    typeof w.resourceId === 'string' &&
+    typeof w.backendId === 'string' &&
     typeof w.state === 'string' &&
-    WORKLOAD_STATES.includes(w.state)
+    WORKLOAD_STATES.includes(w.state as WorkloadState)
+  );
+}
+
+function isBackend(value: unknown): value is Backend {
+  if (typeof value !== 'object' || value === null) return false;
+  const b = value as Partial<Backend>;
+  return (
+    typeof b.id === 'string' &&
+    b.id.startsWith('b-') &&
+    typeof b.name === 'string' &&
+    typeof b.type === 'string' &&
+    b.type in BACKEND_TYPE_LABEL &&
+    typeof b.instances === 'string' &&
+    ['exposed', 'none'].includes(b.instances)
   );
 }
 
@@ -78,30 +130,55 @@ function read(): State {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== 'object' || parsed === null) return EMPTY;
     const p = parsed as Partial<State> & { version?: unknown };
-    if (p.version !== 1) return EMPTY;
+    if (p.version !== 2) return EMPTY;
+    const strList = (v: unknown): string[] =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    const backendConfig: State['backendConfig'] = {};
+    if (p.backendConfig && typeof p.backendConfig === 'object') {
+      for (const [id, cfg] of Object.entries(p.backendConfig)) {
+        if (cfg && typeof cfg === 'object') {
+          const clean: Record<string, string> = {};
+          for (const [k, v] of Object.entries(cfg)) if (typeof v === 'string') clean[k] = v;
+          backendConfig[id] = clean;
+        }
+      }
+    }
+    const backendStatus: State['backendStatus'] = {};
+    if (p.backendStatus && typeof p.backendStatus === 'object') {
+      for (const [id, s] of Object.entries(p.backendStatus)) {
+        if (typeof s === 'string' && STATUSES.includes(s as BackendStatus)) backendStatus[id] = s as BackendStatus;
+      }
+    }
+    const backendEnabled: State['backendEnabled'] = {};
+    if (p.backendEnabled && typeof p.backendEnabled === 'object') {
+      for (const [id, v] of Object.entries(p.backendEnabled)) if (typeof v === 'boolean') backendEnabled[id] = v;
+    }
     const connections: State['connections'] = {};
     if (p.connections && typeof p.connections === 'object') {
-      for (const [id, value] of Object.entries(p.connections)) {
-        if (typeof value === 'string' && CONNECTIONS.includes(value as Resource['connection'])) {
-          connections[id] = value as Resource['connection'];
-        }
+      for (const [id, v] of Object.entries(p.connections)) {
+        if (typeof v === 'string' && CONNECTIONS.includes(v as ConnectionState)) connections[id] = v as ConnectionState;
       }
     }
     const workloadStates: State['workloadStates'] = {};
     if (p.workloadStates && typeof p.workloadStates === 'object') {
-      for (const [id, value] of Object.entries(p.workloadStates)) {
-        if (typeof value === 'string' && WORKLOAD_STATES.includes(value as WorkloadState)) {
-          workloadStates[id] = value as WorkloadState;
-        }
+      for (const [id, v] of Object.entries(p.workloadStates)) {
+        if (typeof v === 'string' && WORKLOAD_STATES.includes(v as WorkloadState)) workloadStates[id] = v as WorkloadState;
       }
     }
     return {
-      added: Array.isArray(p.added) ? p.added.filter(isResource) : [],
+      backendConfig,
+      backendStatus,
+      backendEnabled,
+      defaultBackend: typeof p.defaultBackend === 'string' ? p.defaultBackend : null,
+      removedBackends: strList(p.removedBackends),
+      addedBackends: Array.isArray(p.addedBackends) ? p.addedBackends.filter(isBackend) : [],
+      addedInstances: Array.isArray(p.addedInstances) ? p.addedInstances.filter(isInstance) : [],
+      removedInstances: strList(p.removedInstances),
       connections,
       workloadStates,
       addedWorkloads: Array.isArray(p.addedWorkloads) ? p.addedWorkloads.filter(isWorkload) : [],
-      decisions: Array.isArray(p.decisions)
-        ? p.decisions.filter((d): d is Decision => typeof d === 'object' && d !== null && typeof (d as Decision).text === 'string')
+      log: Array.isArray(p.log)
+        ? p.log.filter((d): d is Decision => typeof d === 'object' && d !== null && typeof (d as Decision).text === 'string')
         : [],
     };
   } catch {
@@ -116,7 +193,7 @@ function commit(next: State): void {
   snapshot = next;
   if (typeof localStorage !== 'undefined') {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ version: 1, ...snapshot }));
+      localStorage.setItem(KEY, JSON.stringify({ version: 2, ...snapshot }));
     } catch {
       /* quota: the session keeps working, the next one starts from the seeds */
     }
@@ -137,154 +214,262 @@ const getSnapshot = (): State => snapshot;
    Reads
    -------------------------------------------------------------------------- */
 
-export function allResources(): Resource[] {
-  return [...RESOURCES, ...snapshot.added];
+/** A backend with session config, status and enabled overrides applied. */
+export function backendView(backend: Backend): Backend {
+  const configured = backend.configured ?? (Boolean(backend.config) || Boolean(snapshot.backendConfig[backend.id]));
+  return {
+    ...backend,
+    config: snapshot.backendConfig[backend.id] ?? backend.config,
+    status: snapshot.backendStatus[backend.id] ?? backend.status,
+    enabled: snapshot.backendEnabled[backend.id] ?? backend.enabled,
+    isDefault: defaultBackendId() === backend.id,
+    configured,
+  };
 }
 
-/** A seed resource with any session overrides applied. */
-export function resourceView(resource: Resource): Resource {
-  const connection = snapshot.connections[resource.id] ?? resource.connection;
-  const utilization = connection === 'connected' ? resource.utilization : undefined;
-  return { ...resource, connection, utilization };
+export function backendsView(): Backend[] {
+  const views = [
+    ...BACKENDS.filter((b) => !snapshot.removedBackends.includes(b.id)).map(backendView),
+    ...snapshot.addedBackends.map(backendView),
+  ];
+  return [...views].sort((a, b) => Number(b.isDefault ?? false) - Number(a.isDefault ?? false));
 }
 
-export function resourcesView(): Resource[] {
-  return allResources().map(resourceView);
+export function backendById(id: string | undefined): Backend | undefined {
+  if (!id) return undefined;
+  return backendsView().find((b) => b.id === id);
 }
 
-export function resourceViewOf(id: string | undefined): Resource | undefined {
-  const found = allResources().find((r) => r.id === id);
-  return found ? resourceView(found) : undefined;
+export function defaultBackendId(): string | null {
+  return snapshot.defaultBackend ?? BACKENDS.find((b) => b.isDefault)?.id ?? null;
 }
 
-export function allWorkloads(): Workload[] {
+/** An instance with connection override applied; utilization follows the rule. */
+function instanceView(instance: Instance): Instance {
+  const connection = snapshot.connections[instance.id] ?? instance.connection;
+  const utilization = connection === 'connected' ? instance.utilization : undefined;
+  return { ...instance, connection, utilization };
+}
+
+export function instancesView(): Instance[] {
+  const seeds = INSTANCES.filter(
+    (i) => !snapshot.removedInstances.includes(i.id) && !snapshot.removedBackends.includes(i.backendId),
+  ).map(instanceView);
+  return [...seeds, ...snapshot.addedInstances];
+}
+
+export function instanceById(id: string | undefined): Instance | undefined {
+  if (!id) return undefined;
+  return instancesView().find((i) => i.id === id);
+}
+
+export function instancesOf(backendId: string): Instance[] {
+  return instancesView().filter((i) => i.backendId === backendId);
+}
+
+export function workloadsView(): Workload[] {
   return [...WORKLOADS, ...snapshot.addedWorkloads].map((w) => ({
     ...w,
     state: snapshot.workloadStates[w.id] ?? w.state,
   }));
 }
 
-export function workloadOf(id: string | undefined): Workload | undefined {
-  return allWorkloads().find((w) => w.id === id);
+export function workloadById(id: string | undefined): Workload | undefined {
+  if (!id) return undefined;
+  return workloadsView().find((w) => w.id === id);
 }
 
-export function workloadsOn(resourceId: string): Workload[] {
-  return allWorkloads().filter((w) => w.resourceId === resourceId);
+export function workloadsOn(instanceId: string): Workload[] {
+  return workloadsView().filter((w) => w.instanceId === instanceId);
 }
 
-export function activeCount(resourceId: string): number {
-  return workloadsOn(resourceId).filter((w) => w.state === 'running' || w.state === 'queued').length;
+/** The targets Run can choose from, through the current store state. */
+export function targetsView(): Target[] {
+  return eligibleTargets(
+    backendsView().filter((b) => b.configured),
+    instancesView(),
+  );
 }
 
-/** Provider health, derived from the machines behind it — never stored twice. */
-export type ProviderHealth = 'connected' | 'error' | 'disconnected' | 'empty' | 'planned';
-
-export function providerHealth(provider: Provider): ProviderHealth {
-  if (provider.integration === 'planned') return 'planned';
-  const machines = resourcesView().filter((r) => r.providerId === provider.id);
-  if (machines.length === 0) return 'empty';
-  if (machines.some((r) => r.connection === 'connected')) return 'connected';
-  if (machines.some((r) => r.connection === 'error')) return 'error';
-  return 'disconnected';
-}
-
-export function decisions(): Decision[] {
-  return [...snapshot.decisions].sort((a, b) => b.at.localeCompare(a.at));
+export function computeLog(): Decision[] {
+  return [...snapshot.log].sort((a, b) => b.at.localeCompare(a.at));
 }
 
 /* --------------------------------------------------------------------------
    Writes
    -------------------------------------------------------------------------- */
 
-function log(kind: Decision['kind'], text: string, resourceId?: string): Decision {
+function log(kind: Decision['kind'], text: string, subjectId?: string): Decision {
   return {
     id: `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     at: new Date().toISOString(),
     kind,
     text,
-    ...(resourceId ? { resourceId } : {}),
+    ...(subjectId ? { subjectId } : {}),
   };
 }
 
-export function setConnection(id: string, connection: Resource['connection']): void {
-  commit({ ...snapshot, connections: { ...snapshot.connections, [id]: connection } });
+function findInstance(id: string): Instance | undefined {
+  return instancesView().find((i) => i.id === id);
 }
 
-/**
- * A connection attempt, simulated. `willFail` is decided by the form that asked
- * for it (a host marked unreachable, or a secret left empty), not at random —
- * a prototype that fails at random teaches the reader nothing.
- */
-export function connectResource(id: string, opts: { willFail?: boolean } = {}): void {
-  setConnection(id, 'connecting');
+function findBackend(id: string): Backend | undefined {
+  return backendById(id);
+}
+
+/* ---- backends ---- */
+
+export function saveBackendConfig(id: string, config: Record<string, string>, status: BackendStatus): void {
+  const backend = findBackend(id);
+  commit({
+    ...snapshot,
+    backendConfig: { ...snapshot.backendConfig, [id]: config },
+    backendStatus: { ...snapshot.backendStatus, [id]: status },
+    log: [
+      log('configure', `${status === 'ready' ? 'Configured' : 'Saved'} ${backend?.name ?? id} — ${status}.`, id),
+      ...snapshot.log,
+    ],
+  });
+}
+
+/** A connection test, simulated. Deterministic: the caller decides the outcome. */
+export function testBackend(id: string, willFail: boolean): void {
   window.setTimeout(() => {
-    const fail = opts.willFail ?? false;
-    setConnection(id, fail ? 'error' : 'connected');
-    const resource = allResources().find((r) => r.id === id);
     commit({
       ...snapshot,
-      decisions: [
-        log(fail ? 'disconnect' : 'connect', fail ? `Connection to ${resource?.name ?? id} failed.` : `Connected to ${resource?.name ?? id}.`, id),
-        ...snapshot.decisions,
+      backendStatus: { ...snapshot.backendStatus, [id]: willFail ? 'unreachable' : 'ready' },
+      log: [
+        log('configure', `Connection test for ${findBackend(id)?.name ?? id}: ${willFail ? 'no answer.' : 'ready.'}`, id),
+        ...snapshot.log,
       ],
     });
   }, 1100);
 }
 
-export function disconnectResource(id: string): void {
-  setConnection(id, 'disconnected');
-  const resource = allResources().find((r) => r.id === id);
+export function setBackendEnabled(id: string, enabled: boolean): void {
   commit({
     ...snapshot,
-    decisions: [log('disconnect', `Disconnected ${resource?.name ?? id}.`, id), ...snapshot.decisions],
+    backendEnabled: { ...snapshot.backendEnabled, [id]: enabled },
+    log: [log('configure', `${findBackend(id)?.name ?? id} ${enabled ? 'enabled' : 'disabled'}.`, id), ...snapshot.log],
   });
 }
 
-export function addResource(resource: Resource): void {
+export function setDefaultBackend(id: string): void {
   commit({
     ...snapshot,
-    added: [...snapshot.added, resource],
-    decisions: [log('add', `Added ${resource.name} from ${PROVIDERS.find((p) => p.id === resource.providerId)?.name ?? resource.providerId}.`, resource.id), ...snapshot.decisions],
+    defaultBackend: id,
+    log: [log('configure', `${findBackend(id)?.name ?? id} is now the default environment.`, id), ...snapshot.log],
   });
 }
 
-export function removeResource(id: string): void {
-  const resource = allResources().find((r) => r.id === id);
+export function removeBackend(id: string): void {
+  const isAdded = snapshot.addedBackends.some((b) => b.id === id);
   commit({
     ...snapshot,
-    added: snapshot.added.filter((r) => r.id !== id),
-    decisions: [log('disconnect', `Removed ${resource?.name ?? id} from the pool.`, id), ...snapshot.decisions],
+    addedBackends: isAdded ? snapshot.addedBackends.filter((b) => b.id !== id) : snapshot.addedBackends,
+    removedBackends: isAdded ? snapshot.removedBackends : [...snapshot.removedBackends, id],
+    defaultBackend: snapshot.defaultBackend === id ? null : snapshot.defaultBackend,
+    log: [log('remove', `Removed ${findBackend(id)?.name ?? id}. Its instances leave the pool with it.`, id), ...snapshot.log],
   });
 }
+
+/** A backend configured from the catalog in this session. */
+export function addBackend(backend: Backend): void {
+  commit({
+    ...snapshot,
+    addedBackends: [...snapshot.addedBackends, backend],
+    log: [log('add', `Configured ${backend.name} (${backend.type}). Test it before trusting it.`, backend.id), ...snapshot.log],
+  });
+}
+
+/* ---- instances ---- */
+
+export function setInstanceConnection(id: string, connection: ConnectionState): void {
+  commit({ ...snapshot, connections: { ...snapshot.connections, [id]: connection } });
+}
+
+export function connectInstance(id: string, willFail = false): void {
+  setInstanceConnection(id, 'connecting');
+  window.setTimeout(() => {
+    setInstanceConnection(id, willFail ? 'error' : 'connected');
+    const instance = findInstance(id);
+    commit({
+      ...snapshot,
+      log: [
+        log(willFail ? 'disconnect' : 'connect', willFail ? `Connection to ${instance?.name ?? id} failed.` : `Connected to ${instance?.name ?? id}.`, id),
+        ...snapshot.log,
+      ],
+    });
+  }, 1100);
+}
+
+export function disconnectInstance(id: string): void {
+  setInstanceConnection(id, 'disconnected');
+  commit({
+    ...snapshot,
+    log: [log('disconnect', `Disconnected ${findInstance(id)?.name ?? id}.`, id), ...snapshot.log],
+  });
+}
+
+/** A marketplace acquisition, simulated. The rate is the listing's sample. */
+export function acquireInstance(instance: Instance, listingName: string): void {
+  commit({
+    ...snapshot,
+    addedInstances: [...snapshot.addedInstances, instance],
+    log: [
+      log('add', `Acquired ${instance.name} (${listingName}). Representative rate — nothing was provisioned.`, instance.id),
+      ...snapshot.log,
+    ],
+  });
+}
+
+export function terminateInstance(id: string): void {
+  const instance = findInstance(id);
+  if (!instance) return;
+  const isAdded = snapshot.addedInstances.some((i) => i.id === id);
+  commit({
+    ...snapshot,
+    addedInstances: isAdded ? snapshot.addedInstances.filter((i) => i.id !== id) : snapshot.addedInstances,
+    removedInstances: isAdded ? snapshot.removedInstances : [...snapshot.removedInstances, id],
+    log: [log('remove', `Terminated ${instance.name}. A managed machine stops billing; nothing was billed here.`), ...snapshot.log],
+  });
+}
+
+/* ---- workloads / selection ---- */
 
 export function setWorkloadState(id: string, state: WorkloadState): void {
   commit({ ...snapshot, workloadStates: { ...snapshot.workloadStates, [id]: state } });
 }
 
 /**
- * Accept a recommendation. This records a target and a queued run; it does not
- * start anything, because nothing in this build can start anything.
+ * Confirm a target in Run. This records a queued workload with a target; it
+ * does not start anything, because nothing in this build can start anything.
  */
-export function acceptRecommendation(input: Requirements, resourceId: string): Workload {
-  const resource = resourceViewOf(resourceId);
+export function confirmTarget(req: Requirements, target: Target): Workload {
+  const name = req.name.trim() || 'Untitled workload';
+  const kind = req.kind.trim() || 'Unspecified';
+  const isBackendTarget = target.kind === 'backend';
   const workload: Workload = {
     id: `wl-${Date.now().toString(36)}`,
-    name: input.name.trim() || 'Untitled workload',
-    kind: input.kind.trim() || 'Unspecified',
-    resourceId,
+    name,
+    kind,
+    backendId: target.backendId,
+    ...(isBackendTarget ? {} : { instanceId: target.id }),
     state: 'queued',
     startedAt: 'queued just now',
-    duration: 'waiting for a start signal',
+    duration: isBackendTarget ? 'waiting for the scheduler' : 'waiting for a start signal',
     cpuPct: 0,
     memoryGb: 0,
-    note: `Chosen in Find Compute for ${resource?.name ?? 'a machine'}. Thylas does not start work in this build — this run has a target and no executor.`,
+    note: isBackendTarget
+      ? `Chosen in Run for ${target.backendName}. The environment provisions for the work; nothing starts in this build.`
+      : `Chosen in Run for ${target.name}. Thylas does not start work in this build — this run has a target and no executor.`,
   };
   commit({
     ...snapshot,
     addedWorkloads: [...snapshot.addedWorkloads, workload],
-    decisions: [
-      log('reserve', `Assigned ${workload.name} to ${resource?.name ?? resourceId}. Waiting for a start signal.`, resourceId),
-      ...snapshot.decisions,
+    log: [
+      log('target', `Queued ${name} on ${target.name}. Recorded, not started.`, target.id),
+      ...snapshot.log,
     ],
   });
   return workload;
