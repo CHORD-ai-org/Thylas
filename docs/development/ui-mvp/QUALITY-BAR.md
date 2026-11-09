@@ -52,11 +52,11 @@ Measured from four captured surfaces (`/overview`, `/w/ws-research/files`, `/w/w
 
 | # | Finding | Evidence | Dimension | Owner |
 | --- | --- | --- | --- | --- |
-| A1 | **Boards list ends in void.** Two cards occupy the top 250px of 900; ~600px empty below, no third region | capture `app-board3` | Q2, Q3 | SP-10f |
+| A1 | **Boards list ends in void.** Two cards occupy the top 250px of 900; ~600px empty below, no third region. *Partially fixed 11-09:* cards are now 16:9 blocks with a real thumbnail (top 400px), void down to ~300px. The remaining gap is data-bound: two sample boards cannot fill a three-column grid | `app-board3` → `w3-boards2` | Q2, Q3 | SP-10f.1 (remainder blocked on more boards) |
 | A2 | **Processes list ends in void.** 8 rows, then ~380px empty; selecting a run leaves the same page | capture `app-proc` | Q2, Q3, Q4 | SP-10f |
 | A3 | **Files truncates a column instead of budgeting it.** With the panel open at 1440, `SOURCE` renders `produced · #…` | capture `app-files3` | Q4 | SP-10f |
 | A4 | **Case conventions diverge inside one row.** `TYPE` is uppercase mono, `STATE` is lowercase (`running`, `needs you`) | capture `app-proc` | Q7 | SP-10f |
-| A5 | **Numeric columns are left-aligned.** `ACTIVITY 12m / 4m / 1h` start at one x; credits and outputs do the same. Brand P6 requires right alignment in column | capture `app-proc` | Q7, Q4 | SP-10f |
+| A5 | ~~Numeric columns are left-aligned~~ **Retracted on re-measure 11-09.** Re-shot after 10b: `12m / 4m / 1h` and `42 / 11 / 118` share a right edge. The first reading was wrong; tabular figures made the defect look fixed when it was never there | re-capture `w2-proc` | — | closed as invalid |
 | A6 | **Overview leaves 200px+ unused at 1440.** Content column ends ~880; panel closed with no replacement region | capture `app-ov3` | Q2 | SP-10f |
 | A7 | **Rail status dots are unlabelled.** Terracotta dots on workspace rows do not say what state they mean; the one accent may be decorating rather than reporting | capture `app-ov3` | Q7 | SP-10f (decide: label, or remove) |
 | A8 | **Positive:** missing-workspace error is exemplary — names the object, explains, offers a route out | capture `app-files2` | Q5 | — |

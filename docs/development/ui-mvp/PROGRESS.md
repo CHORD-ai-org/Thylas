@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 10:50 (SP-10a done; experience bar adopted — 10f added).
+Last updated: 2026-11-09 11:50 (10a/b/c done; 10f.1 partially — Boards grid shipped).
 
 ---
 
@@ -30,7 +30,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
-| SP-10 Visual quality | — | **In progress** — 10a done 11-08; 10f added 11-09 | 6.75 | SP-07 | radius shipped; typeface, icons, surface, accessibility remain; **10f experience pass** (composition, object completeness, context chip, trace) from the 11-09 audit |
+| SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter + four-step ramp, glyphs→paths, Boards card grid shipped; 10d surface/states, 10e a11y, 10f.1 (Overview split, Processes panel, Files budget), 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
