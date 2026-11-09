@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { routes, switchWorkspace } from '../lib/routes';
 import { processesIn } from '../data/selectors';
 import { useWorkspaces } from '../state/workspaces';
+import { useCompute } from '../state/compute';
 import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
 import { Badge, IconButton } from '../components/ui';
@@ -10,6 +11,7 @@ import {
   IconAccount,
   IconBoards,
   IconChevron,
+  IconCompute,
   IconFiles,
   IconNotes,
   IconOverview,
@@ -59,6 +61,8 @@ function needsYou(ws: Workspace): number {
 export function Rail() {
   const { railCollapsed, toggleRail, openPalette } = useApp();
   const workspaces = useWorkspaces();
+  /* Subscribed so the rail follows a machine being added or removed. */
+  useCompute();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState<string[]>([]);
@@ -121,6 +125,15 @@ export function Rail() {
           path={routes.recently()}
           icon={<IconRecently />}
           active={pathname === routes.recently()}
+          collapsed={railCollapsed}
+        />
+        {/* Compute is not a workspace room: a machine is where work runs, and a
+            machine does not belong to one workspace. */}
+        <RailItem
+          label="Compute"
+          path={routes.compute()}
+          icon={<IconCompute />}
+          active={pathname.startsWith('/compute')}
           collapsed={railCollapsed}
         />
       </nav>

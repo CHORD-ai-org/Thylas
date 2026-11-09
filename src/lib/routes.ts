@@ -14,6 +14,16 @@ export const routes = {
   notes: () => '/notes',
   note: (noteId: Id) => `/notes/${noteId}`,
   account: (section = 'profile') => `/account/${section}`,
+  /* Compute is a global surface: a machine is not inside a workspace, it is
+     where a workspace's work runs. One pool, five screens. */
+  compute: () => '/compute',
+  computeResources: () => '/compute/resources',
+  computeResource: (resourceId: Id) => `/compute/resources/${resourceId}`,
+  computeNewResource: () => '/compute/resources/new',
+  computeProviders: () => '/compute/providers',
+  computeWorkloads: () => '/compute/workloads',
+  computeWorkload: (workloadId: Id) => `/compute/workloads/${workloadId}`,
+  computeFind: () => '/compute/find',
 };
 
 export type WorkspaceRoom = 'files' | 'boards' | 'processes';

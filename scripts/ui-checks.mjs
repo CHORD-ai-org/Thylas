@@ -2179,6 +2179,102 @@ async function main() {
   `), { version: 2, color: 'plain', section: 'sage' });
   await js(`localStorage.removeItem('thylas:board:v1:b-lit'); localStorage.removeItem('thylas:board:v2:b-lit'); return true;`);
 
+  // ---- Compute: one pool, three kinds of machine ----
+  await goto('/compute');
+  check('compute: the rail opens the section', await js(`
+    const item = [...document.querySelectorAll('[data-rail-item]')].find(a => a.textContent.trim() === 'Compute');
+    return { present: !!item, path: location.pathname, title: document.querySelector('h1')?.textContent.trim() };
+  `), { present: true, path: '/compute', title: 'Compute' });
+
+  check('compute: the overview counts the pool it has', await js(`
+    const stats = [...document.querySelectorAll('[class*="stat"]')].map(s => s.textContent.replace(/ +/g, ' ').trim());
+    const rows = document.querySelectorAll('ul[class*="rows"] > li').length;
+    return { registered: stats.some(s => s.startsWith('7')), rows };
+  `), (v) => v.registered === true && v.rows >= 3);
+
+  await goto('/compute/resources/r-tm-h100');
+  check('compute: an unreachable machine reports no availability', await js(`
+    const text = document.body.innerText;
+    return {
+      unknown: text.includes('Connection error · Availability unknown'),
+      noSample: text.includes('Not measurable while unreachable') || text.includes('no sample'),
+      noNumbers: !/GPU \d+%/.test(text),
+    };
+  `), { unknown: true, noSample: true, noNumbers: true });
+
+  await goto('/compute/resources?availability=unknown');
+  check('compute: filtering by unknown leaves only unreachable machines', await js(`
+    const names = [...document.querySelectorAll('a[class*="tr"] [class*="tdTitle"]')].map(n => n.textContent.trim());
+    return { count: names.length, names };
+  `), (v) => v.count === 2 && v.names.includes('tm-h100-04') && v.names.includes('office-box'));
+
+  const fillField = async (label, value) => js(`
+    const row = [...document.querySelectorAll('label')].find(l => l.textContent.trim().toUpperCase().startsWith(${JSON.stringify(label)}));
+    const input = row.querySelector('input, select');
+    const set = Object.getOwnPropertyDescriptor(input.constructor.prototype, 'value').set;
+    set.call(input, ${JSON.stringify(value)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 90));
+    return 1;
+  `);
+
+  await goto('/compute/resources/new');
+  await js(`${helpers} click(byText('button', 'Connect via SSH')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  await fillField('HOST', 'unreachable.host');
+  await fillField('USER', 'ceaser');
+  await js(`${helpers} click(byText('button', 'Verify and add')); await new Promise(r => setTimeout(r, 1500)); return 1;`);
+  check('compute: a host that does not answer is not added', await js(`
+    return { error: document.querySelector('[role="alert"]')?.textContent.trim() ?? null, path: location.pathname };
+  `), (v) => v.path === '/compute/resources/new' && typeof v.error === 'string' && v.error.includes('did not answer'));
+
+  await fillField('HOST', 'lab-09');
+  await js(`${helpers} click(byText('button', 'Verify and add')); await new Promise(r => setTimeout(r, 1700)); return 1;`);
+  check('compute: a machine is added with declared hardware, and says so', await js(`
+    return {
+      title: document.querySelector('h1')?.textContent.trim(),
+      named: document.body.innerText.includes('lab-09'),
+      declared: document.body.innerText.includes('declared'),
+    };
+  `), { title: 'Machine added', named: true, declared: true });
+
+  await goto('/compute/find');
+  await js(`
+    const input = document.querySelector('input[aria-label="Minimum GPU memory in GB"]');
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, '40'); input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 120));
+    return 1;
+  `);
+  await js(`${helpers} click(byText('button', 'Find machines')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('compute: find ranks machines and gives reasons', await js(`
+    const cards = [...document.querySelectorAll('li[class*="rec"]')];
+    return { count: cards.length, first: cards[0]?.innerText.split(String.fromCharCode(10)).slice(0, 6).join(' | ') ?? null };
+  `), (v) => v.count >= 2 && typeof v.first === 'string' && v.first.length > 10);
+
+  await js(`${helpers} click(byText('button', 'Choose this')); await new Promise(r => setTimeout(r, 500)); return 1;`);
+  check('compute: accepting a recommendation queues a run', await js(`
+    return { band: document.querySelector('[class*="assignedTitle"]')?.textContent.trim() ?? null };
+  `), (v) => typeof v.band === 'string' && v.band.includes('Assigned'));
+
+  await goto('/compute/workloads?state=queued');
+  check('compute: the queued run is in the workload list', await js(`
+    return { rows: document.querySelectorAll('div[role="row"][data-state]').length };
+  `), (v) => v.rows >= 2);
+
+  await goto('/compute/workloads');
+  const runningBefore = await js(`return document.querySelectorAll('div[role="row"][data-state="running"]').length;`);
+  await js(`${helpers} click(byText('button', 'Stop')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('compute: stopping a run is local and visible', await js(`
+    return { running: document.querySelectorAll('div[role="row"][data-state="running"]').length };
+  `), (v) => v.running === 2);
+
+  await goto('/compute/resources?q=zzzz');
+  check('compute: a filter with no match says so', await js(`
+    return document.querySelector('[class*="emptyTitle"]')?.textContent.trim() ?? null;
+  `), 'No machine matches these filters');
+  await goto('/overview');
+
   } catch (err) {
     results.push({ name: 'the run stopped before the last check', pass: false, actual: String(err?.message ?? err).slice(0, 400) });
   }

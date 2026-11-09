@@ -7,12 +7,16 @@ import s from './shell.module.css';
 export function PlainLayout({
   children,
   wide = false,
+  size = 'read',
   panel,
   panelTitle = 'Panel',
   panelMeta,
 }: {
   children: ReactNode;
   wide?: boolean;
+  /** `console` is for surfaces that are tables rather than prose: Compute needs
+      six columns, and 880px forces every name to truncate. */
+  size?: 'read' | 'wide' | 'console';
   /** A right-hand region that only exists when the surface has something to put there. */
   panel?: ReactNode;
   panelTitle?: string;
@@ -23,7 +27,14 @@ export function PlainLayout({
   return (
     <div className={s.body}>
       <main className={s.plain} data-scroll-region="page">
-        <div className={[s.plainInner, wide ? s.plainWide : ''].join(' ')}>{children}</div>
+        <div
+          className={[
+            s.plainInner,
+            size === 'console' ? s.plainConsole : (wide || size === 'wide') ? s.plainWide : '',
+          ].join(' ')}
+        >
+          {children}
+        </div>
       </main>
       {panel && panelOpen ? (
         <ContextPanel ctx="ask" title={panelTitle} meta={panelMeta}>

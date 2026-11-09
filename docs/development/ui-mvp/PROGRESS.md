@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 14:44 (10a–10e done except density/loading in 10d; 10f.1 partially; SP-11 shipped).
+Last updated: 2026-11-09 21:10 (SP-11 shipped; Compute section added; 10a–10e done except density/loading in 10d).
 
 ---
 
@@ -30,6 +30,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-11 Workspaces | — | **Completed** 11-09 | 1.0 | SP-02, SP-05a | create + delete, derived counts, tombstones, notes and tabs go with it |
+| Compute | — | **Completed** 11-09 | 2.0 | — | 8 routes, 5 screens, provider registry, add-resource flow, Find compute; 22 unit + 11 e2e. Docs: `docs/development/compute/` |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
@@ -201,6 +202,11 @@ Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALIT
 | 11-09 | Duplicate controls | `Collapse sidebar` ×2 → 1 (the wordmark icon removed); the strip's `⌘K` is a hint while the rail is open |
 | 11-09 | `npm run e2e` (10e) | 242/242; 5 new: combobox semantics, 8-Tab trap, Escape + restore, rail sentence, one control per named action |
 | 11-09 | Screenshots | `.workbuddy/shots/sp10e-{palette,tabbed,returned}.png` |
+| 11-09 | Compute unit tests | 22 cases in `src/data/compute.test.ts`; connection ≠ availability, no metrics when unreachable, ranking order, seed integrity |
+| 11-09 | Compute e2e | 11 assertions: rail entry, pool counts, unreachable machine has no numbers, unknown filter = 2 rows, add failure/success, find, accept, queued run, stop 3→2, no-match |
+| 11-09 | Compute responsive | 1440 and 1024: zero overflow; 390 is blocked by the fixed rail (shell gap G1), not by Compute |
+| 11-09 | Compute bundle | main JS 180.60 KB gzip (was 156.2); the five screens are not lazy-loaded yet |
+| 11-09 | Screenshots | `.workbuddy/shots/compute-{overview,resources,detail,providers,workloads,find,add}.png` |
 
 ## Next concrete action
 

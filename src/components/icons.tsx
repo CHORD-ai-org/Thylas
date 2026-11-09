@@ -271,3 +271,17 @@ export const IconFile = ({ size = 16 }: Props) => (
     <path d="M9.2 2.8v2.6h2.6" />
   </svg>
 );
+
+export const IconCheck = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M3.2 8.4 6.4 11.6 12.8 4.8" />
+  </svg>
+);
+
+export const IconCompute = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M2.4 5.4 8 2.6l5.6 2.8L8 8.2z" />
+    <path d="M2.4 8.4 8 11.2l5.6-2.8" />
+    <path d="M2.4 11.2 8 14l5.6-2.8" />
+  </svg>
+);

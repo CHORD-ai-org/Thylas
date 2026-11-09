@@ -7,6 +7,14 @@ import { BoardsPage, BoardDetailPage } from '../pages/Boards';
 import { ProcessesPage, RunDetailPage } from '../pages/Processes';
 import { NotesPage } from '../pages/Notes';
 import { AccountPage } from '../pages/Account';
+import { ComputeOverview } from '../pages/compute/ComputeOverview';
+import { ComputeResources } from '../pages/compute/ComputeResources';
+import { ComputeAddResource } from '../pages/compute/ComputeAddResource';
+import { ComputeResourceDetail } from '../pages/compute/ComputeResourceDetail';
+import { ComputeProviders } from '../pages/compute/ComputeProviders';
+import { ComputeWorkloads } from '../pages/compute/ComputeWorkloads';
+import { ComputeWorkloadDetail } from '../pages/compute/ComputeWorkloadDetail';
+import { ComputeFind } from '../pages/compute/ComputeFind';
 import { NotFound } from '../pages/NotFound';
 
 function WorkspaceRedirect() {
@@ -27,6 +35,16 @@ export const routerChildren = [
   { path: 'w/:wsId/processes/:runId', element: <RunDetailPage /> },
   { path: 'notes', element: <NotesPage /> },
   { path: 'notes/:noteId', element: <NotesPage /> },
+  /* `resources/new` before the dynamic detail route: React Router prefers a
+     static segment, but the order says what was meant. */
+  { path: 'compute', element: <ComputeOverview /> },
+  { path: 'compute/resources', element: <ComputeResources /> },
+  { path: 'compute/resources/new', element: <ComputeAddResource /> },
+  { path: 'compute/resources/:resourceId', element: <ComputeResourceDetail /> },
+  { path: 'compute/providers', element: <ComputeProviders /> },
+  { path: 'compute/workloads', element: <ComputeWorkloads /> },
+  { path: 'compute/workloads/:workloadId', element: <ComputeWorkloadDetail /> },
+  { path: 'compute/find', element: <ComputeFind /> },
   { path: 'account', element: <Navigate to={routes.account()} replace /> },
   { path: 'account/:section', element: <AccountPage /> },
   { path: '*', element: <NotFound /> },

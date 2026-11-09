@@ -616,6 +616,11 @@
   max-width: 1000px;
 }
 
+/* Tables need room for six columns; prose does not. */
+.plainConsole {
+  max-width: 1180px;
+}
+
 /* ---------------- panel ---------------- */
 
 .panel {

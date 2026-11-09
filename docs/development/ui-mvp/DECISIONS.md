@@ -388,6 +388,16 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-048 · Compute: two facts per machine, a registry instead of pages, and a recommendation that records rather than schedules
+
+**Status:** accepted in force (Compute, 2026-11-09).
+**Context:** the surface has to hold three kinds of resource — a local agent, an SSH server, a cloud account — and three levels of honesty, because only one of those can be read today. The easy versions are wrong in familiar ways: one `status` word that merges reachability with load, a page per provider, a "Find compute" that starts a run.
+**Decision:** connection (`connected`/`connecting`/`disconnected`/`error`) and availability (`available`/`busy`/`offline`/`unknown`) are separate fields; anything not connected reports `Availability unknown` and **carries no utilization at all** (`metricsOf` returns `undefined`, not zero). Providers live in one registry whose entries declare their own `fields[]` and `integration` level, so a new provider is data, not a route. Hardware typed into the add flow is `declared` and labelled in the detail and the done card. Stop/cancel are local and say so. Find compute is a sort with reasons; accepting it writes a **queued** workload with a note that no executor exists. Tables use a `console` container (1180px) because the prose width truncated every name.
+**Alternatives:** (1) one `status` field — cheaper, and it produces "offline · 82% GPU", which is the class of lie this product cannot afford; (2) a route per provider — the thing the brief asks not to do; (3) inventing utilization for unreachable machines so the table looks full — rejected on the same ground as fake metrics anywhere else; (4) letting Find start the run — there is nothing to start it.
+**Consequence:** a reader can tell a machine that is busy from a machine that cannot be seen, and the difference is visible in the table, the detail header and the recommendation caveats. The cost of honesty is empty cells, which are explained in place ("Not measurable while unreachable").
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |
