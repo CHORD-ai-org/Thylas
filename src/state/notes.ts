@@ -49,11 +49,15 @@ function readNote(id: string): Note | null {
   }
 }
 
+const hasStorage = (): boolean => typeof localStorage !== 'undefined';
+
 function writeNote(note: Note): void {
+  if (!hasStorage()) return;
   localStorage.setItem(noteKey(note.id), JSON.stringify(note));
 }
 
 function writeIndex(notes: Note[]): void {
+  if (!hasStorage()) return;
   localStorage.setItem(INDEX_KEY, JSON.stringify({ version: 1, entries: notes.map(toEntry) }));
 }
 
@@ -76,6 +80,9 @@ function readIndexIds(): string[] | null {
 }
 
 function loadFresh(): Note[] {
+  /* No Storage (a unit test, a prerender): the seeds are the truth. Writing
+     them would throw, and a count that throws is worse than a count of samples. */
+  if (!hasStorage()) return [...NOTE_SEEDS];
   const ids = readIndexIds();
   if (ids === null) {
     /* First run: write the seeds, so what the surface shows is stored state and

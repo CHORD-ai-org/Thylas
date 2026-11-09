@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { routes, switchWorkspace } from '../lib/routes';
-import { workspaces, processesIn } from '../data/selectors';
+import { processesIn } from '../data/selectors';
+import { useWorkspaces } from '../state/workspaces';
 import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
 import { Badge, IconButton } from '../components/ui';
@@ -13,6 +14,7 @@ import {
   IconNotes,
   IconOverview,
   IconProcesses,
+  IconPlus,
   IconRecently,
   IconSearch,
 } from '../components/icons';
@@ -56,11 +58,12 @@ function needsYou(ws: Workspace): number {
 
 export function Rail() {
   const { railCollapsed, toggleRail, openPalette } = useApp();
+  const workspaces = useWorkspaces();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState<string[]>([]);
 
-  const activeWs = workspaces().find((w) => pathname.startsWith(`/w/${w.id}`))?.id ?? null;
+  const activeWs = workspaces.find((w) => pathname.startsWith(`/w/${w.id}`))?.id ?? null;
 
   const isOpen = (id: string) => id === activeWs || open.includes(id);
 
@@ -131,11 +134,23 @@ export function Rail() {
         ) : (
           <div className={s.railLabelLine}>
             <span>Workspace</span>
-            <span className={s.railCount}>{workspaces().length}</span>
+            {/* Creation is a two-word form on Overview, not a dialog here: the
+                button goes where the form is, so the new card is in view when
+                it opens. */}
+            <span className={s.railHeadActions}>
+              <span className={s.railCount}>{workspaces.length}</span>
+              <IconButton
+                label="New workspace"
+                className={s.railAdd}
+                onClick={() => navigate(`${routes.overview()}?new=1`)}
+              >
+                <IconPlus size={13} />
+              </IconButton>
+            </span>
           </div>
         )}
 
-        {workspaces().map((ws) => {
+        {workspaces.map((ws) => {
           const expanded = isOpen(ws.id);
           const pending = needsYou(ws);
           return (

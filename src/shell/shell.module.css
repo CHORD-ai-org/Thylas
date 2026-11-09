@@ -687,3 +687,23 @@
   color: var(--accent);
   background: var(--tint-sel);
 }
+
+/* The create control lives in the section header, quiet next to the count: it
+   is not the surface's main action, and the count is what a reader looks for. */
+.railHeadActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: -4px;
+}
+
+.railAdd {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-3);
+}
+
+.railAdd:hover {
+  color: var(--ink);
+  background: var(--tint-hover);
+}

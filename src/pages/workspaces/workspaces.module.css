@@ -1,0 +1,195 @@
+/* The workspace grid: three shapes in one track — a card you can open, the
+   same card asking a question, and the form that makes a new one. They share a
+   width and a corner so the row reads as one list rather than three controls. */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--s3);
+  margin-top: var(--s3);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.cardOpen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-surface);
+  background: var(--bg-surface);
+  text-align: left;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.cardOpen:hover {
+  border-color: var(--line-strong);
+}
+
+.cardOpen:active {
+  border-color: var(--ink-3);
+}
+
+/* The delete control sits over the card's top-right corner instead of inside
+   it: a button inside a button is invalid, and the card has to stay one target.
+   It appears on hover and on keyboard focus within, never on touch — where it
+   would overlap the name it belongs to. */
+.cardDelete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.card:hover .cardDelete,
+.card:focus-within .cardDelete {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .cardDelete {
+    opacity: 1;
+  }
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  /* A gutter for the delete control that appears in this corner on hover: a
+     badge sliding under an icon would make both unreadable. */
+  padding-right: 26px;
+}
+
+.cardName {
+  font: var(--t-ui-strong);
+}
+
+.cardMeta {
+  font: var(--t-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  margin-top: 6px;
+}
+
+.cardFoot {
+  font: var(--t-caption);
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  background: var(--bg-surface);
+}
+
+.confirmTitle {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.confirmWhat {
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: 8px;
+}
+
+/* The one button in the app that is allowed to be red, and only in a confirm
+   strip that has already said what it removes. */
+.danger {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.danger:hover {
+  background: var(--tint-live);
+}
+
+.newCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 96px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-surface);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  background: transparent;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.newCard:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 96px;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-surface);
+  background: var(--bg-surface);
+}
+
+.formLabel {
+  font: var(--t-caption);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.formInput {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-app);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.formInput[aria-invalid] {
+  border-color: var(--error);
+}
+
+.formError {
+  font: var(--t-caption);
+  color: var(--error);
+}
+
+.empty {
+  margin-top: var(--s3);
+  font: var(--t-ui);
+  color: var(--ink-2);
+}

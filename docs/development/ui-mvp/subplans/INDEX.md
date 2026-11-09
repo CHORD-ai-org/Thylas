@@ -28,6 +28,7 @@ Parents carry UX/visual specification so units do not repeat them; each unit say
 | [SP-07a](SP-07a-ai-endpoint.md) | AI middleware, client, error taxonomy | SP-07 | 1.0 | SP-03b | **Completed** 11-08 |
 | [SP-07b](SP-07b-ai-panel.md) | Overview AI panel and its states | SP-07 | 0.75 | SP-07a, SP-02 | **Completed** 11-08 |
 | [SP-07c](SP-07c-process-states.md) | Process states, controls, labelled simulator | SP-07 | 0.75 | SP-03b | **Completed** 11-08 |
+| [SP-11](SP-11-workspaces.md) | Create and delete a workspace, with what it owns | — | 1.0 | SP-02, SP-05a | **Completed** 11-09 |
 | [SP-08](SP-08-account-and-settings.md) | Account and settings | — | 0.5 | SP-01 | Not Started |
 | [SP-10](SP-10-visual-quality.md) | Radius, typeface, icons, surface, accessibility | — | 3.5 | SP-07 | **In progress** — 10a done 11-08 |
 | [SP-09a](SP-09a-gates.md) | Gates script and e2e expansion | SP-09 | 1.0 | SP-02…SP-08 | Not Started |

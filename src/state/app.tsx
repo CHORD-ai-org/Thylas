@@ -59,6 +59,9 @@ type AppState = {
   closePalette: () => void;
   openObjectTab: (ctx: string, seed: ObjectTabSeed) => void;
   closeObjectTab: (ctx: string, id: string) => void;
+  /** Closes every tab whose path starts with `prefix`. A deleted workspace
+      takes its tabs with it; leaving them would show a strip of tombstones. */
+  closeTabsFor: (prefix: string) => void;
 };
 
 const AppCtx = createContext<AppState | null>(null);
@@ -227,6 +230,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTabs((prev) => closeTab(prev, ctx, id));
   }, []);
 
+  const closeTabsFor = useCallback((prefix: string) => {
+    setTabs((prev) => {
+      let changed = false;
+      const next: TabsState = {};
+      for (const [ctx, list] of Object.entries(prev)) {
+        const kept = list.filter((tab) => !tab.path.startsWith(prefix));
+        if (kept.length !== list.length) changed = true;
+        next[ctx] = kept;
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
@@ -258,8 +274,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       closePalette: () => setPaletteOpen(false),
       openObjectTab,
       closeObjectTab,
+      closeTabsFor,
     }),
-    [ui, panelOpen, paletteOpen, tabs, dirty, toggleRail, togglePanel, isDirty, markDirty, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab],
+    [ui, panelOpen, paletteOpen, tabs, dirty, toggleRail, togglePanel, isDirty, markDirty, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab, closeTabsFor],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

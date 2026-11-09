@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
-import { recent, workspaces } from '../data/selectors';
+import { recent } from '../data/selectors';
+import { useWorkspaces } from '../state/workspaces';
 import { useApp } from '../state/app';
 import { Kbd } from '../components/ui';
 import s from './palette.module.css';
@@ -16,6 +17,7 @@ type Command = {
 
 export function CommandPalette() {
   const { paletteOpen, closePalette, togglePanel, toggleRail } = useApp();
+  const spaces = useWorkspaces();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
@@ -29,7 +31,14 @@ export function CommandPalette() {
       { id: 'go-account', label: 'Account', group: 'Go', run: () => navigate(routes.account()) },
     ];
 
-    for (const ws of workspaces()) {
+    list.push({
+      id: 'new-workspace',
+      label: 'New workspace',
+      group: 'Workspaces',
+      run: () => navigate(`${routes.overview()}?new=1`),
+    });
+
+    for (const ws of spaces) {
       list.push(
         { id: `go-${ws.id}-files`, label: `Files — ${ws.name}`, group: 'Workspaces', run: () => navigate(routes.files(ws.id)) },
         { id: `go-${ws.id}-boards`, label: `Whiteboard — ${ws.name}`, group: 'Workspaces', run: () => navigate(routes.boards(ws.id)) },
@@ -53,7 +62,7 @@ export function CommandPalette() {
     );
 
     return list;
-  }, [navigate, togglePanel, toggleRail]);
+  }, [navigate, togglePanel, toggleRail, spaces]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

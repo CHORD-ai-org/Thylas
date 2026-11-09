@@ -109,10 +109,10 @@ Four levels, in order of proximity:
 | --- | --- |
 | Capability absent because a service is missing (upload, create, submit, run control) | Render the control **disabled** with `title` = "Needs the files service — not connected in this build". Nothing happens on click because nothing can |
 | Capability absent because WAM does not expose it | Render **nothing** (mirrored-control rule) |
-| Action valid in principle but out of scope for this build (new workspace, new board) | Do not render the affordance. Absence is honest; a disabled button invites a support request |
+| Action valid in principle but out of scope for this build (new board, upload) | Do not render the affordance. Absence is honest; a disabled button invites a support request |
 | Action would leave the app (billing, invoices) | Render as a link that says where it goes |
 
-Consequence for the current UI: `Overview` intent Start, `Files` Upload / New folder, `Boards` New board / canvas tools, `Processes` Start a process, run Controls, `Notes` New / Move to…, `Account` Manage plan / Create key, and the Overview "New workspace" card (which currently opens the palette, `I5`) all change from *click → apology* to *disabled with reason* or *absent*.
+Consequence for the current UI: `Overview` intent Start, `Files` Upload / New folder, `Boards` New board / canvas tools, `Processes` Start a process, run Controls, `Notes` New / Move to…, and `Account` Manage plan / Create key all change from *click → apology* to *disabled with reason* or *absent*. Workspaces left this list in SP-11: creating one is in scope, so the card creates one (D-045).
 
 ## 7. Keyboard `[C]`
 
@@ -145,7 +145,7 @@ Forbidden: single-letter shortcuts outside the palette, shortcuts that shadow br
 | V2 | Object tabs without type | `TabStrip.tsx:96` | add glyph, keep label | 1 |
 | V3 | No overflow menu | `TabStrip.tsx` | `+N` menu after 8 | 4 |
 | V4 | 9 post-hoc apologies | see §6 | disabled-with-reason or absent | 4 |
-| V5 | "New workspace" opens palette | `Overview.tsx` | remove the affordance | 2 |
+| V5 | "New workspace" opens palette | `Overview.tsx` | closed twice: the card was removed in SP-02, then returned in SP-11 as a form that creates the workspace (D-045) | 2 |
 | V6 | Accent on hover text | `overview:151`, `recently:69`, `processes:115/315/370` | tint only | 2–3 |
 | V7 | No pressed state for buttons | `ui.module.css` | `:active` per matrix | 0 |
 | V8 | No loading language | — | static bars, `aria-busy` | 4 |

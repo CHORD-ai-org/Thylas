@@ -242,7 +242,9 @@ async function main() {
     const el = document.getElementById('intent-reason');
     return !!el && el.offsetParent !== null && el.textContent.includes('Nothing is started');
   `), true);
-  check('overview: no New workspace affordance', await js(`return !document.body.innerText.includes('New workspace');`), true);
+  /* SP-11 replaced the old "creating one is not available" footnote with a
+     working form, so the assertion that guarded the absence is now its inverse. */
+  check('overview: no apology about creating a workspace', await js(`return !document.body.innerText.includes('not available in this build');`), true);
   check('overview: no small text outside glyph tiles', await js(`
     return [...document.querySelectorAll('main *')]
       .filter(el => el.textContent.trim() && !el.className.toString().includes('glyph'))
@@ -250,6 +252,89 @@ async function main() {
   `), true);
   const overviewCss = readFileSync(new URL('../src/pages/overview.module.css', import.meta.url), 'utf8');
   check('overview: accent confined to shared primitives', (overviewCss.match(/var\(--accent/g) ?? []).length, 0);
+
+  // ---- SP-11: a workspace can be made and removed here ----
+  check('workspaces: the grid offers creation', await js(`
+    return [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'New workspace');
+  `), true);
+
+  await js(`${helpers} click(byText('button', 'New workspace')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('workspaces: the form opens with focus and a label', await js(`
+    const input = document.getElementById('new-workspace-name');
+    return {
+      focused: document.activeElement === input,
+      label: document.querySelector('label[for="new-workspace-name"]')?.textContent.trim(),
+    };
+  `), { focused: true, label: 'New workspace' });
+
+  const submitName = async (name) => js(`
+    const input = document.getElementById('new-workspace-name');
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, ${JSON.stringify(name)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 120));
+    input.form.requestSubmit();
+    await new Promise(r => setTimeout(r, 350));
+    return location.pathname;
+  `);
+
+  check('workspaces: a duplicate name is refused in place', await js(`
+    const input = document.getElementById('new-workspace-name');
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, 'Research');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 120));
+    input.form.requestSubmit();
+    await new Promise(r => setTimeout(r, 300));
+    return {
+      path: location.pathname,
+      error: document.getElementById('new-workspace-error')?.textContent.trim() ?? null,
+      cards: document.querySelectorAll('[data-workspace-card]').length,
+    };
+  `), (v) => v.path === '/overview' && typeof v.error === 'string' && v.error.includes('already exists') && v.cards === 2);
+
+  check('workspaces: creating one lands inside it', await submitName('Field notes'), (v) => typeof v === 'string' && v.startsWith('/w/ws-field-notes-') && v.endsWith('/files'));
+  const fieldPath = await js(`return location.pathname;`);
+  const fieldId = fieldPath.split('/')[2];
+
+  check('workspaces: a new workspace is empty and says so', await js(`
+    return {
+      empty: document.body.innerText.includes('This folder is empty'),
+      rail: [...document.querySelectorAll('[data-ws-row]')].some(r => r.textContent.includes('Field notes')),
+      count: document.querySelector('[class*="railCount"]')?.textContent.trim(),
+    };
+  `), { empty: true, rail: true, count: '3' });
+
+  await goto('/overview');
+  check('workspaces: a card counts what is really there', await js(`
+    const card = document.querySelector('[data-workspace-card="${fieldId}"]');
+    /* No regex here: inside a template literal a backslash is eaten, so /\s+/g
+       arrives as /s+/g and deletes every letter s ("Field notes" -> "Field note"). */
+    return card ? card.innerText.split(String.fromCharCode(10)).join(' ').replace(/ +/g, ' ').trim() : null;
+  `), (v) => typeof v === 'string' && v.includes('0 files · 0 boards · 0 processes'));
+
+  await goto(fieldPath);
+  await goto('/overview');
+  await js(`${helpers} click(document.querySelector('button[aria-label="Delete Field notes"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('workspaces: delete asks first and says what goes', await js(`
+    const box = document.querySelector('[data-confirm]');
+    return box ? box.innerText.split(String.fromCharCode(10)).join(' ').replace(/ +/g, ' ').trim() : null;
+  `), (v) => typeof v === 'string' && v.includes('Delete “Field notes”?') && v.includes('It is empty') && v.includes('no undo'));
+
+  await js(`${helpers} click([...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Delete')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('workspaces: deleting removes the card and the rail row', await js(`
+    return {
+      cards: document.querySelectorAll('[data-workspace-card]').length,
+      rail: [...document.querySelectorAll('[data-ws-row]')].map(r => r.textContent).join('|'),
+      count: document.querySelector('[class*="railCount"]')?.textContent.trim(),
+    };
+  `), (v) => v.cards === 2 && !v.rail.includes('Field notes') && v.count === '2');
+
+  await goto(fieldPath);
+  check('workspaces: a deleted workspace says it is gone', await js(`
+    return document.body.innerText.includes('Workspace not found');
+  `), true);
+  await goto('/overview');
 
   // ---- SP-07b: one answer, and no claim that work started ----
   const setField = async (value) => js(`

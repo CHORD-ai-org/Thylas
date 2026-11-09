@@ -359,6 +359,16 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-045 · A workspace can be created and deleted here, and deleting one takes what is inside it
+
+**Status:** accepted in force (SP-11).
+**Context:** SP-02 removed the "New workspace" card because it opened the command palette — the label and the action disagreed. The reason was never "workspaces must not be created"; it was that a card which does not create a workspace is a lie. With a local store in hand, the card can be true.
+**Decision:** workspaces are owned locally. Creation is `seeds + created − deleted` persisted at `thylas:workspaces:v1`; deletion of a sample is a tombstone, deletion of a created one removes it. Every selector that returns a workspace-scoped object asks `liveIds()` first, so a deleted workspace's files, boards, runs, folders and recent entries leave no trace and an open tab resolves to "Workspace not found". Its notes are deleted for real — they are the only content a person typed — and the confirm states the count before the press. Counts on the cards are derived, never stored.
+**Alternatives:** (1) mutate `data/mock.ts` in place — puts the samples back on reload and makes "deleted" untestable; (2) hide the workspace only, leaving its objects reachable by URL — one surface contradicting another; (3) keep notes of a deleted workspace in storage, unlisted — silent orphans with no way back.
+**Consequence:** a workspace is now a first-class object in the demo, which raises one question the build cannot answer: a created workspace has no files service, so it stays empty (the banner on Files already says so). Recorded in the interaction contract rather than papered over. `R4` is marked reversed.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

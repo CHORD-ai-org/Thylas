@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 11:50 (10a/b/c done; 10f.1 partially — Boards grid shipped).
+Last updated: 2026-11-09 13:20 (10a/b/c done; 10f.1 partially; SP-11 workspaces shipped).
 
 ---
 
@@ -14,7 +14,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | --- | --- | --- | --- | --- | --- |
 | SP-00 Foundation | — | **Completed** 11-07 | 1.5 | — | lint zones, Vitest 8, e2e 25, grammar recipes |
 | SP-01 Application shell | — | **Completed** 11-07 | 2.0 | SP-00 | typed tabs, measured overflow, rail keys, states |
-| SP-02 Overview | — | **Completed** 11-07 | 1.0 | SP-01 | computed lede + zero state, honest disabled Start, no new-workspace card, shared section tick |
+| SP-02 Overview | — | **Completed** 11-07 | 1.0 | SP-01 | computed lede + zero state, honest disabled Start, shared section tick; its "no new-workspace card" is reversed by SP-11 |
 | SP-03a Tab model | SP-03 | **Completed** 11-07 | 1.0 | SP-01 | pure `lib/tabs.ts` 12 tests, v2 persistence, tombstones, cross-scope isolation |
 | SP-03b Panel and restore | SP-03 | **Completed** 11-07 | 0.5 | SP-03a | per-context widths, named-region scroll restore, room-preserving switch, settings deleted |
 | SP-04a Table grammar | SP-04 | **Completed** 11-07 | 0.75 | SP-03b | grammar adoption, measured 3-width budgets, no truncation |
@@ -29,6 +29,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07a AI endpoint | SP-07 | **Completed** 11-08 | 1.0 | SP-03b | `POST /api/ai` in dev *and* preview, seven error kinds, key never leaves the server, 35 offline assertions |
 | SP-07b AI panel | SP-07 | **Completed** 11-08 | 0.75 | SP-07a, SP-02 | four states, abort, retry by `retryable`, footer meta, 15 e2e assertions |
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
+| SP-11 Workspaces | — | **Completed** 11-09 | 1.0 | SP-02, SP-05a | create + delete, derived counts, tombstones, notes and tabs go with it |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter + four-step ramp, glyphs→paths, Boards card grid shipped; 10d surface/states, 10e a11y, 10f.1 (Overview split, Processes panel, Files budget), 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
@@ -180,13 +181,19 @@ Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALIT
 | 11-08 | Backlink | after linking Method → Questions, the target reads `Linked from (1)` naming Method |
 | 11-08 | Delete | inline confirmation, `There is no undo`, then the list returns without the note |
 | 11-08 | Screenshots | `.workbuddy/shots/sp05c-{links,search,backlinks,delete}.png` |
+| 11-09 | `npm test` (SP-11) | 228/228; 17 store cases — derived counts, trim, blank, too long, case-insensitive duplicate, reload, tombstone, object filtering, note deletion, hand-edited payload |
+| 11-09 | `npm run e2e` (SP-11) | 234/234; 9 new — create, duplicate refusal, landing inside, empty state, card counts, delete confirm, delete effect, deleted URL |
+| 11-09 | Deleted contents | `filesIn`, `boardsIn`, `processesIn`, `getFile`, `getProcess`, `foldersIn`, `recent()`, `needsInput()` all empty for a tombstoned workspace; asserted in `workspaces.test.ts` |
+| 11-09 | Counts | `Research` reads `8 files · 2 boards · 9 processes` from the data, not from the sample's declared `counts` (which said 5 notes for a workspace holding 2) |
+| 11-09 | `npm run build` (SP-11) | shell 156.2 KB gzip; editor chunk unchanged |
+| 11-09 | Screenshots | `.workbuddy/shots/sp11-{grid,form,duplicate,empty,confirm,hover}.png` |
 
 ## Next concrete action
 
-1. **SP-10b Typeface** (1 day) and **10c Icons** (0.5 day): Inter in, eight characters out. Then **10d**.
-2. **SP-09a Gates** (1 day): `scripts/gates.mjs` with eleven rules (R11 already exists inside `scripts/ai-checks.mjs`), plus the e2e surface coverage. SP-07 is now closed, so every rule has something to check.
+1. **SP-10d surface and 10e accessibility**, then **10f.1** (Overview split, Processes panel, Files budget) — `optimization-plan.md` W0–W6 has the sequence and `QUALITY-BAR.md` §4 the four surfaces it has to lift.
+2. **SP-09a Gates** (1 day) after the visual phase; every rule then has a finished surface to check.
 3. **SP-08 Account** (0.5 day) is independent; density persistence and the last post-click apology.
-4. **Do not start SP-05 until Q-1 (CodeMirror 6) is answered.** Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
+4. **Q-1 no longer blocks anything** — CodeMirror 6 shipped in SP-05b, so the row is answered by the code. Q-4 (persisted board viewport) is still unapproved, so `BoardScene.viewport` stays unread: every visit starts fitted.
 
 ## Resolved
 
@@ -195,7 +202,7 @@ Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALIT
 | R1 | Object tabs carried no type | SP-01 | every object tab has an svg glyph; e2e assertion |
 | R2 | Strip scrolled horizontally / no overflow | SP-01 | measured limit 3–8; e2e "strip does not scroll" passes |
 | R3 | Hard-coded "Two processes need a decision" lede | SP-02 | `pendingLede(needsInput().length)`; zero state verified in the DOM |
-| R4 | "New workspace" card opened the palette as an apology | SP-02 | card removed; one sentence names the missing workspace service |
+| R4 | "New workspace" card opened the palette as an apology | SP-02 | card removed; **reversed in SP-11** — the card returns because it now creates a workspace (D-045) |
 | R5 | Intent Start clicked, then apologised | SP-02 | Start disabled with a persistent reason; no post-click banner |
 | R6 | A parquet file was shown with a `PDF` glyph | SP-02 | glyph derives from `getFile(id).kind` |
 | R7 | Accent-coloured hover text on Overview rows | SP-02 | hover is a tint; zero local accent declarations |

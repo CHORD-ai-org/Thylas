@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import {
   STATE_LABEL,
@@ -9,7 +9,6 @@ import {
   needsInput,
   pendingLede,
   recent,
-  workspaces,
 } from '../data/selectors';
 import type { Process, RecentItem, RecentKind } from '../data/types';
 import { USER } from '../data/mock';
@@ -17,8 +16,9 @@ import { AI_MAX_PROMPT, type AiErr, type AiStatusBody } from '../lib/ai';
 import { ask, probe } from '../services/ai/client';
 import type { Answer } from '../services/ai/types';
 import { useApp } from '../state/app';
+import { useWorkspaces } from '../state/workspaces';
+import { WorkspaceGrid } from './workspaces/WorkspaceGrid';
 import {
-  Badge,
   Button,
   Chip,
   EmptyState,
@@ -163,6 +163,8 @@ function AiPanel({
 export function Overview() {
   const navigate = useNavigate();
   const { panelOpen, togglePanel } = useApp();
+  const list = useWorkspaces();
+  const [params] = useSearchParams();
   const [intent, setIntent] = useState('');
   const [engaged, setEngaged] = useState(false);
   const [ai, setAi] = useState<AiStatusBody | null>(null);
@@ -373,30 +375,11 @@ export function Overview() {
       </div>
 
       <section className={s.block}>
-        <SectionLabel aside={String(workspaces().length)}>Workspaces</SectionLabel>
-        <div className={s.wsGrid}>
-          {workspaces().map((ws) => (
-            <button
-              key={ws.id}
-              type="button"
-              className={s.wsCard}
-              onClick={() => navigate(routes.files(ws.id))}
-            >
-              <span className={s.wsCardTop}>
-                <span className={s.wsCardName}>{ws.name}</span>
-                <Badge>{ws.scope === 'org' ? 'ORG' : 'PERSONAL'}</Badge>
-              </span>
-              <span className={s.wsCardMeta}>
-                {ws.counts.files} files · {ws.counts.boards} boards · {ws.counts.processes} processes
-              </span>
-              <span className={s.wsCardFoot}>
-                {ws.scope === 'org' ? `${ws.members} members · you are a member` : 'only you'}
-              </span>
-            </button>
-          ))}
-        </div>
+        <SectionLabel aside={String(list.length)}>Workspaces</SectionLabel>
+        <WorkspaceGrid autoCreate={params.get('new') === '1'} />
         <p className={s.footNote}>
-          Workspaces come from the workspace service. Creating one is not available in this build.
+          A workspace keeps its own files, boards and runs. A new one starts empty and lives on
+          this machine; deleting one deletes what is inside it.
         </p>
       </section>
 

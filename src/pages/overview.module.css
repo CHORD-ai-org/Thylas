@@ -240,57 +240,6 @@
   margin-top: var(--s12);
 }
 
-.wsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: var(--s3);
-  margin-top: var(--s3);
-}
-
-.wsCard {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-surface);
-  background: var(--bg-surface);
-  text-align: left;
-  transition: border-color var(--dur-fast) var(--ease);
-}
-
-.wsCard:hover {
-  border-color: var(--line-strong);
-}
-
-.wsCard:active {
-  border-color: var(--ink-3);
-}
-
-.wsCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s2);
-}
-
-.wsCardName {
-  font: var(--t-ui-strong);
-}
-
-.wsCardMeta {
-  font: var(--t-caption);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
-  margin-top: 6px;
-}
-
-.wsCardFoot {
-  font: var(--t-caption);
-  color: var(--ink-3);
-  margin-top: 10px;
-}
-
 /* Absence is the honest form: no disabled "New workspace" button, no dashed
    card. One sentence says where workspaces come from. */
 .footNote {
