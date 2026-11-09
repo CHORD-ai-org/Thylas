@@ -23,6 +23,8 @@ body {
   background: var(--bg-app);
   color: var(--ink);
   font: var(--t-ui);
+  /* Numbers are facts (P6): columns of figures line up without per-table rules. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;

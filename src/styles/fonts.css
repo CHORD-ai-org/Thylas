@@ -1,44 +1,25 @@
-/* Self-hosted faces. Six files, no CDN, no runtime package.
+/* Self-hosted faces. Five files, no CDN, no runtime package. Inter Variable
+   replaced IBM Plex Sans for Latin and Greek (D-042); Plex Mono and Noto SC stay.
    Licensing: SIL OFL 1.1 — see public/fonts/OFL.txt.
    Loading: Plex Sans 400 is preloaded in index.html; Noto Sans SC is fetched
    only when a CJK glyph is actually rendered (it sits second in every stack). */
 
 @font-face {
-  font-family: 'IBM Plex Sans';
-  src: url('/fonts/IBMPlexSans-Regular.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'Inter Variable';
+  src: url('/fonts/InterVariable-latin.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
     U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Greek, for the τ mark. Inter's Greek subset keeps the mark in the same face
+   as the UI instead of falling through to the 1 MB CJK font (D-042). */
 @font-face {
-  font-family: 'IBM Plex Sans';
-  src: url('/fonts/IBMPlexSans-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
-    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: 'IBM Plex Sans';
-  src: url('/fonts/IBMPlexSans-SemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
-    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* Greek, for the τ mark only. Without it the brand mark falls through to the
-   CJK face and an English screen downloads 1 MB of hanzi for one glyph. */
-@font-face {
-  font-family: 'IBM Plex Sans';
-  src: url('/fonts/IBMPlexSans-Greek.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'Inter Variable';
+  src: url('/fonts/InterVariable-greek.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
@@ -62,6 +43,9 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  /* Inter's x-height is ~4% taller; scale CJK up so a mixed line sits on one
+     baseline group. Measured against a 13px mixed string at W1 exit. */
+  size-adjust: 104%;
 }
 
 @font-face {
@@ -70,4 +54,5 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  size-adjust: 104%;
 }

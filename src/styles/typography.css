@@ -1,12 +1,15 @@
-/* Type contract — docs/design/typography.md §3.
-   Seven steps, three weights, no serif. Component styles must not declare
-   font-size or font-weight directly; they use these tokens. */
+/* Type contract — docs/design/typography.md §3, re-cut for Inter (D-042).
+   Four sizes plus mono, three weights, no serif. Component styles must not
+   declare font-size or font-weight directly; they use these tokens.
+
+   Ramp: 11 · 13 · 16 · 20 · 32. The old 24px `page` step is gone — a screen
+   title is either a section (20) or the one display element (32). */
 
 :root {
-  /* Symbol faces sit before the CJK face on purpose: ⌘, ▦, ▶ and friends are not
-     in the Plex subset, and without a symbol fallback they would pull 1 MB of
-     Noto Sans SC onto an English screen for four glyphs. */
-  --ui: 'IBM Plex Sans', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans SC', system-ui,
+  /* Inter first, then a symbol face: ⌘, ⌥ and arrows are not in Inter's Latin
+     subset, and without that fallback four glyphs would pull 1 MB of Noto SC
+     onto an English screen. */
+  --ui: 'Inter Variable', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans SC', system-ui,
     -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', 'Cascadia Mono', 'SF Mono', Consolas, monospace;
 
@@ -16,10 +19,14 @@
   --t-ui-strong: 500 13px/20px var(--ui);
   --t-read: 400 16px/26px var(--ui);
   --t-section: 500 20px/28px var(--ui);
-  --t-page: 500 24px/32px var(--ui);
+  --t-page: 500 20px/28px var(--ui);
   --t-display: 500 32px/40px var(--ui);
   --t-mono: 400 12px/18px var(--mono);
 
   --track-caption: 0.02em;
   --track-label: 0.06em;
+  /* Inter at display sizes needs negative tracking to hold the editorial
+     register; at 11px it needs a little air. */
+  --track-display: -0.018em;
+  --track-section: -0.008em;
 }

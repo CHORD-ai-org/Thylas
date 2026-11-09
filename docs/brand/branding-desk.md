@@ -51,20 +51,22 @@ The name of the direction is **Quiet Computationalism**. Each word is a constrai
 | P7 | **Motion is consequence.** Nothing moves before the user acts | Freeze-frame at t=0 and t=2s with no input: identical |
 | P8 | **No fictional control.** A control acts, is disabled with a reason, or is absent | Click every control in a build where services are absent: zero apologies |
 
-## 3. Typography — the brand's main voice `[C]`
+## 3. Typography — the brand's main voice `[C]`, amended 2026-11-09 by D-042
 
-The full specification is `docs/design/typography.md`. The brand argument:
+The full specification is `docs/design/typography.md`. **The Latin UI face changed from IBM Plex Sans to Inter Variable on 2026-11-09 (D-042).** The argument below is the amended one; the original Plex reasoning is kept at the end because the reversal costs one line and the reasoning should stay auditable.
 
-- **IBM Plex Sans** is a humanist sans with engineered details: flat terminals, an even rhythm, a slightly narrow fit. It was drawn for interfaces and for a technology company, which is exactly the register Thylas wants — precise without being cold, warm without being friendly-for-no-reason. It is legible at 13px, which is where this product lives.
-- **Noto Sans SC** covers Chinese without introducing a second personality: same vertical rhythm, similar apparent weight. Chinese must never look like an afterthought set in a fallback.
-- **IBM Plex Mono** shares Plex's skeleton, so a mono value inside a sans row looks like a *material change*, not a font change. This is why numbers and ids read as instrument readouts.
-- **No serif.** The editorial quality comes from measure (66–72 characters), a single display step, and rules. A serif in the chrome would be costume; a serif in the reading column is a real option but must be argued as a decision (`typography.md` §1, `[?]`).
+- **Inter Variable** is a neo-grotesque drawn for screens: a tall x-height, flat terminals and open apertures that hold at 11–13px, which is where this product lives. Its narrower fit at 32px gives the display step an editorial register without a second family. It replaced Plex because Plex's humanist details read as "engineer tool" at small sizes — legible, but soft where the interface needs precision (`D-042`).
+- **Noto Sans SC** covers Chinese without a second personality. Inter's x-height is ~4 % taller than Plex's, so the CJK faces carry `size-adjust: 104%`; a mixed line must sit on one baseline group.
+- **IBM Plex Mono** stays. Its tabular figures are better than Inter's, so a mono value inside a sans row still reads as a *material change*, not a font change. This is why numbers and ids read as instrument readouts.
+- **No serif.** Editorial quality comes from measure (66–72 characters), a single display step, and rules.
 
 ```css
---ui:   "IBM Plex Sans", "Noto Sans SC", system-ui, sans-serif;
+--ui:   "Inter Variable", "Noto Sans SC", system-ui, sans-serif;
 --mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
-/* 7 steps: 11 · 12 mono · 13 · 16 · 20 · 24 · 32 */
+/* 4 steps + mono: 11 · 13 · 16 · 20 · 32 · (12 mono) */
 ```
+
+**Original reasoning (Plex, superseded 11-09):** *"IBM Plex Sans is a humanist sans with engineered details… precise without being cold."* Retained for audit; the weight and spacing rules derived from it still hold.
 
 ## 4. Colour system `[C]` palette, `[P]` semantics
 

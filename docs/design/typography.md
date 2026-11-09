@@ -111,10 +111,10 @@ That is **eight** steps including the two 11px variants; no other size may be wr
 | Old (in `design/tokens.css`) | New | Note |
 | --- | --- | --- |
 | `--serif` stack | removed | no fourth family |
-| `--ui` = Inter/Segoe | `--ui` = Plex Sans → Noto SC | self-hosted |
-| `--t-display` 28/34 serif | `--t-display` 32/40 Plex 500 | one per screen |
-| `--t-section` 18/26 serif | `--t-section` 20/28 Plex 500 | |
-| `--t-read` 16/26 serif | `--t-read` 16/26 Plex 400 | measure unchanged at 66ch |
+| `--ui` = Inter/Segoe | `--ui` = Inter Variable → Noto SC (D-042, 11-09; was Plex for two days) | self-hosted |
+| `--t-display` 28/34 serif | `--t-display` 32/40 Inter 500 | one per screen |
+| `--t-section` 18/26 serif | `--t-section` 20/28 Inter 500 | |
+| `--t-read` 16/26 serif | `--t-read` 16/26 Inter 400 | measure unchanged at 66ch |
 | `--t-ui-strong` 550 | 500 | real weight |
 | `--t-caption` 450 11/16 | 500 11/16 +0.06em | uppercase labels only |
 | `--t-mono` 12/18 | `--t-mono` 12/18 (kept) + `--t-mono-s` 11/16 | |
