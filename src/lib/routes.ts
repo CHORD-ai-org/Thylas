@@ -13,17 +13,31 @@ export const routes = {
   run: (wsId: Id, runId: Id) => `/w/${wsId}/processes/${runId}`,
   notes: () => '/notes',
   note: (noteId: Id) => `/notes/${noteId}`,
-  account: (section = 'profile') => `/account/${section}`,
-  /* Compute is a global surface: a machine is not inside a workspace, it is
-     where a workspace's work runs. One pool, five screens. */
+  chat: () => '/chat',
+  chatConversation: (conversationId: Id) => `/chat/${conversationId}`,
+  /* User is the person's own surface. Account was renamed, and the old path
+     is a redirect — no page keeps the old name. */
+  user: (section: 'identity' | 'preferences' | 'environment' | 'security' = 'identity') =>
+    `/user/${section}`,
+  /* Connect is the integration center: two detail shapes, one per noun. */
+  connect: () => '/connect',
+  connectDiscover: () => '/connect/discover',
+  connectCustom: () => '/connect/custom',
+  connectIntegration: (integrationId: Id) => `/connect/i/${integrationId}`,
+  connectApp: (appId: Id) => `/connect/apps/${appId}`,
+  /* Compute v2 (D-050): execution environments first. One pool of backends,
+     the Run selection in the middle, machines and history as support. */
   compute: () => '/compute',
-  computeResources: () => '/compute/resources',
-  computeResource: (resourceId: Id) => `/compute/resources/${resourceId}`,
-  computeNewResource: () => '/compute/resources/new',
-  computeProviders: () => '/compute/providers',
-  computeWorkloads: () => '/compute/workloads',
-  computeWorkload: (workloadId: Id) => `/compute/workloads/${workloadId}`,
-  computeFind: () => '/compute/find',
+  computeBackends: () => '/compute/backends',
+  computeAddBackend: () => '/compute/backends/new',
+  computeBackend: (backendId: Id) => `/compute/backends/${backendId}`,
+  computeRun: () => '/compute/run',
+  computeInstances: () => '/compute/instances',
+  computeInstance: (instanceId: Id) => `/compute/instances/${instanceId}`,
+  computeActivity: () => '/compute/activity',
+  computeWorkload: (workloadId: Id) => `/compute/activity/${workloadId}`,
+  computeMarketplace: () => '/compute/marketplace',
+  computeListing: (listingId: Id) => `/compute/marketplace/${listingId}`,
 };
 
 export type WorkspaceRoom = 'files' | 'boards' | 'processes';

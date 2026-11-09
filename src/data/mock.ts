@@ -17,10 +17,13 @@ import type {
 
 export const USER: User = {
   name: 'Ceaser Zhao',
+  username: 'ceaser',
+  accountId: 'acct-8f21c4d9',
   email: 'ceaser@oasis.dev',
   initials: 'CZ',
   plan: 'Free',
   role: 'Member · Onda Lab',
+  memberSince: '2026',
 };
 
 export const WORKSPACES: Workspace[] = [

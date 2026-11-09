@@ -285,3 +285,25 @@ export const IconCompute = ({ size = 16 }: Props) => (
     <path d="M2.4 11.2 8 14l5.6-2.8" />
   </svg>
 );
+
+export const IconConnect = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M6.6 9.4 9.4 6.6" />
+    <path d="M7.2 4.8 8.8 3.2a2.83 2.83 0 0 1 4 4l-1.6 1.6" />
+    <path d="M8.8 11.2 7.2 12.8a2.83 2.83 0 0 1-4-4l1.6-1.6" />
+  </svg>
+);
+
+export const IconChat = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M2.6 3.4h8.2v5.4H6.2L3.4 11V8.8h-.8z" />
+    <path d="M13.4 6.6v5.2l-2.4-1.8H7.4" />
+  </svg>
+);
+
+export const IconCopy = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <rect x="5.6" y="5.6" width="7.8" height="7.8" />
+    <path d="M10.4 5.6V2.6H2.6v7.8h3" />
+  </svg>
+);

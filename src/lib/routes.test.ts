@@ -20,8 +20,13 @@ describe('routes', () => {
     expect(routes.recently()).toBe('/recently');
     expect(routes.notes()).toBe('/notes');
     expect(routes.note('n-1')).toBe('/notes/n-1');
-    expect(routes.account()).toBe('/account/profile');
-    expect(routes.account('usage')).toBe('/account/usage');
+    expect(routes.user()).toBe('/user/identity');
+    expect(routes.user('environment')).toBe('/user/environment');
+    expect(routes.connect()).toBe('/connect');
+    expect(routes.connectDiscover()).toBe('/connect/discover');
+    expect(routes.connectCustom()).toBe('/connect/custom');
+    expect(routes.connectIntegration('int-1')).toBe('/connect/i/int-1');
+    expect(routes.connectApp('app-1')).toBe('/connect/apps/app-1');
   });
 
   it('names the room behind a path, including object details', () => {
@@ -48,7 +53,9 @@ describe('routes', () => {
       routes.board('ws-1', 'b-1'),
       routes.run('ws-1', 'r-1'),
       routes.note('n-1'),
-      routes.account('plan'),
+      routes.user('preferences'),
+      routes.connectIntegration('int-1'),
+      routes.connectApp('app-1'),
     ];
     for (const path of all) expect(path).not.toMatch(/\/\//);
   });

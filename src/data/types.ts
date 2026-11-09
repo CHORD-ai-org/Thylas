@@ -20,10 +20,13 @@ export type Workspace = {
 
 export type User = {
   name: string;
+  username: string;
+  accountId: string;
   email: string;
   initials: string;
   plan: string;
   role: string;
+  memberSince: string;
 };
 
 
