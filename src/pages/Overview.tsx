@@ -28,7 +28,7 @@ import {
   StatusDot,
   TypeGlyph,
 } from '../components/ui';
-import { IconAnswer, IconBoards } from '../components/icons';
+import { IconAnswer, IconArrow, IconBoards } from '../components/icons';
 import { PlainLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import s from './overview.module.css';
@@ -279,20 +279,21 @@ export function Overview() {
           />
           <Button
             variant="primary"
-            className={s.startBtn}
+            className={s.sendBtn}
             onClick={submit}
             disabled={!canAsk}
             aria-describedby="intent-reason"
-          >
-            Ask
-          </Button>
+            aria-label="Send"
+            title="Send (⌘↵)"
+            icon={<IconArrow size={14} />}
+          />
         </div>
         <div className={s.intentFoot}>
           <p id="intent-reason" className={s.intentReason}>
             {reason}
           </p>
           <span className={s.intentMeta}>
-            <kbd className={s.kbdInline}>⌘↵</kbd> to ask · <kbd className={s.kbdInline}>esc</kbd>{' '}
+            <kbd className={s.kbdInline}>⌘↵</kbd> to send · <kbd className={s.kbdInline}>esc</kbd>{' '}
             clears
           </span>
         </div>

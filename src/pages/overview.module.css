@@ -67,9 +67,23 @@
   color: var(--ink-3);
 }
 
-.startBtn {
+/* Send: an arrow in a square, the shape every message field uses. The word was
+   doing the job of an icon and costing 42px of a field that is mostly input. */
+.sendBtn {
+  width: 32px;
   height: 32px;
-  padding: 0 16px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Disabled, the button is still a square. The shared disabled recipe paints it
+   almost the same value as the field it sits in, so the control vanished until
+   the first keystroke — the field looked like it had no button and then grew
+   one. A recessed ground keeps the shape without pretending to be pressable. */
+.sendBtn:disabled {
+  background: var(--bg-app);
+  border-color: transparent;
+  color: var(--ink-3);
 }
 
 .intentFoot {

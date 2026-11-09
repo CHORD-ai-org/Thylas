@@ -377,8 +377,15 @@ async function main() {
       panel: el ? el.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120) : null,
     };
   `), (v) => typeof v.panel === 'string' && v.panel.includes('Answers one question with DeepSeek') && v.panel.includes('does not start a process'));
+  check('ask: the send control is an icon button with a name', await js(`
+    const b = document.querySelector('button[aria-label="Send"]');
+    if (!b) return null;
+    const r = b.getBoundingClientRect();
+    return { label: b.getAttribute('aria-label'), w: Math.round(r.width), h: Math.round(r.height), text: b.textContent.trim() };
+  `), { label: 'Send', w: 32, h: 32, text: '' });
+
   check('ask: Ask is disabled while the field is empty', await js(`
-    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    const btn = document.querySelector('button[aria-label="Send"]');
     return { disabled: btn ? btn.disabled : 'missing', described: btn ? btn.getAttribute('aria-describedby') : '' };
   `), { disabled: true, described: 'intent-reason' });
 
@@ -455,7 +462,7 @@ async function main() {
   await setField('x'.repeat(8001));
   check('ask: an over-long question is refused with the limit stated', await js(`
     const reason = document.getElementById('intent-reason');
-    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    const btn = document.querySelector('button[aria-label="Send"]');
     return { text: reason.textContent.trim(), disabled: btn ? btn.disabled : 'missing' };
   `), (v) => v.disabled === true && /8001 characters; the limit is 8000/.test(v.text));
   await setField('');
@@ -480,7 +487,7 @@ async function main() {
   check('ask: without a key the control is disabled and names the variable', await js(`
     await new Promise(r => setTimeout(r, 200));
     const reason = document.getElementById('intent-reason');
-    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Ask');
+    const btn = document.querySelector('button[aria-label="Send"]');
     return {
       disabled: btn ? btn.disabled : 'missing',
       names: reason ? reason.textContent.includes('DEEPSEEK_API_KEY') : false,
