@@ -12,6 +12,18 @@
 export const AI_PATH = '/api/ai';
 
 /**
+ * The streaming sibling (D-051). Same middleware, same key handling, same error
+ * kinds — a separate path so `/api/ai` (and the single-turn Ask panel on it)
+ * keeps its contract untouched. The response is SSE; see `AiStreamEvent`.
+ */
+export const AI_STREAM_PATH = '/api/ai/stream';
+
+/** History turns the client may send and the server will accept per request. */
+export const AI_MAX_HISTORY = 12;
+/** Per-message cap inside history: a pasted file is context, not a prompt. */
+export const AI_MAX_HISTORY_ITEM = 4000;
+
+/**
  * A read-only answer to "is this endpoint able to work at all". It exists
  * because the alternative is worse: either the send control is always enabled
  * and every reader learns about a missing key by failing, or the browser is
@@ -133,6 +145,32 @@ export function isAiBody(value: unknown): value is AiBody {
     isAiErrorKind(value.kind) &&
     typeof value.message === 'string' &&
     typeof value.retryable === 'boolean'
+  );
+}
+
+/* --------------------------------------------------------------------------
+   The streaming contract. Events travel as SSE `data:` lines, JSON-encoded.
+   -------------------------------------------------------------------------- */
+
+export type AiStreamEvent =
+  | { start: true; model: string }
+  | { delta: string }
+  | { done: true; model: string; ms: number }
+  | { error: AiErr };
+
+export type AiHistoryItem = { role: 'user' | 'assistant'; content: string };
+
+export function isAiHistory(value: unknown): value is AiHistoryItem[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= AI_MAX_HISTORY &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        (item.role === 'user' || item.role === 'assistant') &&
+        typeof item.content === 'string' &&
+        item.content.length <= AI_MAX_HISTORY_ITEM,
+    )
   );
 }
 
