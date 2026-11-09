@@ -6,6 +6,11 @@
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#F1EBDD" />
     <title>Thylas</title>
+    <!-- The SVG is the source; the 32px PNG is the fallback for browsers that
+         will not take an SVG icon, and the 180px one is the iOS home screen. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/InterVariable-latin.woff2" as="font" type="font/woff2" crossorigin />
     <style>
       /* pre-paint ground so the first frame is paper, not white */

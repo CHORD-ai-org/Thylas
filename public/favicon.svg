@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Thylas">
+  <!-- The mark is a tau on paper: the same letter, colour and ground as the
+       wordmark in the rail, reduced to what survives at 16px. The foot at the
+       stem and the slight bow of the bar are what separate it from a capital
+       T — without them the icon reads as the wrong letter. -->
+  <rect width="64" height="64" rx="14" fill="#F1EBDD" />
+  <g fill="none" stroke="#493626" stroke-width="6.5" stroke-linecap="round">
+    <path d="M16 21c6-3.4 26-3.4 32 0" />
+    <path d="M32 19.5v19c0 4.2 3.2 6.8 7.6 6.8" />
+  </g>
+</svg>
