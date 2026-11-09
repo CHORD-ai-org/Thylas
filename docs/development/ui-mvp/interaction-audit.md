@@ -16,16 +16,18 @@
 
 | # | Severity | Problem | Measured | Fix belongs to |
 | --- | --- | --- | --- | --- |
-| A1 | **blocking** | The command palette is `aria-modal="true"` but has no focus trap. Six Tabs walk out of it into the rail | trail: `Overview · Recently · Notes · Account · Files · Whiteboard` | SP-10e |
-| A2 | **blocking** | Closing it drops focus to `<body>`, so the next Tab restarts from the top of the page | `focusAfterClose: BODY` | SP-10e |
-| A3 | high | The palette input has no accessible name and no `aria-activedescendant`; arrowing changes the highlight silently for a screen reader | `aria-label: null`, `aria-controls: palette-list`, `activedescendant: null` | SP-10e |
-| A4 | high | Rail rows announce a concatenated name: label, badge and counts run together | `"ResearchPERSONAL"`, `"lit-reviewWhiteboard · Research"` | SP-10e |
+| A1 | **closed 11-09** | The command palette is `aria-modal="true"` but had no focus trap | 8 real Tabs now stay inside the dialog; asserted in e2e | SP-10e |
+| A2 | **closed 11-09** | Closing it dropped focus to `<body>` | `closePalette` restores the opener; measured `focusAfterClose: Search or jump to (Ctrl K)` | SP-10e |
+| A3 | **closed 11-09** | The palette input had no name and no `aria-activedescendant` | `role=combobox`, `aria-label="Search commands"`, active descendant pointing at the highlighted option and `aria-selected=true` | SP-10e |
+| A4 | **closed 11-09** | Rail rows announced a concatenated name | `"Research, personal workspace, 1 need you"` | SP-10e |
 | A5 | high | Text below 4.5:1 on every route — the two smallest steps of the ink ramp | `11px label 2.0:1`, `13px nav 3.2:1` (needs 4.5) | SP-10b |
 | A6 | high | 8px type survives in four places: workspace initials, file-kind badges | `PQ` `CSV` `PDF` `MD` at 8px | SP-10b |
 | A7 | medium | Tap targets under 24×24: tab close, zoom, filter chips | `18×18` ×4, `22×22` ×3, `22` high chips | SP-10d |
 | A8 | medium | The note list is six buttons with no arrow-key model | ArrowDown leaves focus in place (an earlier count of 18 was the row's three spans being counted per row) | SP-05c |
-| A9 | medium | Two controls share the name `Collapse sidebar`, so neither is unique to a screen reader | appears at stop 2 and stop 9 | SP-10e |
+| A9 | **closed 11-09** | Two controls shared the name `Collapse sidebar` | the icon beside the wordmark is gone; the labelled row is the only one. The strip's `⌘K` became a hint while the rail is open, so no action has two controls | SP-10e |
 | A10 | medium | Empty states carry no next action where one exists | Overview's four blocks leave a third of the fold blank; Processes is empty on the right; Notes shows "Nothing open" above a list of 18 | SP-10d |
+
+Two defects were found by the fix rather than by the audit: Escape only worked while the input itself had focus (after tabbing to an option the dialog could not be closed from the keyboard), and the global focus outline is offset by 1px, so a row spanning a scroll container had it clipped on all four sides. Both are fixed and asserted.
 
 ## The one design-level finding
 

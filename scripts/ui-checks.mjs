@@ -736,6 +736,61 @@ async function main() {
   await js(`document.querySelector('[role="dialog"] input').dispatchEvent(new KeyboardEvent('keydown', {key:'Escape', bubbles:true})); await new Promise(r => setTimeout(r, 200));`);
   check('palette: closes on escape', await js(`return !!document.querySelector('[role="dialog"]');`), false);
 
+  // ---- SP-10e: the keyboard stays inside the palette, and comes back ----
+  await js(`
+    document.querySelector('button[aria-label^="Search or jump to"]').focus();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }));
+    await new Promise(r => setTimeout(r, 300));
+    return 1;
+  `);
+  check('palette: the field is a named combobox pointing at the highlighted option', await js(`
+    const input = document.querySelector('[role="dialog"] input');
+    const id = input.getAttribute('aria-activedescendant');
+    const option = id ? document.getElementById(id) : null;
+    return {
+      name: input.getAttribute('aria-label'),
+      role: input.getAttribute('role'),
+      points: !!option,
+      selected: option ? option.getAttribute('aria-selected') : null,
+    };
+  `), { name: 'Search commands', role: 'combobox', points: true, selected: 'true' });
+
+  /* Real key events: a synthetic KeyboardEvent moves no focus, so a trap that
+     works would look broken and a trap that is broken would look fine. */
+  for (let i = 0; i < 8; i++) {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
+  }
+  check('palette: eight tabs stay inside the dialog', await js(`
+    const a = document.activeElement;
+    return { inside: !!a.closest('[role="dialog"]'), tag: a.tagName };
+  `), (v) => v.inside === true);
+
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  await sleep(350);
+  check('palette: escape closes it and returns focus to the opener', await js(`
+    return {
+      open: !!document.querySelector('[role="dialog"]'),
+      focus: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName,
+    };
+  `), (v) => v.open === false && typeof v.focus === 'string' && v.focus.startsWith('Search or jump to'));
+
+  check('rail: a workspace row announces a sentence, not a concatenation', await js(`
+    return [...document.querySelectorAll('[data-ws-row]')].map(r => r.getAttribute('aria-label'));
+  `), (v) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'string' && /^[^,]+, (personal|organisation) workspace/.test(n)));
+
+  /* Named, not global: Notes in the rail and Notes in the strip are two doors
+     to one room, which is fine. The three names below were one control each,
+     duplicated — that is what makes a screen reader hear the same thing twice. */
+  check('shell: one control per named action', await js(`
+    const names = [...document.querySelectorAll('button, a[href]')]
+      .filter(el => el.offsetParent !== null)
+      .map(el => (el.getAttribute('aria-label') || el.textContent || '').replace(/ +/g, ' ').trim().toLowerCase());
+    const count = (n) => names.filter(x => x === n).length;
+    return { collapse: count('collapse sidebar'), create: count('create workspace') };
+  `), { collapse: 1, create: 1 });
+
   await js(`${helpers} window.dispatchEvent(new KeyboardEvent('keydown', {key:'\\\\', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 300));`);
   check('panel: hidden by shortcut', await js(`return !!document.querySelector('aside[data-panel-context]');`), false);
   await js(`${helpers} window.dispatchEvent(new KeyboardEvent('keydown', {key:'\\\\', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 300));`);

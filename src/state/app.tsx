@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -243,12 +244,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  /* Focus returns to whatever opened the palette. Captured here rather than in
+     the dialog's effect: by the time an effect runs, `document.activeElement`
+     may already be the dialog's own input. */
+  const paletteOpener = useRef<HTMLElement | null>(null);
+  const openPalette = useCallback(() => {
+    paletteOpener.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setPaletteOpen(true);
+  }, []);
+  const closePalette = useCallback(() => {
+    setPaletteOpen(false);
+    const opener = paletteOpener.current;
+    paletteOpener.current = null;
+    if (!opener?.isConnected) return;
+    /* After the dialog leaves the tree, so the browser cannot move focus back
+       into a node that is about to be removed. */
+    window.setTimeout(() => {
+      if (opener.isConnected) opener.focus();
+    }, 0);
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setPaletteOpen((v) => !v);
+        setPaletteOpen((v) => {
+          if (v) {
+            const opener = paletteOpener.current;
+            paletteOpener.current = null;
+            if (opener?.isConnected) window.setTimeout(() => opener.focus(), 0);
+          } else {
+            paletteOpener.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }
+          return !v;
+        });
       } else if (meta && e.key === '\\') {
         e.preventDefault();
         setPanelOpen((v) => !v);
@@ -270,13 +302,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       markDirty,
       panelWidthFor,
       setPanelWidthFor,
-      openPalette: () => setPaletteOpen(true),
-      closePalette: () => setPaletteOpen(false),
+      openPalette,
+      closePalette,
       openObjectTab,
       closeObjectTab,
       closeTabsFor,
     }),
-    [ui, panelOpen, paletteOpen, tabs, dirty, toggleRail, togglePanel, isDirty, markDirty, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab, closeTabsFor],
+    [ui, panelOpen, paletteOpen, tabs, dirty, toggleRail, togglePanel, isDirty, markDirty, panelWidthFor, setPanelWidthFor, openObjectTab, closeObjectTab, closeTabsFor, openPalette, closePalette],
   );
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

@@ -104,9 +104,6 @@ export function Rail() {
             <IconButton label="Search or jump to (Ctrl K)" onClick={openPalette}>
               <IconSearch />
             </IconButton>
-            <IconButton label="Collapse sidebar" onClick={toggleRail}>
-              <IconChevron dir="left" />
-            </IconButton>
           </span>
         )}
       </div>
@@ -140,7 +137,9 @@ export function Rail() {
             <span className={s.railHeadActions}>
               <span className={s.railCount}>{workspaces.length}</span>
               <IconButton
-                label="New workspace"
+                /* Not "New workspace": the Overview card already carries that
+                   name, and two controls with one name cannot be told apart. */
+                label="Create workspace"
                 className={s.railAdd}
                 onClick={() => navigate(`${routes.overview()}?new=1`)}
               >
@@ -171,6 +170,7 @@ export function Rail() {
                   navigate(switchWorkspace(pathname, ws.id));
                 }}
                 aria-expanded={expanded}
+                aria-label={`${ws.name}, ${ws.scope === 'org' ? 'organisation workspace' : 'personal workspace'}${pending > 0 ? `, ${pending} need you` : ''}`}
                 title={ws.name}
               >
                 {railCollapsed ? null : (

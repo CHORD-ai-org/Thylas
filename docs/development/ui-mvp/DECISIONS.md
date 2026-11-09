@@ -378,6 +378,16 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-047 · The layer that opens a dialog owns its focus, and one action gets one control
+
+**Status:** accepted in force (SP-10e).
+**Context:** the audit's two blocking findings were both about keyboard ownership: `aria-modal` with no trap, and a close that left focus on `<body>`. Implementing the fix exposed two more. Escape was bound to the palette's input, so after tabbing to an option the dialog could not be closed from the keyboard at all. And the rail's search existed twice — once in the rail, once as `⌘K` in the tab strip — which is how one action ends up with two names.
+**Decision:** `openPalette` / `closePalette` live in `state/app.tsx` and own the opener element; the dialog only traps Tab and closes on Escape from anywhere inside it. Focus is restored in a `setTimeout(0)` after the dialog unmounts, guarded by `isConnected`. Where one action had two controls, one of them changes shape rather than being duplicated: the strip's `⌘K` is a hint while the rail is open and a button when the rail is collapsed. Rail rows carry an explicit `aria-label` sentence instead of relying on their concatenated children.
+**Alternative:** a focus-trap library. Rejected: the trap is twelve lines and the dialog has two kinds of focusable node.
+**Consequence:** Tab cannot leave an open palette, Escape always closes it, and the keyboard returns to the button that opened it. The rule "one action, one control" is now asserted by name (`collapse sidebar` ×1, `create workspace` ×1) rather than by a global duplicate scan — `Notes` in the rail and `Notes` in the strip are two doors to one room and are allowed.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

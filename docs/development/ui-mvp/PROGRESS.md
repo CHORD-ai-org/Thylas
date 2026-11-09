@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 13:58 (10a/b/c done, 10d states shipped; 10f.1 partially; SP-11 shipped).
+Last updated: 2026-11-09 14:44 (10a–10e done except density/loading in 10d; 10f.1 partially; SP-11 shipped).
 
 ---
 
@@ -31,7 +31,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-11 Workspaces | — | **Completed** 11-09 | 1.0 | SP-02, SP-05a | create + delete, derived counts, tombstones, notes and tabs go with it |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
-| SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter + four-step ramp, glyphs→paths, Boards card grid, four states + inset focus shipped; 10d density/loading, 10e a11y, 10f.1 remainder, 10f.2–4 remain |
+| SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
@@ -193,6 +193,14 @@ Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALIT
 | 11-09 | Recently row | hover was `color: var(--accent)` on the label — accent used for hover; replaced by the shared inset tint |
 | 11-09 | `npm run e2e` (10d) | 237/237; 3 new: a process row, a filter chip and a rail row each answer hover, press and focus, forced and compared |
 | 11-09 | Screenshots | `.workbuddy/shots/sp10d-{hover,active,focus,disabled}.png` |
+| 11-09 | Palette trap (10e) | 8 real Tabs all land inside `[role=dialog]`; measured with `Input.dispatchKeyEvent`, not a synthetic event |
+| 11-09 | Focus restore (10e) | `Escape` → `document.activeElement` is `Search or jump to (Ctrl K)`, the control that opened it |
+| 11-09 | Palette semantics | `role=combobox`, `aria-label="Search commands"`, `aria-activedescendant` → an existing option with `aria-selected=true` |
+| 11-09 | Escape bug, found by the fix | it was bound to the input, so after tabbing to an option the dialog could not be closed from the keyboard |
+| 11-09 | Rail names | `"Research, personal workspace, 1 need you"` — a sentence, not `"ResearchPERSONAL1"` |
+| 11-09 | Duplicate controls | `Collapse sidebar` ×2 → 1 (the wordmark icon removed); the strip's `⌘K` is a hint while the rail is open |
+| 11-09 | `npm run e2e` (10e) | 242/242; 5 new: combobox semantics, 8-Tab trap, Escape + restore, rail sentence, one control per named action |
+| 11-09 | Screenshots | `.workbuddy/shots/sp10e-{palette,tabbed,returned}.png` |
 
 ## Next concrete action
 

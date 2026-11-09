@@ -22,6 +22,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [
@@ -71,12 +72,11 @@ export function CommandPalette() {
   }, [commands, query]);
 
   useEffect(() => {
-    if (paletteOpen) {
-      setQuery('');
-      setIndex(0);
-      const t = window.setTimeout(() => inputRef.current?.focus(), 0);
-      return () => window.clearTimeout(t);
-    }
+    if (!paletteOpen) return;
+    setQuery('');
+    setIndex(0);
+    const t = window.setTimeout(() => inputRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
   }, [paletteOpen]);
 
   useEffect(() => {
@@ -97,16 +97,50 @@ export function CommandPalette() {
   return (
     <div className={s.scrim} onMouseDown={closePalette} role="presentation">
       <div
+        ref={dialogRef}
         className={s.palette}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
         onMouseDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          /* Escape closes from anywhere in the dialog. It used to live on the
+             input alone, so pressing it after tabbing to an option did nothing
+             — and the palette stayed open under the user's hands. */
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            closePalette();
+            return;
+          }
+          if (e.key !== 'Tab') return;
+          /* `aria-modal` is a promise: everything outside is unreachable. Six
+             Tabs used to walk into the rail (audit A1). */
+          const focusables = [
+            inputRef.current,
+            ...Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? []),
+          ].filter((el): el is HTMLElement => el !== null);
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (!first || !last) return;
+          const here = document.activeElement;
+          if (!e.shiftKey && here === last) {
+            e.preventDefault();
+            first.focus();
+          } else if (e.shiftKey && here === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        }}
       >
         <div className={s.inputRow}>
           <input
             ref={inputRef}
             className={s.input}
+            role="combobox"
+            aria-label="Search commands"
+            aria-expanded
+            aria-autocomplete="list"
+            aria-activedescendant={filtered[index] ? `palette-${filtered[index].id}` : undefined}
             placeholder="Go to, open, or run…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -140,6 +174,7 @@ export function CommandPalette() {
                 {showGroup ? <div className={s.group}>{cmd.group}</div> : null}
                 <button
                   type="button"
+                  id={`palette-${cmd.id}`}
                   role="option"
                   aria-selected={i === index}
                   className={[s.row, i === index ? s.rowActive : ''].join(' ')}

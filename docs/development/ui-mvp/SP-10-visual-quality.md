@@ -83,7 +83,7 @@ Exit: a script scans `.tsx` for a one-character text node outside `kbd` and retu
 
 Exit: four states photographed per control class; the palette, the board and the reader all still fit 1440×900 without scroll.
 
-### 10e · Accessibility pass (0.5 day)
+### 10e · Accessibility pass (0.5 day) — **Done 11-09**
 
 From `interaction-audit.md`, the four findings that do not change a single pixel and still matter more than the rest of this file:
 
@@ -94,7 +94,7 @@ From `interaction-audit.md`, the four findings that do not change a single pixel
 | A3 | The palette input has no name and no `aria-activedescendant` | `aria-label="Search"`, active option mirrored on the input |
 | A4, A9 | Rail rows announce `"ResearchPERSONAL"`; two buttons share `Collapse sidebar` | explicit `aria-label` per row; unique names |
 
-Exit: Tab six times from an open palette stays inside it; Esc returns focus to the button that opened it; no control shares an accessible name.
+Exit met: eight real Tabs stay inside the dialog; Esc returns focus to the opener (`Search or jump to (Ctrl K)`); `Collapse sidebar` and `New workspace` each name one control. A1–A4 and A9 are closed in `interaction-audit.md`.
 
 ## D. Order and cost
 

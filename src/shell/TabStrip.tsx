@@ -28,7 +28,7 @@ function TabGlyph({ type }: { type: Tab['type'] }) {
 export function TabStrip({ ctx, wsId, variant }: Props) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { tabs, closeObjectTab, panelOpen, togglePanel, openPalette, isDirty, markDirty } =
+  const { tabs, closeObjectTab, panelOpen, togglePanel, openPalette, isDirty, markDirty, railCollapsed } =
     useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingClose, setPendingClose] = useState<string | null>(null);
@@ -231,9 +231,19 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
       </div>
 
       <div className={s.stripTools}>
-        <IconButton label="Search or jump to (Ctrl K)" onClick={openPalette}>
-          <span className={s.stripKbd}>⌘K</span>
-        </IconButton>
+        {/* One control per action. With the rail open its search button is two
+            hundred pixels to the left, so this becomes the shortcut hint it
+            already looks like; with the rail collapsed it is the only way in,
+            and it becomes a button again. */}
+        {railCollapsed ? (
+          <IconButton label="Search or jump to (Ctrl K)" onClick={openPalette}>
+            <span className={s.stripKbd}>⌘K</span>
+          </IconButton>
+        ) : (
+          <span className={s.stripKbd} aria-hidden>
+            ⌘K
+          </span>
+        )}
         <IconButton
           label={panelOpen ? 'Hide panel (Ctrl \\)' : 'Show panel (Ctrl \\)'}
           active={panelOpen}
