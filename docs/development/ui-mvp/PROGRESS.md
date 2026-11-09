@@ -34,7 +34,9 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
-Remaining: **5.75 days**. 10f is 3.25 of them; see `QUALITY-BAR.md` §4 for the four surfaces it has to lift. Critical path: SP-09a → SP-09b; SP-08 and the rest of SP-10 are independent. SP-05 is closed.
+10b–10f are sequenced by `docs/design/optimization-plan.md` (W0–W6, 6.5 days including 0.25 doc debt, per-wave exit evidence).
+
+Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALITY-BAR.md` §4 for the four surfaces it has to lift. Critical path: SP-09a → SP-09b; SP-08 and the rest of SP-10 are independent. SP-05 is closed.
 
 ---
 

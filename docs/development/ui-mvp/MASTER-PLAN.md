@@ -5,7 +5,7 @@
 **Owner:** founder. Execution: agent.
 **Companion documents:** `PROGRESS.md` (truth about the repo), `DECISIONS.md` (every deviation, with reasons), `subplans/`.
 **Design authority:** `docs/brand/branding-desk.md`, `docs/design/{typography,interaction-contract,motion-guidelines,spatial-language}.md`.
-**Experience authority (added 2026-11-09):** `QUALITY-BAR.md` (eight scored dimensions, five tests), `docs/design/interaction-lifecycles.md` (per-feature states), `docs/research/eden-benchmark.md` (what the reference demonstrates and what it does not). A unit that passes its own acceptance but fails the quality bar is not done.
+**Experience authority (added 2026-11-09):** `docs/design/optimization-plan.md` (the six-wave visual + interaction program), `QUALITY-BAR.md` (eight scored dimensions, five tests), `docs/design/interaction-lifecycles.md` (per-feature states), `docs/research/eden-benchmark.md` (what the reference demonstrates and what it does not). A unit that passes its own acceptance but fails the quality bar is not done.
 **Technical authority:** `docs/architecture/tech-stack.md` — where this plan and that document disagree, the document wins and `DECISIONS.md` records why.
 
 ---

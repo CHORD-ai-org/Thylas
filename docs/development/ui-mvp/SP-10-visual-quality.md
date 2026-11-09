@@ -124,6 +124,7 @@ Total 3.5 days, before SP-09a (gates) and SP-09b (audit). SP-09b then re-runs th
 **Why this phase exists.** 10a–10e make the *pixels* right: radius, face, icons, states, contrast. They do not make the *product* feel composed. A measured audit of four surfaces on 11-09 found that defect, and it is not cosmetic: at 1440 the Boards and Processes lists end in 380–600px of void, Files truncates a column while the panel is open, and numeric columns are left-aligned. Those are composition and completeness failures, not styling ones.
 
 **Authority:** `QUALITY-BAR.md` (eight dimensions, scoring, five tests) and `docs/research/eden-benchmark.md` (what the reference actually demonstrates). Both are binding for this phase.
+**Execution order:** `docs/design/optimization-plan.md` sequences 10b–10f into six waves (W0–W6, 6 days) with per-wave exit evidence. Where this file and that plan disagree on order, the plan wins; on scope, this file wins.
 
 ### 10f.1 · Composition (1 day)
 
