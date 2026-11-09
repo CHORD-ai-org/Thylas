@@ -245,3 +245,29 @@ export const IconDistribute = ({ size = 16, axis = 'h' }: Props & { axis?: 'h' |
     )}
   </svg>
 );
+
+export const IconArrow = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M2.8 8h9.6M8.8 4.4 12.4 8l-3.6 3.6" />
+  </svg>
+);
+
+export const IconDisclosure = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M6.4 4.4 10.2 8l-3.8 3.6" />
+  </svg>
+);
+
+export const IconNote = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M4 2.6h5.4L12 5.2v8.2H4z" />
+    <path d="M9.2 2.8v2.6h2.6M6 8.4h4M6 10.8h2.8" />
+  </svg>
+);
+
+export const IconFile = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M4 2.6h5.4L12 5.2v8.2H4z" />
+    <path d="M9.2 2.8v2.6h2.6" />
+  </svg>
+);

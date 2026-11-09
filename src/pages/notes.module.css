@@ -199,10 +199,11 @@
 }
 
 .endMark {
-  margin-top: var(--s8);
-  text-align: center;
-  color: var(--ink-3);
-  font: var(--t-ui);
+  width: 4px;
+  height: 4px;
+  margin: var(--s8) auto 0;
+  border-radius: 50%;
+  background: var(--line-strong);
 }
 
 .readerEmpty {

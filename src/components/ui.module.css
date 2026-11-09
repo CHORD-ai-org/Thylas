@@ -225,8 +225,8 @@
   border-radius: var(--r-chip);
   background: var(--bg-surface);
   font: var(--t-mono-s);
-  font-size: 8px;
-  letter-spacing: 0;
+  font-size: 9px;
+  letter-spacing: -0.02em;
   color: var(--ink-2);
   flex: 0 0 auto;
 }

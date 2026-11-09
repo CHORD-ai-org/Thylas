@@ -902,6 +902,8 @@
 }
 
 .panelArrow {
+  display: inline-flex;
+  align-items: center;
   color: var(--ink-3);
 }
 
@@ -1072,16 +1074,19 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--s3);
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: var(--s4);
   margin-top: var(--s4);
+  align-items: start;
 }
 
 .boardIndexCard {
   display: flex;
-  align-items: center;
-  gap: var(--s3);
-  padding: var(--s3);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-surface);
   background: var(--bg-surface);
@@ -1093,16 +1098,23 @@
 }
 
 .cardPreview {
-  display: grid;
-  grid-template-columns: repeat(3, 14px);
-  grid-auto-rows: 10px;
-  gap: 3px;
-  padding: 6px;
-  border: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  aspect-ratio: 16 / 9;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
   background: var(--bg-paper);
+  background-image: radial-gradient(rgba(73, 54, 38, 0.14) 1px, transparent 1.2px);
+  background-size: 14px 14px;
 }
 
 .cardTile {
+  width: 56px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
   background: color-mix(in oklab, var(--spine, var(--line-strong)) 40%, var(--bg-paper));
 }
 
@@ -1114,8 +1126,17 @@
 .cardBody {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
+  padding: var(--s3) var(--s4) var(--s4);
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  color: var(--ink-3);
 }
 
 .cardName {

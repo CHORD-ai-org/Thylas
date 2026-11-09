@@ -76,7 +76,14 @@
 }
 
 .boardGlyph {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  background: var(--bg-surface);
   color: var(--ink-2);
 }
 

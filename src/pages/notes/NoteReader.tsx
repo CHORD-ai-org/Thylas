@@ -105,7 +105,7 @@ export function NoteReader({
           </p>
         );
       })}
-      {words > 0 ? <p className={s.endMark}>◦</p> : null}
+      {words > 0 ? <p className={s.endMark} aria-hidden /> : null}
     </div>
   );
 }

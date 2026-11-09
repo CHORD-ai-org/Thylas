@@ -5,21 +5,7 @@ import { boardsIn, getBoard, getWorkspace } from '../data/selectors';
 import type { Board } from '../data/types';
 import { useRegisterTab } from '../state/app';
 import { Badge, Button, EmptyState, Field, Kbd } from '../components/ui';
-import {
-  IconAlign,
-  IconCard,
-  IconChevron,
-  IconCursor,
-  IconDistribute,
-  IconFit,
-  IconFold,
-  IconMinus,
-  IconPlus,
-  IconRedo,
-  IconSection,
-  IconTrash,
-  IconUndo,
-} from '../components/icons';
+import { IconAlign, IconArrow, IconCard, IconChevron, IconCursor, IconDistribute, IconFit, IconFold, IconMinus, IconPlus, IconRedo, IconSection, IconTrash, IconUndo } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import {
@@ -97,12 +83,15 @@ export function BoardsPage() {
                   : null}
               </span>
               <span className={s.cardBody}>
-                <span className={s.cardName}>{board.name}</span>
-                <span className={s.cardMeta}>
-                  {board.boardCards.length} cards · {board.sections.length} sections · updated {board.updated}
+                <span className={s.cardTitleRow}>
+                  <span className={s.cardName}>{board.name}</span>
+                  <IconChevron size={11} />
                 </span>
+                <span className={s.cardMeta}>
+                  {board.boardCards.length} cards · {board.sections.length} sections
+                </span>
+                <span className={s.cardMeta}>updated {board.updated}</span>
               </span>
-              <IconChevron size={11} />
             </button>
           ))}
           {boards.length === 0 ? (
@@ -841,7 +830,7 @@ function BoardPanel({
     return (
       <div className={s.panelInner}>
         <h3 className={s.panelCardTitle}>
-          {from} <span className={s.panelArrow}>→</span> {to}
+          {from} <span className={s.panelArrow}><IconArrow size={11} /></span> {to}
         </h3>
         <div className={s.panelFields}>
           <Field label="From">{from}</Field>

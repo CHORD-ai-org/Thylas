@@ -16,7 +16,7 @@ import type { Process, RunAction } from '../data/types';
 import { useRegisterTab } from '../state/app';
 import { clearRunState, setRunState, useRunOverrides } from '../state/runs';
 import { Badge, Button, Chip, EmptyState, Field, StatusDot } from '../components/ui';
-import { IconAnswer, IconPause, IconStop, IconChevron } from '../components/icons';
+import { IconAnswer, IconBoards, IconChevron, IconFile, IconNote, IconPause, IconStop } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import s from './processes.module.css';
@@ -341,7 +341,9 @@ export function RunDetailPage() {
           <div className={s.refChips}>
             {run.refs.map((ref) => (
               <span key={`${ref.kind}-${ref.id}`} className={s.refChip}>
-                <span className={s.refChipMark}>{ref.kind === 'file' ? '▤' : 'N'}</span>
+                <span className={s.refChipMark}>
+                  {ref.kind === 'file' ? <IconFile size={11} /> : <IconNote size={11} />}
+                </span>
                 {ref.label}
               </span>
             ))}
@@ -398,7 +400,7 @@ export function RunDetailPage() {
                       ev.kind === 'state' ? s.markState : '',
                     ].join(' ')}
                   >
-                    {ev.kind === 'artifact' ? '□' : ev.kind === 'checkpoint' ? '·' : '•'}
+
                   </span>
                   <span className={s.eventText}>{ev.text}</span>
                   <span className={[s.eventMeta, ev.meta === 'running' ? s.eventLive : ''].join(' ')}>
@@ -409,7 +411,7 @@ export function RunDetailPage() {
               {local ? (
                 <li className={s.eventRow}>
                   <span className={s.eventT}>now</span>
-                  <span className={[s.eventMark, s.markState].join(' ')}>•</span>
+                  <span className={[s.eventMark, s.markState].join(' ')} />
                   <span className={s.eventText}>
                     State set to “{STATE_LABEL[state]}” in this browser. The run itself did not move.
                   </span>
@@ -435,7 +437,15 @@ export function RunDetailPage() {
                 const to = artifactRoute(a);
                 return (
                   <li key={`${a.label}-${i}`} className={s.outRow}>
-                    <span className={s.outMark}>{a.kind === 'file' ? '▤' : a.kind === 'board' ? '▦' : 'N'}</span>
+                    <span className={s.outMark}>
+                      {a.kind === 'file' ? (
+                        <IconFile size={11} />
+                      ) : a.kind === 'board' ? (
+                        <IconBoards size={11} />
+                      ) : (
+                        <IconNote size={11} />
+                      )}
+                    </span>
                     <span className={s.outLabel}>{a.label}</span>
                     <span className={s.outMeta}>{a.meta}</span>
                     {to ? (

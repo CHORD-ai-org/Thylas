@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { IconDisclosure, IconNote } from './icons';
 import type { FileKind } from '../lib/types';
 import type { Tone } from '../lib/tone';
 import s from './ui.module.css';
@@ -122,9 +123,17 @@ export function TypeGlyph({ kind }: { kind: FileKind }) {
 }
 
 export function NoteGlyph() {
-  return <span className={[s.glyph, s.glyphNote].join(' ')}>N</span>;
+  return (
+    <span className={s.glyph} title="Note">
+      <IconNote size={11} />
+    </span>
+  );
 }
 
 export function ProcessGlyph() {
-  return <span className={[s.glyph, s.glyphProcess].join(' ')}>▶</span>;
+  return (
+    <span className={s.glyph} title="Process run">
+      <IconDisclosure size={11} />
+    </span>
+  );
 }

@@ -334,8 +334,8 @@
 }
 
 .refKind {
+  display: inline-flex;
   width: 12px;
-  font: var(--t-mono-s);
   color: var(--ink-3);
   flex: 0 0 auto;
 }

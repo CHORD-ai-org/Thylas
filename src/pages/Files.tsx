@@ -6,7 +6,7 @@ import { filesInFolder, foldersIn, getFile, getWorkspace, filesIn } from '../dat
 import type { FileItem } from '../data/types';
 import { useApp, useRegisterTab } from '../state/app';
 import { Button, EmptyState, Field, TypeGlyph, Badge } from '../components/ui';
-import { IconChevron, IconFolder, IconUpload } from '../components/icons';
+import { IconBoards, IconChevron, IconDisclosure, IconFolder, IconNote, IconUpload } from '../components/icons';
 import { WorkspaceLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import s from './files.module.css';
@@ -50,7 +50,15 @@ function FilePanel({ file, onOpen }: { file: FileItem; onOpen: () => void }) {
           <ul className={s.refList}>
             {file.usedBy.map((ref) => (
               <li key={`${ref.kind}-${ref.id}`} className={s.refRow}>
-                <span className={s.refKind}>{ref.kind === 'board' ? '▦' : ref.kind === 'process' ? '▶' : 'N'}</span>
+                <span className={s.refKind}>
+                  {ref.kind === 'board' ? (
+                    <IconBoards size={11} />
+                  ) : ref.kind === 'process' ? (
+                    <IconDisclosure size={11} />
+                  ) : (
+                    <IconNote size={11} />
+                  )}
+                </span>
                 <span className={s.refLabel}>{ref.label}</span>
                 <span className={s.refMeta}>{ref.meta}</span>
               </li>

@@ -1,3 +1,4 @@
+import { IconBoards } from '../components/icons';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getWorkspace, recent, STATE_LABEL, STATE_TONE } from '../data/selectors';
@@ -18,7 +19,11 @@ function glyph(kind: RecentKind) {
   if (kind === 'file') return <TypeGlyph kind="pdf" />;
   if (kind === 'note') return <NoteGlyph />;
   if (kind === 'process') return <ProcessGlyph />;
-  return <span className={s.boardGlyph}>▦</span>;
+  return (
+    <span className={s.boardGlyph}>
+      <IconBoards size={11} />
+    </span>
+  );
 }
 
 export function Recently() {

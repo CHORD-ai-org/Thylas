@@ -3,15 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import { useApp } from '../state/app';
 import { roomPath, rotateIntoView, type Tab } from '../lib/tabs';
-import {
-  IconBoards,
-  IconChevron,
-  IconClose,
-  IconFiles,
-  IconNotes,
-  IconPanel,
-  IconProcesses,
-} from '../components/icons';
+import { IconBoards, IconChevron, IconClose, IconFiles, IconNotes, IconPanel, IconProcesses } from '../components/icons';
 import { IconButton } from '../components/ui';
 import s from './shell.module.css';
 
@@ -168,7 +160,11 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
                   <TabGlyph type={tab.type} />
                 </span>
                 <span className={s.tabText}>{tab.label}</span>
-                {tab.missing ? <span className={s.tabGone} aria-label="deleted">×</span> : null}
+                {tab.missing ? (
+                  <span className={s.tabGone} aria-label="deleted">
+                    <IconClose size={10} />
+                  </span>
+                ) : null}
                 {tab.live ? <span className={s.tabLive} aria-label="running" /> : null}
               </button>
               <button
@@ -220,7 +216,11 @@ export function TabStrip({ ctx, wsId, variant }: Props) {
                       <TabGlyph type={tab.type} />
                     </span>
                     <span className={s.overflowLabel}>{tab.label}</span>
-                    {tab.missing ? <span className={s.tabGone} aria-label="deleted">×</span> : null}
+                    {tab.missing ? (
+                  <span className={s.tabGone} aria-label="deleted">
+                    <IconClose size={10} />
+                  </span>
+                ) : null}
                     {tab.live ? <span className={s.tabLive} /> : null}
                   </button>
                 ))}
