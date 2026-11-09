@@ -378,6 +378,7 @@
 
 .previewTitle {
   font: var(--t-page);
+  letter-spacing: var(--track-display);
   overflow-wrap: anywhere;
 }
 

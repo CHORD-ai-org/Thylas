@@ -8,6 +8,7 @@
 
 .greeting {
   font: var(--t-display);
+  letter-spacing: var(--track-display);
   letter-spacing: -0.015em;
   color: var(--ink);
 }

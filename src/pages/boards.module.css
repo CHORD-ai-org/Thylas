@@ -1058,6 +1058,7 @@
 
 .indexTitle {
   font: var(--t-page);
+  letter-spacing: var(--track-display);
   margin: 0 0 4px;
 }
 

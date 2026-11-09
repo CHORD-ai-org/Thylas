@@ -139,6 +139,7 @@
 .title {
   margin-top: 10px;
   font: var(--t-display);
+  letter-spacing: var(--track-display);
   letter-spacing: -0.015em;
 }
 
@@ -347,6 +348,7 @@
   width: 100%;
   margin-top: 10px;
   font: var(--t-page);
+  letter-spacing: var(--track-display);
   letter-spacing: -0.01em;
   color: var(--ink);
   background: transparent;

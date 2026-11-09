@@ -12,6 +12,7 @@
 .title {
   margin-top: 10px;
   font: var(--t-page);
+  letter-spacing: var(--track-display);
 }
 
 .hint {
