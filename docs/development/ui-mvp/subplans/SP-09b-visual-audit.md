@@ -56,3 +56,27 @@ The gate, the screenshots, the Lighthouse JSON, and the recorded interview answe
 
 - Screenshots go stale the moment someone edits; they are evidence at a commit, not a live view.
 - The identity test needs three humans; if unavailable, the item stays `Review Required` rather than being marked passed.
+
+---
+
+## Added 2026-11-09 — maturity review (binding)
+
+The checklist above asks whether the surface obeys the brand. It does not ask whether the product feels finished. This audit now also runs the review in `QUALITY-BAR.md`:
+
+| Step | Artefact |
+| --- | --- |
+| Score all eight surfaces on Q1–Q8 | table appended to `QUALITY-BAR.md` §4, one row per surface, with evidence links |
+| T1 reference contact sheet | six 1440 captures beside the corresponding public reference renders — composition only |
+| T2 three-second reading | five answers recorded verbatim |
+| T3 zero-instruction task | completion time, dead ends, page jumps |
+| T4 orphan component | five answers, three states per component |
+| T5 five-minute session | five steps, pass/fail per step |
+| Lifecycle coverage | `interaction-lifecycles.md` rows checked; every `gap` either fixed or explicitly deferred with a reason |
+
+Pass condition: every surface ≥ 20/24, no dimension ≤ 1, zero unexplained `gap` on Files / Notes / Board / AI.
+
+## Validation (amended)
+
+Gate + screenshots + Lighthouse JSON + interview answers + **the scored table** + **the lifecycle coverage check**.
+A score without an artefact is recorded as 2, not 3.
+

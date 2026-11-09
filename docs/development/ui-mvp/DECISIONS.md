@@ -350,6 +350,15 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-044 · Product experience is scored, and the reference is used for composition only
+
+**Context:** the founder's 2026-11-09 directive sets Eden-level product maturity as the target. The risk is twofold: treating "polish" as taste, and importing a look that is not Thylas.
+**Decision:** adopt `QUALITY-BAR.md` — eight dimensions, 0–3, ship threshold 20/24 with no dimension ≤ 1, artefacts required for a 3. Adopt `interaction-lifecycles.md` as the completeness test. Eden is used for **composition and information design only**; palette, type, radius, shadow and motion stay as decided (D-041, D-042). Where the reference and the brand conflict, the brand wins and the deviation is recorded in the benchmark's §5.
+**Alternative:** a subjective "does it look professional" review at SP-09b. Rejected: the 11-09 audit produced four surfaces scoring 16–21/24 with concrete defects; a taste review would have passed all four.
+**Consequence:** SP-10 gains a 3.25-day experience phase (10f) and SP-09b gains a scored table and five tests. Two lifecycle mechanics (context chip, compressed trace) are added to a surface marked complete — an amendment, not new scope.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

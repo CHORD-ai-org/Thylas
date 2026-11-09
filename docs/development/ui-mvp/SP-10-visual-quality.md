@@ -116,3 +116,48 @@ Total 3.5 days, before SP-09a (gates) and SP-09b (audit). SP-09b then re-runs th
 4. Every interactive element has four documented states.
 5. Nine surfaces at 1440×900 and 1280×800, no horizontal scroll, no clipped text.
 6. The AI surface still answers (the key now present must not be the reason a screenshot passes).
+
+---
+
+## F. Experience pass (10f) — added 2026-11-09 by directive
+
+**Why this phase exists.** 10a–10e make the *pixels* right: radius, face, icons, states, contrast. They do not make the *product* feel composed. A measured audit of four surfaces on 11-09 found that defect, and it is not cosmetic: at 1440 the Boards and Processes lists end in 380–600px of void, Files truncates a column while the panel is open, and numeric columns are left-aligned. Those are composition and completeness failures, not styling ones.
+
+**Authority:** `QUALITY-BAR.md` (eight dimensions, scoring, five tests) and `docs/research/eden-benchmark.md` (what the reference actually demonstrates). Both are binding for this phase.
+
+### 10f.1 · Composition (1 day)
+
+| Surface | Defect | Fix, not a redesign |
+| --- | --- | --- |
+| Boards (list) | 2 cards in the top quarter of the page, rest empty (A1) | list becomes a 3-column grid of board cards with a thumbnail at 16:10, card count, last-updated, and the owning workspace; ≥ 6 cards above the fold |
+| Processes (list) | 8 rows then void, detail is another page (A2) | row selection opens the run detail **in the side panel**: compressed trace header, artifacts, then events. The list keeps its full height; the panel is the third region |
+| Overview | content ends at 880/1440 (A6) | the right column becomes a real region: `NEEDS YOU` moves there full-height, and the left column keeps continue + workspaces. Two columns with distinct duties, not two halves of one list |
+| Files | `SOURCE` truncates (A3) | column budget recalculated at 1440 with panel open; source collapses to `#12` + tooltip-free full value in the panel's Source row |
+
+### 10f.2 · Object completeness (0.75 day)
+
+- **Row-level primary action** on Files and Notes (open), keyboard reachable, never inside a `…` menu (lifecycle gap 3).
+- **Provenance line, one component:** `produced by run #12 · 2h ago` — identical in file row, board card, note reference.
+- **State case, one convention:** machine states are lowercase everywhere (`running`, `needs you`); column headers stay uppercase. Fixes A4.
+- **Numeric columns:** tabular figures, right-aligned, units stated. Fixes A5.
+
+### 10f.3 · Context and trace (1 day)
+
+- **Context chip** at the top of the AI panel: workspace · selection · attached count, editable before send (T3, lifecycle gap 1). Without it the panel cannot claim to answer "in context".
+- **Compressed trace** as the run detail's first block: `read 12 files · 3 searches · produced 2 artifacts`, expandable to the event list (T4).
+- **Insert result as note** with provenance (lifecycle gap 2), scoped to notes only — board insertion waits for artifact ingestion (B2).
+
+### 10f.4 · State honesty sweep (0.5 day)
+
+Fix the four `unverified` lifecycle rows that can silently lose work or focus: focus after closing a tab, note write failure keeps text, board scene failure is named, per-board viewport restore. Each gets one assertion in the existing e2e suite.
+
+### 10f exit
+
+| # | Check |
+| --- | --- |
+| 1 | All eight surfaces scored in `QUALITY-BAR.md` §2; none ≤ 1; ≥ 20/24 each |
+| 2 | No surface has more than 120px unexplained void at 1440×900 |
+| 3 | `interaction-lifecycles.md` has zero `gap` rows for Files, Notes, Board, AI |
+| 4 | T1 contact sheet produced; no Q2 finding repeats a previous pass |
+| 5 | Nothing added that carries no information (QUALITY-BAR §7.3) |
+

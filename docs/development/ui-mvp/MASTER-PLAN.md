@@ -5,6 +5,7 @@
 **Owner:** founder. Execution: agent.
 **Companion documents:** `PROGRESS.md` (truth about the repo), `DECISIONS.md` (every deviation, with reasons), `subplans/`.
 **Design authority:** `docs/brand/branding-desk.md`, `docs/design/{typography,interaction-contract,motion-guidelines,spatial-language}.md`.
+**Experience authority (added 2026-11-09):** `QUALITY-BAR.md` (eight scored dimensions, five tests), `docs/design/interaction-lifecycles.md` (per-feature states), `docs/research/eden-benchmark.md` (what the reference demonstrates and what it does not). A unit that passes its own acceptance but fails the quality bar is not done.
 **Technical authority:** `docs/architecture/tech-stack.md` — where this plan and that document disagree, the document wins and `DECISIONS.md` records why.
 
 ---
@@ -33,6 +34,7 @@ That is narrower than the product vision and wider than the current build. The c
 | 12 | Tested as an integrated system | E2E: 3 paths + cross-surface navigation |
 | 13 | Quiet Computationalism | Brand checklist (`branding-desk.md` §13) |
 | 14 | No critical regressions | Full gate run + screenshot diff |
+| 15 | **Product experience holds up** (added 11-09) | Every surface ≥ 20/24 on `QUALITY-BAR.md`; no dimension ≤ 1; zero unexplained `gap` in `interaction-lifecycles.md` for Files / Notes / Board / AI |
 
 ---
 
