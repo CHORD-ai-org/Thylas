@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 13:20 (10a/b/c done; 10f.1 partially; SP-11 workspaces shipped).
+Last updated: 2026-11-09 13:58 (10a/b/c done, 10d states shipped; 10f.1 partially; SP-11 shipped).
 
 ---
 
@@ -31,7 +31,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-07c Process states | SP-07 | **Completed** 11-08 | 0.75 | SP-03b | URL filters, capability-gated controls on a local copy, 700 ms simulator, empty/loading/error |
 | SP-11 Workspaces | — | **Completed** 11-09 | 1.0 | SP-02, SP-05a | create + delete, derived counts, tombstones, notes and tabs go with it |
 | SP-08 Account | — | Not Started | 0.5 | SP-01 | density persistence, zero accent |
-| SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter + four-step ramp, glyphs→paths, Boards card grid shipped; 10d surface/states, 10e a11y, 10f.1 (Overview split, Processes panel, Files budget), 10f.2–4 remain |
+| SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter + four-step ramp, glyphs→paths, Boards card grid, four states + inset focus shipped; 10d density/loading, 10e a11y, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 
@@ -187,6 +187,12 @@ Remaining: **6.25 days** for SP-10 (10b–10f). 10f is 3.25 of them; see `QUALIT
 | 11-09 | Counts | `Research` reads `8 files · 2 boards · 9 processes` from the data, not from the sample's declared `counts` (which said 5 notes for a workspace holding 2) |
 | 11-09 | `npm run build` (SP-11) | shell 156.2 KB gzip; editor chunk unchanged |
 | 11-09 | Screenshots | `.workbuddy/shots/sp11-{grid,form,duplicate,empty,confirm,hover}.png` |
+| 11-09 | States measured (10d) | 41 interactive classes, forced through CDP: hover 11 → 4 (3 disabled, 1 nested), active 31 → 2 (1 disabled, 1 scroll container), focus 0 → 0 |
+| 11-09 | Focus defect | the global outline is offset 1px and was clipped on all four sides of a row inside a scroll container; rows now draw an inset ring (`grammar.focusInside`) |
+| 11-09 | Press | one global `translateY(1px)`, gated by `prefers-reduced-motion`; colour stays local (`--tint-sel`) |
+| 11-09 | Recently row | hover was `color: var(--accent)` on the label — accent used for hover; replaced by the shared inset tint |
+| 11-09 | `npm run e2e` (10d) | 237/237; 3 new: a process row, a filter chip and a rail row each answer hover, press and focus, forced and compared |
+| 11-09 | Screenshots | `.workbuddy/shots/sp10d-{hover,active,focus,disabled}.png` |
 
 ## Next concrete action
 

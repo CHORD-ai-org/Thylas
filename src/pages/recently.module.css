@@ -55,17 +55,18 @@
   border-top: 1px solid var(--line);
 }
 
+/* The row answers with a tint, like every other row in the product. It used to
+   answer by turning its label accent — colour used for hover, which the palette
+   reserves for state. */
 .row {
+  composes: focusInside from '../styles/grammar.module.css';
+  composes: rowState from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
   height: 40px;
   padding: 0 2px;
-}
-
-.row:hover .label {
-  color: var(--accent);
 }
 
 .glyph {
@@ -119,3 +120,9 @@
   font: var(--t-caption);
   color: var(--ink-3);
 }
+
+.filter:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+

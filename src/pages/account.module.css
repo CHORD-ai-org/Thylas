@@ -33,6 +33,7 @@
 }
 
 .navItem {
+  composes: focusInside from '../styles/grammar.module.css';
   height: 28px;
   padding: 0 8px;
   border-radius: var(--r-chip);
@@ -227,3 +228,11 @@
     position: static;
   }
 }
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.navItem:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+

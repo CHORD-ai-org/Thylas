@@ -61,6 +61,7 @@
 /* The row is a container, not a button: the chevron and the folder are two
    sibling controls. Expanding must never select, and no span carries a click. */
 .treeRow {
+  composes: focusInside from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
   height: 28px;
@@ -98,6 +99,8 @@
   color: var(--ink);
 }
 
+/* The folder's name-button sits beside the disclosure, not inside it: it owns
+   the hover the row only tints. */
 .treeSelect {
   display: flex;
   align-items: center;
@@ -199,6 +202,7 @@
 }
 
 .trow {
+  composes: focusInside from '../styles/grammar.module.css';
   composes: rowState from '../styles/grammar.module.css';
   display: grid;
   grid-template-columns: minmax(140px, 1fr) 58px 74px 100px 56px;
@@ -469,3 +473,32 @@
     padding-right: 4px;
   }
 }
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.treeRow:active {
+  background: var(--tint-sel);
+}
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.treeToggle:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.treeChild:active {
+  background: var(--tint-sel);
+}
+
+.treeSelect:hover {
+  color: var(--ink);
+}
+
+.treeSelect:active {
+  color: var(--ink);
+}
+
+

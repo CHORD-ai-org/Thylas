@@ -707,3 +707,16 @@
   color: var(--ink);
   background: var(--tint-hover);
 }
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.tabClose:active {
+  background: var(--tint-sel);
+}
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.collapseRow:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}

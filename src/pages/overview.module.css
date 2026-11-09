@@ -132,6 +132,7 @@
 }
 
 .row {
+  composes: focusInside from '../styles/grammar.module.css';
   composes: rowState from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
@@ -361,3 +362,4 @@
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
+

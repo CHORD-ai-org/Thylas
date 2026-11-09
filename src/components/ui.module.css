@@ -242,3 +242,9 @@
   color: var(--ink);
   padding-left: 1px;
 }
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.iconButton:active {
+  background: var(--tint-sel);
+}

@@ -114,6 +114,22 @@ svg {
   background: transparent;
 }
 
+/* Pressed (optimization-plan C6). One pixel of travel, no colour of its own:
+   the movement is the acknowledgement, and the tint stays local to whichever
+   surface already owns a hover tint. Global because the state is the same
+   everywhere — a press that travels 1px on a row and 0px on a button is how a
+   product starts to feel assembled from parts.
+
+   Motion-gated: a translate is movement, so reduced-motion drops it and keeps
+   the colour change the local rules provide. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(button, [role='button'], [role='tab'], [role='row'], a[href]):not(:disabled):not(
+      [aria-disabled='true']
+    ):active {
+    transform: translateY(1px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

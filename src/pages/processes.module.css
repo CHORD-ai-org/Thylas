@@ -95,6 +95,7 @@
 }
 
 .trow {
+  composes: focusInside from '../styles/grammar.module.css';
   composes: rowState from '../styles/grammar.module.css';
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 108px 128px 96px 72px 52px;
@@ -565,3 +566,9 @@
   text-transform: uppercase;
   color: var(--ink-3);
 }
+
+.filter:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+

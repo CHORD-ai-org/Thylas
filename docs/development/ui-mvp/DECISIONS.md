@@ -368,6 +368,15 @@ Format: **status · context · decision · alternative · consequence**.
 **Consequence:** a workspace is now a first-class object in the demo, which raises one question the build cannot answer: a created workspace has no files service, so it stays empty (the banner on Files already says so). Recorded in the interaction contract rather than papered over. `R4` is marked reversed.
 
 ---
+## D-046 · One press everywhere, and focus drawn inside the row
+
+**Status:** accepted in force (SP-10d).
+**Context:** the plan asked for four states per interactive class. Measured on 11-09 with the CSS domain forcing each pseudo-class: of 41 interactive classes, **31 had no pressed state and 11 no hover**; focus was already complete (0 missing) because `base.css` draws a global outline. Fixing that class by class would have produced thirty near-identical `:active` blocks, and the first screenshot of the fix showed a second defect: the global outline sits at `outline-offset: 1px`, so on a row that spans a scroll container it is clipped on all four sides — present in the stylesheet, invisible on screen.
+**Decision:** the press is one global rule in `base.css` — `translateY(1px)` on `button`, `[role=button]`, `[role=tab]`, `[role=row]` and `a[href]`, gated by `prefers-reduced-motion: no-preference`. Colour stays local (each surface's `:active` uses `--tint-sel`, because only the surface knows what its hover already looks like). Focus on rows moves to `grammar.focusInside`, an inset 1px ring composed into seven row classes, so it cannot be clipped and the page stylesheets stay free of `--accent`.
+**Alternative:** per-class `:active` rules. Rejected after the measurement: 31 copies of the same declaration, each free to drift.
+**Consequence:** a press travels 1px on a rail row, a table row, a tab and a button alike; reduced-motion users get the tint without the travel. The measurement is repeatable — `scripts/ui-checks.mjs` forces `hover`, `active` and `focus-visible` through CDP on a row, a chip and a rail row and compares computed styles, so the claim is asserted rather than photographed.
+
+---
 
 ## Open questions (need a human, not a default)
 

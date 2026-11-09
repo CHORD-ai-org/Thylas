@@ -1148,3 +1148,7 @@
   font: var(--t-caption);
   color: var(--ink-3);
 }
+
+.boardIndexCard:active {
+  border-color: var(--ink-3);
+}

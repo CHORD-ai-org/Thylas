@@ -193,3 +193,8 @@
   font: var(--t-ui);
   color: var(--ink-2);
 }
+
+.newCard:active {
+  border-color: var(--ink);
+  color: var(--ink);
+}

@@ -63,6 +63,7 @@
 }
 
 .noteRow {
+  composes: focusInside from '../styles/grammar.module.css';
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -493,3 +494,15 @@
   align-items: flex-start;
   gap: var(--s2);
 }
+
+/* Pressed. The 1px travel is global (base.css); the tint is local because
+   only the surface knows what its hover already looks like. */
+.noteRow:active {
+  background: var(--tint-sel);
+}
+
+.filter:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+

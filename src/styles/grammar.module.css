@@ -153,3 +153,23 @@
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+
+.filter:active {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+
+/* A row's press is the same inset block as its hover, one step stronger. */
+.rowState:active::before {
+  background: var(--tint-sel);
+}
+
+/* Keyboard focus on a row. The global outline is offset by 1px, and a row that
+   spans a scroll container has that pixel clipped on all four sides — present
+   in the stylesheet, absent on screen. An inset ring cannot be clipped, and the
+   recipe lives here so six surfaces do not each invent their own. */
+.focusInside:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--accent);
+  border-radius: var(--r-sm);
+}

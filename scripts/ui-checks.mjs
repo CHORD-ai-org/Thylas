@@ -748,6 +748,67 @@ async function main() {
   await js(`${helpers} click(byText('[aria-label="Filter processes"] [role="tab"]', 'Needs you')); await new Promise(r => setTimeout(r, 300));`);
   check('processes: filter narrows the table', await js(`return document.querySelectorAll('button[class*="trow"]').length;`), 1);
 
+  // ---- SP-10d: the four states, forced and measured ----
+  /* `:hover` cannot be produced by a synthetic event, so the states are forced
+     through the CSS domain and the computed style is compared before and after.
+     A transition reads its start value at t=0, hence the wait. */
+  await send('DOM.enable');
+  await send('CSS.enable');
+  /* requestNode resolves against the DOM agent's tree, so the tree has to exist
+     once before the first probe; after that each probe converts a fresh object
+     rather than querying a snapshot that React has already replaced. */
+  await send('DOM.getDocument', { depth: -1 });
+  const forcedStates = async (selector) => {
+    await js(`
+      document.querySelectorAll('[data-state-probe]').forEach(e => e.removeAttribute('data-state-probe'));
+      document.querySelector(${JSON.stringify(selector)})?.setAttribute('data-state-probe', '1');
+      return 1;
+    `);
+    /* Ask the page for the node and convert its remote object: `DOM.querySelector`
+       answers from a cached tree, so a node React re-rendered a moment ago is
+       simply not in it. */
+    const remote = await send('Runtime.evaluate', {
+      expression: `document.querySelector('[data-state-probe="1"]')`,
+    });
+    if (!remote.result.objectId) return { missing: true };
+    const found = await send('DOM.requestNode', { objectId: remote.result.objectId });
+    const read = async (forced) => {
+      await send('CSS.forcePseudoState', { nodeId: found.nodeId, forcedPseudoClasses: forced });
+      await sleep(200);
+      return js(`
+        const el = document.querySelector('[data-state-probe="1"]');
+        const cs = getComputedStyle(el);
+        const pb = getComputedStyle(el, '::before');
+        return [cs.backgroundColor, cs.borderColor, cs.color, cs.boxShadow, cs.transform, cs.outlineStyle, pb.backgroundColor].join('|');
+      `);
+    };
+    const base = await read([]);
+    const out = {};
+    for (const state of ['hover', 'active', 'focus-visible']) out[state] = (await read([state])) !== base;
+    await send('CSS.forcePseudoState', { nodeId: found.nodeId, forcedPseudoClasses: [] });
+    return out;
+  };
+
+  await js(`return 1;`);
+  check('states: a process row answers hover, press and keyboard focus', await forcedStates('button[class*="trow"]'), {
+    hover: true,
+    active: true,
+    'focus-visible': true,
+  });
+  check('states: a filter chip answers all three', await forcedStates('[aria-label="Filter processes"] [role="tab"]'), {
+    hover: true,
+    active: true,
+    'focus-visible': true,
+  });
+  /* The rail row rather than a Button: this route has no `.button` instance
+     (its controls are rows, chips and an empty-state action), and a probe that
+     finds nothing reports a failure of the selector, not of the state. */
+  check('states: a rail row answers all three', await forcedStates('[data-rail-item]'), {
+    hover: true,
+    active: true,
+    'focus-visible': true,
+  });
+
   await js(`${helpers} click(byText('button', 'Collapse sidebar')); await new Promise(r => setTimeout(r, 400));`);
   check('rail: collapses', await js(`return document.querySelector('[data-rail]').getAttribute('data-rail');`), 'collapsed');
   await send('Page.reload');

@@ -53,6 +53,7 @@
 }
 
 .row {
+  composes: focusInside from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -97,3 +98,14 @@
   font: var(--t-caption);
   color: var(--ink-3);
 }
+
+/* Keyboard selection has its own colour; the pointer needs an answer too, or
+   a mouse user sees nothing until the row is chosen. */
+.row:hover {
+  background: var(--tint-hover);
+}
+
+.row:active {
+  background: var(--tint-sel);
+}
+
