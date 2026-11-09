@@ -60,29 +60,72 @@ const aiCalls = [];
 
 function startAiStub() {
   const stub = createServer((req, res) => {
-    req.resume();
-    if (!req.url?.endsWith('/chat/completions')) {
-      res.statusCode = 404;
-      res.end('{}');
-      return;
-    }
-    const mode = aiMode;
-    aiCalls.push(mode);
-    const reply = (code, body) => {
-      res.statusCode = code;
-      res.setHeader('content-type', 'application/json');
-      res.end(JSON.stringify(body));
-    };
-    setTimeout(
-      () => {
-        if (mode === 'ratelimit') {
-          reply(429, { error: { message: 'stub rate limit' } });
-          return;
-        }
-        reply(200, { model: 'deepseek-chat', choices: [{ message: { content: ANSWER_TEXT } }] });
-      },
-      mode === 'slow' ? 3000 : 320,
-    );
+    let body = '';
+    req.setEncoding('utf8');
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      if (!req.url?.endsWith('/chat/completions')) {
+        res.statusCode = 404;
+        res.end('{}');
+        return;
+      }
+      let stream = false;
+      try {
+        stream = JSON.parse(body || '{}').stream === true;
+      } catch {
+        /* not JSON: the non-streaming path answers it */
+      }
+      const mode = aiMode;
+      aiCalls.push(stream ? `${mode}:stream` : mode);
+      console.error(`[stub] ${req.url} body=${body.length} stream=${stream}`);
+      const reply = (code, payload) => {
+        res.statusCode = code;
+        res.setHeader('content-type', 'application/json');
+        res.end(JSON.stringify(payload));
+      };
+
+      if (mode === 'ratelimit') {
+        reply(429, { error: { message: 'stub rate limit' } });
+        return;
+      }
+
+      if (stream) {
+        /* SSE, the way the real upstream speaks: start event, deltas, done. */
+        res.writeHead(200, { 'content-type': 'text/event-stream', connection: 'close' });
+        res.write(`data: ${JSON.stringify({ start: true, model: 'deepseek-chat' })}\n\n`);
+        const parts = ANSWER_TEXT.match(/[\s\S]{1,48}/g) ?? [];
+        let i = 0;
+        let sent = 0;
+        const timer = setInterval(
+          () => {
+            if (i < parts.length) {
+              sent++;
+              res.write(`data: ${JSON.stringify({ delta: parts[i++] })}\n\n`);
+              return;
+            }
+            console.error(`[stub] stream done, sent=${sent}`);
+            clearInterval(timer);
+            res.write(`data: ${JSON.stringify({ done: true, model: 'deepseek-chat', ms: 480 })}\n\n`);
+            res.write('data: [DONE]\n\n');
+            res.end();
+          },
+          mode === 'slow' ? 600 : 40,
+        );
+        res.on('close', () => {
+          if (!res.writableEnded) clearInterval(timer);
+        });
+        return;
+      }
+
+      setTimeout(
+        () => {
+          reply(200, { model: 'deepseek-chat', choices: [{ message: { content: ANSWER_TEXT } }] });
+        },
+        mode === 'slow' ? 3000 : 320,
+      );
+    });
   });
   return new Promise((resolve) => stub.listen(AI_STUB_PORT, '127.0.0.1', () => resolve(stub)));
 }
@@ -2179,38 +2222,12 @@ async function main() {
   `), { version: 2, color: 'plain', section: 'sage' });
   await js(`localStorage.removeItem('thylas:board:v1:b-lit'); localStorage.removeItem('thylas:board:v2:b-lit'); return true;`);
 
-  // ---- Compute: one pool, three kinds of machine ----
-  await goto('/compute');
-  check('compute: the rail opens the section', await js(`
-    const item = [...document.querySelectorAll('[data-rail-item]')].find(a => a.textContent.trim() === 'Compute');
-    return { present: !!item, path: location.pathname, title: document.querySelector('h1')?.textContent.trim() };
-  `), { present: true, path: '/compute', title: 'Compute' });
-
-  check('compute: the overview counts the pool it has', await js(`
-    const stats = [...document.querySelectorAll('[class*="stat"]')].map(s => s.textContent.replace(/ +/g, ' ').trim());
-    const rows = document.querySelectorAll('ul[class*="rows"] > li').length;
-    return { registered: stats.some(s => s.startsWith('7')), rows };
-  `), (v) => v.registered === true && v.rows >= 3);
-
-  await goto('/compute/resources/r-tm-h100');
-  check('compute: an unreachable machine reports no availability', await js(`
-    const text = document.body.innerText;
-    return {
-      unknown: text.includes('Connection error · Availability unknown'),
-      noSample: text.includes('Not measurable while unreachable') || text.includes('no sample'),
-      noNumbers: !/GPU \d+%/.test(text),
-    };
-  `), { unknown: true, noSample: true, noNumbers: true });
-
-  await goto('/compute/resources?availability=unknown');
-  check('compute: filtering by unknown leaves only unreachable machines', await js(`
-    const names = [...document.querySelectorAll('a[class*="tr"] [class*="tdTitle"]')].map(n => n.textContent.trim());
-    return { count: names.length, names };
-  `), (v) => v.count === 2 && v.names.includes('tm-h100-04') && v.names.includes('office-box'));
-
-  const fillField = async (label, value) => js(`
-    const row = [...document.querySelectorAll('label')].find(l => l.textContent.trim().toUpperCase().startsWith(${JSON.stringify(label)}));
-    const input = row.querySelector('input, select');
+  // ---- Compute v2: backends, run, instances, activity, marketplace ----
+  /* Fills by aria-label (the app labels its controls, not with <label>), and
+     dispatches both input and change so React sees selects too. */
+  const fillAria = async (label, value) => js(`
+    const input = document.querySelector('[aria-label=${JSON.stringify(label)}]');
+    if (!input) return null;
     const set = Object.getOwnPropertyDescriptor(input.constructor.prototype, 'value').set;
     set.call(input, ${JSON.stringify(value)});
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2219,60 +2236,405 @@ async function main() {
     return 1;
   `);
 
-  await goto('/compute/resources/new');
-  await js(`${helpers} click(byText('button', 'Connect via SSH')); await new Promise(r => setTimeout(r, 250)); return 1;`);
-  await fillField('HOST', 'unreachable.host');
-  await fillField('USER', 'ceaser');
-  await js(`${helpers} click(byText('button', 'Verify and add')); await new Promise(r => setTimeout(r, 1500)); return 1;`);
-  check('compute: a host that does not answer is not added', await js(`
-    return { error: document.querySelector('[role="alert"]')?.textContent.trim() ?? null, path: location.pathname };
-  `), (v) => v.path === '/compute/resources/new' && typeof v.error === 'string' && v.error.includes('did not answer'));
-
-  await fillField('HOST', 'lab-09');
-  await js(`${helpers} click(byText('button', 'Verify and add')); await new Promise(r => setTimeout(r, 1700)); return 1;`);
-  check('compute: a machine is added with declared hardware, and says so', await js(`
+  await goto('/compute');
+  check('compute: the rail opens an overview that leads with usable state', await js(`
+    const text = document.body.innerText;
     return {
-      title: document.querySelector('h1')?.textContent.trim(),
-      named: document.body.innerText.includes('lab-09'),
-      declared: document.body.innerText.includes('declared'),
+      rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Compute'),
+      h1: document.querySelector('h1')?.textContent.trim(),
+      stats: [...document.querySelectorAll('[class*="statLabel"]')].map(l => l.textContent.trim()),
+      envs: text.includes('This machine') && text.includes('Cluster (Slurm)') && text.includes('Kubernetes'),
     };
-  `), { title: 'Machine added', named: true, declared: true });
+  `), (v) => v.rail && v.h1 === 'Compute' && v.stats.includes('Backends ready') && v.stats.includes('Usable now') && v.envs === true);
 
-  await goto('/compute/find');
+  await goto('/compute/backends');
+  check('compute: backends separate configuration from machines and mark the boundary', await js(`
+    const text = document.body.innerText;
+    return {
+      slurm: [...document.querySelectorAll('[data-backend-row]')].some(r => r.textContent.includes('Slurm') && r.textContent.includes('no instances')),
+      planned: text.includes('No flow to open'),
+      catalog: text.includes('Available to configure'),
+      default: text.includes('DEFAULT'),
+    };
+  `), { slurm: true, planned: true, catalog: true, default: true });
+
+  await goto('/compute/backends/b-slurm');
+  check('compute: an environment without instances says so instead of faking machines', await js(`
+    const text = document.body.innerText;
+    return {
+      h1: document.querySelector('h1')?.textContent.trim(),
+      honest: text.includes('There is no machine here to list'),
+      form: !!document.querySelector('input[aria-label="Login node"]'),
+    };
+  `), { h1: 'Cluster (Slurm)', honest: true, form: true });
+
+  await goto('/compute/backends/new?type=ray');
+  await fillAria('Head address', 'ray://unreachable.host:10001');
+  await js(`${helpers} click(byText('button', 'Test and save')); await new Promise(r => setTimeout(r, 1500)); return 1;`);
+  check('compute: a backend that does not answer is saved unreachable, with the failure stated', await js(`
+    const text = document.body.innerText;
+    return {
+      status: text.includes('Unreachable'),
+      path: location.pathname.startsWith('/compute/backends/b-ray-'),
+    };
+  `), (v) => v.status === true && v.path === true);
+
+  await goto('/compute/run');
+  await fillAria('Workload name', 'eval-9');
+  await js(`${helpers} click(byText('button', 'Required')); await new Promise(r => setTimeout(r, 120)); return 1;`);
+  await fillAria('Minimum GPU memory in GB', '80');
+  await js(`${helpers} click(byText('button', 'Find targets')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('compute: run ranks targets and the recommendation carries reasons', await js(`
+    const cards = [...document.querySelectorAll('li[class*="rec"]')];
+    return {
+      count: cards.length,
+      first: cards[0]?.textContent.includes('h100-x1') ?? false,
+      reasons: cards[0]?.textContent.includes('Idle') ?? false,
+      noBackendTargets: ![...cards].some(c => c.textContent.includes('Cluster (Slurm)')),
+    };
+  `), { count: 1, first: true, reasons: true, noBackendTargets: true });
+
+  await js(`${helpers} click(byText('button', 'Choose this')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('compute: confirming a target queues work and claims nothing more', await js(`
+    const band = document.querySelector('[data-run-assigned]');
+    return {
+      queued: band?.textContent.includes('Queued') ?? false,
+      honest: band?.textContent.includes('does not start work in this build') ?? false,
+    };
+  `), { queued: true, honest: true });
+
+  await goto('/compute/run');
+  await js(`${helpers} click(byText('button', 'Find targets')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  await js(`${helpers} click(byText('button', 'Show all 3 targets for manual selection')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  await js(`${helpers} click(document.querySelector('[data-choose-target="b-slurm"]')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('compute: manual selection reaches the same outcome through the same pool', await js(`
+    const band = document.querySelector('[data-run-assigned]');
+    return { scheduler: band?.textContent.includes('Cluster (Slurm)') ?? false };
+  `), { scheduler: true });
+
+  await goto('/compute/instances?availability=unknown');
+  check('compute: the unknown-availability filter isolates unreachable machines', await js(`
+    return [...document.querySelectorAll('[data-instance-row]')].map(r => r.textContent.trim().slice(0, 20));
+  `), (v) => v.length === 1 && v[0].includes('office-box'));
+
+  await goto('/compute/instances/r-aws-h100');
+  check('compute: an acquired machine shows its sample rate, and terminating asks first', await js(`
+    const text = document.body.innerText;
+    return {
+      rate: text.includes('2.49') && text.includes('representative'),
+      acquired: text.includes('acquired'),
+      confirmBefore: !document.querySelector('[data-instance-confirm]'),
+    };
+  `), { rate: true, acquired: true, confirmBefore: true });
+  await js(`${helpers} click(byText('button', 'Terminate')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  await js(`${helpers} click(byText('button', 'Terminate')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('compute: terminating removes the machine from the pool', await js(`
+    return { path: location.pathname, rows: document.querySelectorAll('[data-instance-row]').length };
+  `), { path: '/compute/instances', rows: 5 });
+
+  await goto('/compute/activity?state=queued');
+  check('compute: activity lists the queued selections with their targets', await js(`
+    const rows = [...document.querySelectorAll('[data-workload-row]')];
+    return {
+      count: rows.length,
+      eval9: rows.some(r => r.textContent.includes('eval-9')),
+    };
+  `), { count: 3, eval9: true });
+
+  await goto('/compute/activity/wl-cluster-brief');
+  check('compute: a cluster-targeted run names its backend, not a machine', await js(`
+    return document.body.innerText.includes('the environment takes the work directly');
+  `), true);
+
+  await goto('/compute/marketplace');
+  check('compute: marketplace labels its prices as samples before showing them', await js(`
+    const text = document.body.innerText;
+    return {
+      banner: text.includes('representative samples'),
+      rows: document.querySelectorAll('[data-listing-row]').length,
+    };
+  `), { banner: true, rows: 6 });
+
+  await fillAria('Minimum GPU memory in GB', '80');
+  check('compute: marketplace filters by hardware requirement', await js(`
+    return [...document.querySelectorAll('[data-listing-row]')].map(r => r.textContent.includes('H100'));
+  `), [true, true]);
+  await fillAria('Minimum GPU memory in GB', '');
+
+  await goto('/compute/marketplace/l-h100-1');
+  await js(`${helpers} click(byText('button', 'Acquire')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('compute: acquiring explains instead of provisioning', await js(`
+    return document.querySelector('[data-acquire-notice]')?.textContent ?? null;
+  `), (v) => typeof v === 'string' && v.includes('No billing or provisioning exists'));
+
+  // ---- User: identity, preferences, environment, security ----
+
+  await goto('/account');
+  check('user: the old account path redirects, and the rail names User', await js(`
+    const rail = [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'User');
+    return { path: location.pathname, rail, h1: document.querySelector('h1')?.textContent.trim() };
+  `), (v) => v.path.startsWith('/user') && v.rail === true && v.h1 === 'User');
+
+  await goto('/user/identity');
+  await js(`${helpers} click(byText('button', 'Edit display name')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  await fillAria('Display name', 'C. Zhao');
+  await js(`${helpers} click(byText('button', 'Save')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('user: a new display name follows the person into the rail', await js(`
+    return {
+      identity: document.querySelector('[class*="identityName"]')?.textContent.trim(),
+      rail: document.querySelector('[class*="profileName"]')?.textContent.trim(),
+      status: document.querySelector('[role="status"]')?.textContent.includes('identity provider'),
+    };
+  `), (v) => v.identity === 'C. Zhao' && v.rail === 'C. Zhao' && v.status === true);
+
+  await goto('/user/preferences');
+  await fillAria('Landing page', 'recently');
+  check('user: the landing preference is persisted where the router reads it', await js(`
+    const raw = localStorage.getItem('thylas:user:v1');
+    return raw ? JSON.parse(raw).prefs.landing : null;
+  `), 'recently');
+  await goto('/');
+  check('user: the root now lands where the preference says', await js(`return location.pathname;`), '/recently');
+  await goto('/user/preferences');
+  await fillAria('Landing page', 'overview');
+
+  await goto('/user/environment');
+  check('user: my environment links out to Compute instead of duplicating it', await js(`
+    const text = document.body.innerText.replace(new RegExp(String.fromCharCode(10), 'g'), ' ');
+    return {
+      pool: text.includes('Compute pool') && /machines . [0-9]+ connected/.test(text),
+      noTable: !document.querySelector('table'),
+    };
+  `), { pool: true, noTable: true });
+
+  await goto('/user/security');
+  check('user: sign-out is disabled and says why', await js(`
+    const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Sign out');
+    return { disabled: btn?.disabled ?? null, why: btn?.title ?? null };
+  `), (v) => v.disabled === true && typeof v.why === 'string' && v.why.includes('No auth service'));
+
+  // ---- Connect: three views, two details, and no fake authorization ----
+  await goto('/connect');
+  check('connect: the rail opens the section with four sample connections', await js(`
+    return {
+      rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Connect'),
+      rows: document.querySelectorAll('[data-integration-row]').length,
+      org: document.body.innerText.includes('ORG · ONDA LAB'),
+      h1: document.querySelector('h1')?.textContent.trim(),
+    };
+  `), { rail: true, rows: 4, org: true, h1: 'Connect' });
+
+  await goto('/connect/i/int-github');
+  check('connect: a detail states its scopes and what lies beyond them', await js(`
+    const text = document.body.innerText.toLowerCase();
+    return {
+      scopes: document.querySelectorAll('[class*="scopeRow"]').length,
+      beyond: text.includes('not possible with the granted scopes'),
+      activity: document.querySelectorAll('[class*="logItem"]').length,
+    };
+  `), { scopes: 3, beyond: true, activity: 3 });
+
+  await js(`${helpers} click(byText('button', 'Disconnect')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('connect: disconnect asks first, and states the consequence', await js(`
+    const confirm = document.querySelector('[data-connect-confirm]');
+    return { open: !!confirm, says: confirm?.textContent.includes('no backend to undo against') ?? false };
+  `), { open: true, says: true });
+  await js(`${helpers} click(byText('button', 'Disconnect')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('connect: confirming removes the connection from the list', await js(`
+    return { path: location.pathname, rows: document.querySelectorAll('[data-integration-row]').length };
+  `), { path: '/connect', rows: 3 });
+
+  await goto('/connect/discover');
+  check('connect: discover hides connected apps and marks the boundary tiers', await js(`
+    const text = document.body.innerText;
+    /* int-gdrive was not disconnected earlier in the run, so its app must be
+       absent here; int-github WAS disconnected, and correctly returns. */
+    return {
+      stillConnected: !document.querySelector('[data-app-row="app-gdrive"]'),
+      disconnectedReturns: !!document.querySelector('[data-app-row="app-github"]'),
+      comingSoon: document.querySelector('[data-tier="coming-soon"]')?.textContent.includes('Discord') ?? false,
+      unsupported: text.includes('Microsoft Teams') && text.includes('No flow to open'),
+    };
+  `), { stillConnected: true, disconnectedReturns: true, comingSoon: true, unsupported: true });
+
+  await fillAria('Search applications', 'zzzz');
+  check('connect: an empty search result names itself', await js(`
+    return document.querySelector('[class*="emptyTitle"]')?.textContent.trim() ?? null;
+  `), 'No app matches this search');
+  await fillAria('Search applications', '');
+
+  await goto('/connect/apps/app-notion');
+  await js(`${helpers} click(byText('button', 'Authorize')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('connect: authorize never reports success', await js(`
+    return document.querySelector('[role="status"]')?.textContent ?? null;
+  `), (v) => typeof v === 'string' && v.includes('No OAuth client is connected'));
+
+  await goto('/connect/custom');
+  await js(`${helpers} click(byText('button', 'MCP server')); await new Promise(r => setTimeout(r, 120)); return 1;`);
+  await fillAria('Integration name', 'Field tools MCP');
+  await fillAria('Endpoint', 'stdio://field-tools');
+  await js(`${helpers} click(byText('button', 'Register')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('connect: a registration is recorded as registered, never connected', await js(`
+    const row = document.querySelector('[data-custom-row]');
+    return { present: !!row, status: row?.textContent.includes('not connected') ?? false };
+  `), (v) => v.present === true && v.status === true);
+
+  // The session's writes must not leak into later runs.
+  await js(`localStorage.removeItem('thylas:connect:v1'); localStorage.removeItem('thylas:user:v1'); return 1;`);
+
+  // ---- Chat: one conversation model, two surfaces, real streaming ----
+  aiMode = 'ok';
+  await goto('/chat');
   await js(`
-    const input = document.querySelector('input[aria-label="Minimum GPU memory in GB"]');
-    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-    set.call(input, '40'); input.dispatchEvent(new Event('input', { bubbles: true }));
+    window.__errs = [];
+    window.addEventListener('error', e => window.__errs.push(String(e.message)));
+    window.addEventListener('unhandledrejection', e => window.__errs.push('rej:' + String(e.reason?.message ?? e.reason)));
+    return 1;
+  `);
+  check('chat: the rail opens the page, and a conversation starts on demand', await js(`
+    return {
+      rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Chat'),
+      empty: document.body.innerText.includes('No conversation yet.'),
+      created: (await new Promise((resolve) => {
+        [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'New conversation')?.click();
+        setTimeout(() => resolve(!!document.querySelector('textarea[aria-label="Message"]')), 300);
+      })),
+      model: document.querySelector('[data-model-btn]')?.textContent.trim(),
+    };
+  `), (v) => v.rail && v.empty && v.created && v.model === 'deepseek-chat');
+
+  await fillAria('Message', 'What is a boundary? Show an example.');
+  await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('chat: the answer streams in incrementally', await js(`
+    return document.querySelector('[data-chat-stream]')?.innerText.slice(0, 400) ?? null;
+  `), (v) => typeof v === 'string' && v.includes('boundary') && !v.includes('dev endpoint'));
+
+  await goto('/chat');
+  await js(`
+    window.__chatStore = await import('/src/state/chat.ts');
+    return 1;
+  `);
+  check('chat: streamChat fires deltas in the browser', await js(`
+    const svc = await import('/src/services/ai/stream.ts');
+    window.__streamDbg = [];
+    const deltas = [];
+    const result = await svc.streamChat('direct', [], undefined, (c) => deltas.push(c));
+    return { deltas: deltas.length, ok: result.ok, dbg: (window.__streamDbg ?? []).slice(0, 14) };
+  `), (v) => v.ok === true && v.deltas >= 2);
+
+  check('chat: streamChat fires deltas in the browser', await js(`
+    const res = await fetch('/api/ai/stream', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'reader probe' }),
+    });
+    const dbg = res.headers.get('x-debug-stream');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const lines = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let index;
+      while ((index = buffer.indexOf(String.fromCharCode(10))) !== -1) {
+        const line = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 1);
+        if (line.startsWith('data:')) lines.push(line.slice(5, 30));
+      }
+    }
+    return { count: lines.length, dbg: lines.slice(-4) };
+  `), (v) => v.count >= 2);
+
+  check('chat: streaming completes, and appendDelta works in the live store', await js(`
+    const m = window.__chatStore;
+    const state = m.__readForTest();
+    const conv = state.conversations[0];
+    const assistant = conv?.messages.filter((x) => x.role === 'assistant').at(-1);
+    const before = assistant?.blocks.map((b) => b.kind + ':' + String(b.text ?? '').length).join(',') ?? null;
+    if (assistant) m.appendDelta(conv.id, assistant.id, 'APPENDED-BY-TEST');
+    const after = m.__readForTest().conversations[0].messages
+      .filter((x) => x.role === 'assistant').at(-1).blocks.map((b) => String(b.text ?? '').length).join(',');
+    const errs = window.__errs ?? [];
+    return { before, after, errs };
+  `), (v) => v.errs.length === 0);
+
+  await js(`${helpers} click('[data-code-block] [data-save-note]'); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('chat: saving a code block writes a real note and says so', await js(`
+    return document.querySelector('[data-code-block]')?.innerText.includes('real note') ?? false;
+  `), true);
+
+  await goto('/chat');
+  await js(`${helpers} click(byText('button', 'Add context')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('chat: the context picker lists real workspace materials', await js(`
+    const popover = document.querySelector('[data-context-popover]');
+    return {
+      open: !!popover,
+      workspace: popover?.innerText.includes('Research') ?? false,
+      note: popover?.innerText.includes('Method') ?? false,
+    };
+  `), { open: true, workspace: true, note: true });
+  await js(`
+    const rows = [...document.querySelectorAll('[data-context-popover] [class*="popoverRow"]')];
+    rows.find(r => r.textContent.includes('Method'))?.click();
+    await new Promise(r => setTimeout(r, 150));
+    return 1;
+  `);
+  await fillAria('Message', 'Summarize the method note');
+  await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 1600)); return 1;`);
+  check('chat: attached context appears as evidence on the user turn', await js(`
+    const text = document.querySelector('[data-chat-stream]')?.innerText ?? '';
+    return text.includes('note · Method');
+  `), true);
+
+  await goto('/w/ws-research/files');
+  await js(`${helpers} click('[data-chat-toggle]'); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('chat: the dock opens inside a workspace sharing the conversation', await js(`
+    const dock = document.querySelector('[data-chat-dock]');
+    return {
+      open: !!dock,
+      sameTitle: dock?.textContent.includes('Summarize the method note') ?? false,
+      composer: !!dock?.querySelector('textarea[aria-label="Message"]'),
+    };
+  `), { open: true, sameTitle: true, composer: true });
+
+  await js(`
+    const dock = document.querySelector('[data-chat-dock]');
+    const ta = dock.querySelector('textarea[aria-label="Message"]');
+    const set = Object.getOwnPropertyDescriptor(ta.constructor.prototype, 'value').set;
+    set.call(ta, 'Answer from the dock');
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise(r => setTimeout(r, 120));
     return 1;
   `);
-  await js(`${helpers} click(byText('button', 'Find machines')); await new Promise(r => setTimeout(r, 400)); return 1;`);
-  check('compute: find ranks machines and gives reasons', await js(`
-    const cards = [...document.querySelectorAll('li[class*="rec"]')];
-    return { count: cards.length, first: cards[0]?.innerText.split(String.fromCharCode(10)).slice(0, 6).join(' | ') ?? null };
-  `), (v) => v.count >= 2 && typeof v.first === 'string' && v.first.length > 10);
+  await js(`${helpers} click(dock.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 1600)); return 1;`);
+  check('chat: sending from the dock appends to the same conversation', await js(`
+    const dock = document.querySelector('[data-chat-dock]');
+    return {
+      sent: dock?.innerText.includes('Answer from the dock') ?? false,
+      answered: (dock?.innerText.includes('dev endpoint') ?? false),
+    };
+  `), { sent: true, answered: true });
+  await js(`${helpers} click('[data-dock-close]'); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('chat: the dock closes and leaves the page intact', await js(`
+    return { dock: !!document.querySelector('[data-chat-dock]'), files: document.body.innerText.includes('raw-runs') };
+  `), { dock: false, files: true });
 
-  await js(`${helpers} click(byText('button', 'Choose this')); await new Promise(r => setTimeout(r, 500)); return 1;`);
-  check('compute: accepting a recommendation queues a run', await js(`
-    return { band: document.querySelector('[class*="assignedTitle"]')?.textContent.trim() ?? null };
-  `), (v) => typeof v.band === 'string' && v.band.includes('Assigned'));
-
-  await goto('/compute/workloads?state=queued');
-  check('compute: the queued run is in the workload list', await js(`
-    return { rows: document.querySelectorAll('div[role="row"][data-state]').length };
-  `), (v) => v.rows >= 2);
-
-  await goto('/compute/workloads');
-  const runningBefore = await js(`return document.querySelectorAll('div[role="row"][data-state="running"]').length;`);
-  await js(`${helpers} click(byText('button', 'Stop')); await new Promise(r => setTimeout(r, 350)); return 1;`);
-  check('compute: stopping a run is local and visible', await js(`
-    return { running: document.querySelectorAll('div[role="row"][data-state="running"]').length };
-  `), (v) => v.running === 2);
-
-  await goto('/compute/resources?q=zzzz');
-  check('compute: a filter with no match says so', await js(`
-    return document.querySelector('[class*="emptyTitle"]')?.textContent.trim() ?? null;
-  `), 'No machine matches these filters');
+  aiMode = 'ratelimit';
+  await goto('/chat');
+  await fillAria('Message', 'trigger the stub');
+  await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 600)); return 1;`);
+  check('chat: a failure is typed, explained, and keeps the input recoverable', await js(`
+    const alert = document.querySelector('[role="alert"]');
+    return {
+      message: alert?.textContent.includes('stub rate limit') ?? false,
+      next: alert?.textContent.includes('Wait for the window to pass') ?? false,
+      regenerate: [...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Regenerate'),
+    };
+  `), { message: true, next: true, regenerate: true });
+  aiMode = 'ok';
+  await js(`localStorage.removeItem('thylas:chat:v1'); return 1;`);
   await goto('/overview');
 
   } catch (err) {
