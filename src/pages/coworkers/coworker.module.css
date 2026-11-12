@@ -1,0 +1,123 @@
+/* Coworker-specific pieces. Everything shared (heads, rows, chips, sections,
+   forms) comes from the artifacts module — one list grammar across the product. */
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  font: 500 10px/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--bg-app);
+}
+
+.mark[data-hue='0'] { background: #4b6b8f; }
+.mark[data-hue='1'] { background: #6b8f4b; }
+.mark[data-hue='2'] { background: #8f6b4b; }
+.mark[data-hue='3'] { background: #6b4b8f; }
+
+.statusChip {
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.statusChip[data-status='active'] {
+  color: var(--ok);
+}
+
+.statusChip[data-status='paused'] {
+  color: var(--warn);
+}
+
+.statusChip[data-status='archived'] {
+  color: var(--ink-3);
+}
+
+.briefBlock {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.briefLabel {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.briefBody {
+  margin: 4px 0 0;
+  font: var(--t-ui);
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.briefInput {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  line-height: 1.5;
+  color: var(--ink);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.briefInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.membershipRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+.membershipName {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.membershipRole {
+  font: var(--t-caption);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.convWrap {
+  border: 1px solid var(--line);
+  border-radius: var(--r-surface);
+  overflow: hidden;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+}
+
+.convNote {
+  font: var(--t-caption);
+  color: var(--ink-3);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-app);
+}
+
+.workItem {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
