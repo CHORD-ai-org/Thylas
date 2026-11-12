@@ -1054,11 +1054,12 @@ async function main() {
   check('overview: continue row resumes the object', await js(`return location.pathname;`), '/w/ws-research/files/f-raw-runs');
 
   await goto('/overview');
-  // 'Onda Lab' also appears in a needs-you row's meta; the ORG badge is what
-  // makes the workspace card unambiguous.
+  // 'Onda Lab' also appears in needs-you/continue rows' meta; the members line
+  // is what makes the workspace card unambiguous.
   await js(`
     const card = [...document.querySelectorAll('main button')]
-      .find(b => b.textContent.includes('Onda Lab') && b.textContent.includes('ORG'));
+      .find(b => b.textContent.includes('Onda Lab') && b.textContent.includes('members'));
+    if (!card) return 'no card';
     card.click();
     await new Promise(r => setTimeout(r, 600));
   `);
@@ -2533,7 +2534,7 @@ async function main() {
 
 
   await goto('/chat');
-  await js(`${helpers} click(byText('button', 'Add context')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await js(`${helpers} click(document.querySelector('[data-context-add]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
   check('chat: the context picker lists real workspace materials', await js(`
     const popover = document.querySelector('[data-context-popover]');
     return {

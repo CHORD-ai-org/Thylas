@@ -474,6 +474,21 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-055 · Phase 1 foundation: PostgreSQL + Drizzle, a standalone Node host, CHORD IdP, and no WAM scaffolding
+
+**Status:** accepted in force (backend Phase 1 selection, 2026-11-12). Recorded before implementation; the unit list is `docs/development/backend/PHASE-1.md`.
+**Context:** The five-phase roadmap was recorded today (`backend/ROADMAP.md`). The backend is still 3 files / 3 endpoints mounted only by Vite's dev and preview servers (Q-2), 11 domains live in browser envelopes (`AUDIT.md:51-62`), and `tech-stack.md:24,42` says there is no server runtime. N2 (who owns auth) was unanswered. Phase 1 cannot start until the database, host and identity choices are made.
+**Decision:**
+1. **PostgreSQL + Drizzle.** Migration scripts become the schema of record; the wire contract stays in `src/lib/<domain>.ts` and the client never learns SQL (`ENGINEERING-STANDARDS.md:24`).
+2. **A standalone Node host.** `server/ai-handler.ts` holds the only implementation of the three `/api/ai*` endpoints; the Vite plugin and the standalone server both call it. One handler, two hosts.
+3. **CHORD IdP.** Thylas holds a session cookie and never implements password flows (`tech-stack.md:401-403`); membership flags come from the server, writes are checked server-side, and a non-member gets 403 rather than an empty list.
+4. Q4 keeps the N3/N4 defaults (signed direct upload, 100 MB through-API fallback, Thylas owns folders). Q5 keeps one env reader in `server/config.ts`.
+5. **No WAM.** `server/wam/`, A2A relaying and toolset execution stay out of Phase 1; the boundary stays prose in `backend/INTEGRATION.md`. The MVP follows Thylas's real flow — create Workspace → create Coworker → start work → produce Artifact → reuse it — not a future agent runtime.
+**Alternatives:** SQLite + Drizzle (fastest locally, but a migration as soon as a second device or coworker appears); serverless functions (SSE passthrough and connection handling need separate proof); keeping only the Vite plugin (Q-2 stays open, nothing deployable); a local temporary login (a second identity path to remove later); designing WAM adapters now (the brief explicitly rejects premature abstraction).
+**Consequence:** P1-1 can start. `tech-stack.md:24,42` ("no server runtime") and the two conflicting Q-2 entries need dated annotations. P1-5 stays blocked until CHORD IdP is reachable. No WAM interface is built ahead of a concrete WAM API (D-052 holds).
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

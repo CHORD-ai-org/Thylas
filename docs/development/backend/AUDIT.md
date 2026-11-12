@@ -2,6 +2,11 @@
 
 Written 2026-11-11, before any backend structuring. Facts verified against the code.
 
+> **Snapshot only.** Superseded on 2026-11-12 by `PHASE-1.md` P1-1 (D-055): the
+> backend now has 5 files, a standalone Node host, and `server/ai-handler.ts` as
+> the single implementation of the three endpoints. This file stays as the 11-11
+> record; `PHASE-1.md` P1-8 rewrites the audit against the running code.
+
 ## 1. What the backend actually is today
 
 The entire backend is **one Vite middleware file: `server/ai.ts`**. It is mounted by

@@ -446,11 +446,14 @@
 }
 
 .contextAdd {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
   height: 24px;
-  padding: 0 8px;
   border: 1px dashed var(--line-strong);
-  border-radius: var(--r-pill);
-  font: var(--t-caption);
+  border-radius: 50%;
   color: var(--ink-2);
   background: transparent;
 }
@@ -579,8 +582,8 @@
   justify-content: center;
   border-radius: 50%;
   border: 0;
-  background: var(--accent);
-  color: #fff;
+  background: var(--ink);
+  color: var(--bg-app);
 }
 
 .send:hover {

@@ -81,9 +81,10 @@ async function main() {
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
   const shots = [
-    ['coworkers-directory', '/coworkers'],
-    ['coworkers-working', '/coworkers/cw-reviewer'],
-    ['coworkers-config', '/coworkers/cw-reviewer/config'],
+    ['gpt-rail', '/overview'],
+    ['gpt-notes', '/notes'],
+    ['gpt-compute', '/compute'],
+    ['gpt-user', '/user'],
   ];
 
   for (const [name, path] of shots) {

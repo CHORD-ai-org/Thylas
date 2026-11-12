@@ -39,6 +39,7 @@ function when(at: number): string {
 export function ArtifactLibrary() {
   useArtifacts();
   const [view, setView] = useState<View>('all');
+  const [mode, setMode] = useState<'list' | 'grid'>('list');
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<ArtifactKind | 'all'>('all');
   const [status, setStatus] = useState<ArtifactStatus | 'all'>('all');
@@ -72,6 +73,33 @@ export function ArtifactLibrary() {
           </p>
         </div>
         <div className={s.headActions}>
+          <div className={s.modeRow} role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={[s.modeBtn, mode === 'list' ? s.modeBtnOn : ''].join(' ')}
+              aria-label="List view"
+              aria-pressed={mode === 'list'}
+              onClick={() => setMode('list')}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={[s.modeBtn, mode === 'grid' ? s.modeBtnOn : ''].join(' ')}
+              aria-label="Grid view"
+              aria-pressed={mode === 'grid'}
+              onClick={() => setMode('grid')}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                <rect x="2.5" y="2.5" width="4.6" height="4.6" />
+                <rect x="8.9" y="2.5" width="4.6" height="4.6" />
+                <rect x="2.5" y="8.9" width="4.6" height="4.6" />
+                <rect x="8.9" y="8.9" width="4.6" height="4.6" />
+              </svg>
+            </button>
+          </div>
           <input
             className={s.search}
             type="search"
@@ -81,7 +109,7 @@ export function ArtifactLibrary() {
             onChange={(e) => setQuery(e.target.value)}
           />
           <Link to={routes.artifactNew()} className={s.createBtn} data-create-artifact>
-            <IconPlus size={12} /> Create Artifact
+            <IconPlus size={12} /> New
           </Link>
         </div>
       </header>

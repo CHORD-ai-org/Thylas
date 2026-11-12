@@ -13,7 +13,9 @@ client rendering concern.
 | File | Purpose |
 | --- | --- |
 | `config.ts` | The only module that reads environment variables. Typed once per process. |
-| `ai.ts` | Model API middleware: `POST /api/ai`, `POST /api/ai/stream`, `GET /api/ai/status`. Key scrubbed from every log. |
+| `ai-handler.ts` | The only implementation of the three endpoints. Pure `node:http`; no Vite import. |
+| `ai.ts` | Vite adapter: mounts the handlers in `dev` and `preview`. Key scrubbed from every log. |
+| `index.ts` | Standalone host (`npm run api`), default port 8787. Same handlers, no Vite. |
 
 ## Where new backend functionality goes
 
@@ -24,4 +26,12 @@ client rendering concern.
   boundary lives in `docs/development/backend/INTEGRATION.md` as prose).
 
 The full architecture, standards, and the implemented/proposed domain split:
-`docs/development/backend/`.
+`docs/development/backend/`. The five-phase roadmap: `docs/development/backend/ROADMAP.md`.
+
+## Running the standalone host (D-055)
+
+`npm run api` starts a plain `node:http` server on `PORT` (default 8787). Node
+loads `.env.local` via `--env-file-if-exists`; a variable the shell already set
+wins. `GET /api/ai/status` is the smoke test: it answers `{configured, model}`
+without contacting the model. All three endpoints keep the same paths, the same
+contract (`src/lib/ai.ts`) and the same typed failures as `npm run dev`.

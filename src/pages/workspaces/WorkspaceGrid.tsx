@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { routes } from '../../lib/routes';
 import { plural } from '../../data/selectors';
 import type { Workspace } from '../../data/types';
-import { Badge, Button, IconButton } from '../../components/ui';
+import { Button, IconButton } from '../../components/ui';
 import { IconPlus, IconTrash } from '../../components/icons';
 import { useApp } from '../../state/app';
 import {
@@ -113,7 +113,6 @@ export function WorkspaceGrid({ autoCreate = false }: { autoCreate?: boolean }) 
                 >
                   <span className={s.cardTop}>
                     <span className={s.cardName}>{ws.name}</span>
-                    <Badge>{ws.scope === 'org' ? 'ORG' : 'PERSONAL'}</Badge>
                   </span>
                   <span className={s.cardMeta}>
                     {plural(ws.counts.files, 'file')} · {plural(ws.counts.boards, 'board')} ·{' '}

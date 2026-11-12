@@ -1,7 +1,7 @@
 /**
  * Server configuration, read once per process. The only module that knows
  * which environment variables the backend needs — handlers receive typed
- * values and never touch `env` directly (D-052).
+ * values and never touch `env` directly (D-052, P1-2).
  *
  * Precedence follows the existing rule: a variable the shell already set wins
  * over `.env`-file overrides, so a one-off `DEEPSEEK_MODEL=… npm run dev`
@@ -20,15 +20,24 @@ export type ServerConfig = {
   model: string;
   /** Upstream budget in ms. A completion past this reads as broken, not slow. */
   timeoutMs: number;
+  /** Port for the standalone host. Vite dev keeps its own 5173. */
+  port: number;
+  /** Postgres connection string. Empty means persistence is not configured yet. */
+  databaseUrl: string;
+  /** Target bucket for signed direct uploads (N3). Empty means not configured. */
+  storageBucket: string;
+  /** CHORD identity provider issuer (N2). Empty means not configured. */
+  chordIssuer: string;
 };
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
 const DEFAULT_MODEL = 'deepseek-chat';
 const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_PORT = 8787;
 
-function readTimeout(env: Env): number {
-  const raw = Number(env.DEEPSEEK_TIMEOUT_MS);
-  return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : DEFAULT_TIMEOUT_MS;
+function readPositiveInt(env: Env, name: string, fallback: number, max = Number.MAX_SAFE_INTEGER): number {
+  const raw = Number(env[name]);
+  return Number.isFinite(raw) && raw > 0 && raw <= max ? Math.round(raw) : fallback;
 }
 
 export function readConfig(env: Env): ServerConfig {
@@ -36,7 +45,11 @@ export function readConfig(env: Env): ServerConfig {
     apiKey: (env.DEEPSEEK_API_KEY ?? '').trim(),
     baseUrl: (env.DEEPSEEK_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, ''),
     model: env.DEEPSEEK_MODEL ?? DEFAULT_MODEL,
-    timeoutMs: readTimeout(env),
+    timeoutMs: readPositiveInt(env, 'DEEPSEEK_TIMEOUT_MS', DEFAULT_TIMEOUT_MS),
+    port: readPositiveInt(env, 'PORT', DEFAULT_PORT, 65535),
+    databaseUrl: (env.DATABASE_URL ?? '').trim(),
+    storageBucket: (env.STORAGE_BUCKET ?? '').trim(),
+    chordIssuer: (env.CHORD_ISSUER ?? '').trim(),
   };
 }
 

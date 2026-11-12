@@ -46,3 +46,22 @@
 ## 5. 验收
 
 每页迁移后：截图（shots 脚本）+ 对应 e2e 全绿 + 与参考图并排目检。全部页面完成后跑全量 e2e。
+
+## 6. 执行记录（2026-11-12）
+
+| 页面 | 状态 | 截图 |
+| --- | --- | --- |
+| Chat（landing + conversation） | ✅ | `design/reference/chatgpt/thylas-chat-*.png` |
+| Overview（居中大问句 + 胶囊 intent + 圆形 ink send） | ✅ | `thylas-overview.png` |
+| Artifacts Library（头行 icon 组 + 网格/列表切换 + 类型自渲染卡片） | ✅ | `thylas-artifacts-grid.png` |
+| Connect Discover（两列行 + 区块 + 全宽胶囊搜索） | ✅ | `thylas-connect.png` |
+| Coworkers（Directory 头行一致；Detail 会话区随 Chat 样板） | ✅（创建时已达标） | `coworkers-*.png` |
+| Rail（workspace 徽章 PERSONAL/ORG·MEMBER 移除，工作记录照旧） | ✅ | `thylas-rail.png`（含 Overview） |
+| Compute（runForm/rec/kindCard 无框化，输入类边框保留） | ✅ | `thylas-compute.png` |
+| User（planCard 无框化） | ✅ | `thylas-user.png` |
+| Notes（code/search 为功能性边框，保留） | ✅（无需改动） | — |
+| detail 类页面 | ✅（section 分隔为 hairline 行分隔，即目标形态；composer 随 Chat 样板） | — |
+
+**第二批完成**：多余文字提示清理（rail/grid 的 PERSONAL/ORG·MEMBER 徽章、chat 的 CONTEXT 标签与 Add context 文字按钮→icon-only，aria 名保留）；卡片容器无框化 4 处。e2e 302/302。迁移全部页面完成。
+
+硬关卡修正记录：overview accent 归零约束（send 改 ink 底 32px）；connect 文案保真（tierNote 不顶替 'No flow to open'）。e2e 302/302。

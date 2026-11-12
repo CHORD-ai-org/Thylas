@@ -735,3 +735,106 @@ a.row:active {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* ---- view mode + grid cards (GPT library pattern) -------------------------- */
+
+.modeRow {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.modeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--ink-3);
+  background: var(--bg-surface);
+}
+
+.modeBtn + .modeBtn {
+  border-left: 1px solid var(--line);
+}
+
+.modeBtn:hover {
+  color: var(--ink);
+}
+
+.modeBtnOn {
+  background: var(--bg-app);
+  color: var(--ink);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s4);
+  margin: var(--s4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg-surface);
+  color: inherit;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cardTitle {
+  font: var(--t-caption);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+}
+
+.cardBody[data-kind='concept'] { background: var(--tint-hover); }
+.cardBody[data-kind='methodology'] { background: var(--tint-hover); }
+.cardBody[data-kind='executable'] { background: var(--bg-app); }
+.cardBody[data-kind='product'] { background: var(--bg-app); }
+.cardBody[data-kind='empirical'] { background: var(--tint-live); }
+.cardBody[data-kind='structural'] { background: var(--tint-hover); }
+.cardBody[data-kind='external'] { background: var(--bg-app); }
+
+.cardGlyph {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+}

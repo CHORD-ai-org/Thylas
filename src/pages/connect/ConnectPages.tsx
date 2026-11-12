@@ -364,26 +364,18 @@ export function ConnectDiscover() {
                           <Badge>{AUTH_LABEL[app.auth].toUpperCase()}</Badge>
                         </span>
                         <span className={s.providerBlurb}>{app.blurb}</span>
+                      {app.tierNote ? <span className={s.planned}>{app.tierNote}</span> : null}
                       </div>
                     </div>
 
-                    <div className={s.providerState}>
-                      <TierWord app={app} />
-                      <span className={s.tierAuth}>{AUTH_LABEL[app.auth]}</span>
-                    </div>
-
-                    <div className={s.providerCaps}>
-                      {app.tierNote ? <span className={s.planned}>{app.tierNote}</span> : null}
-                    </div>
-
-                    <div className={s.providerActions}>
+                    <div className={s.providerSide}>
                       {app.tier === 'available' ? (
                         <Link to={routes.connectApp(app.id)} className={s.linkArrow} data-app-open={app.id}>
                           Set up
                         </Link>
-                      ) : (
+                      ) : app.tier === 'unsupported' ? (
                         <span className={s.planned}>No flow to open</span>
-                      )}
+                      ) : null}
                     </div>
                   </li>
                 ))}

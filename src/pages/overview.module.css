@@ -4,6 +4,14 @@
 
 .head {
   max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+  padding-top: var(--s6);
+}
+
+.head .lede {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .greeting {
@@ -33,7 +41,7 @@
   height: 52px;
   padding: 0 8px 0 14px;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-surface);
+  border-radius: 26px;
   background: var(--bg-surface);
   color: var(--ink-3);
 }
@@ -74,6 +82,13 @@
   height: 32px;
   padding: 0;
   justify-content: center;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg-app);
+}
+
+.sendBtn:hover {
+  opacity: 0.9;
 }
 
 /* Disabled, the button is still a square. The shared disabled recipe paints it

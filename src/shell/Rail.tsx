@@ -8,7 +8,7 @@ import { useCompute } from '../state/compute';
 import { displayNameOf, useUser } from '../state/user';
 import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
-import { Badge, IconButton } from '../components/ui';
+import { IconButton } from '../components/ui';
 import {
   IconAccount,
   IconBoards,
@@ -217,7 +217,6 @@ export function Rail() {
                 ) : (
                   <>
                     <span className={s.wsName}>{ws.name}</span>
-                    <Badge>{ws.scope === 'org' ? `ORG · ${ws.role?.toUpperCase()}` : 'PERSONAL'}</Badge>
                     {pending > 0 ? <span className={s.wsPending} title={`${pending} need you`} /> : null}
                   </>
                 )}

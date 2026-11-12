@@ -216,7 +216,6 @@ function ContextBar({
 
   return (
     <div className={s.contextBar}>
-      <span className={s.contextLabel}>Context</span>
       {conversation.context.map((source) => (
         <span key={source.id} className={s.chip} data-kind={source.kind} title={source.detail}>
           {source.name}
@@ -237,7 +236,7 @@ function ContextBar({
         aria-expanded={open}
         data-context-add
       >
-        <IconPlus size={11} /> Add context
+        <IconPlus size={11} />
       </button>
 
       {open ? (
