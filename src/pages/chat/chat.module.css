@@ -18,7 +18,6 @@
   gap: var(--s3);
   padding: 0 var(--s4);
   min-height: var(--h-toolbar);
-  border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
 }
 
@@ -340,19 +339,43 @@
 .streamEmpty {
   margin: auto;
   text-align: center;
-  max-width: 46ch;
-  padding: var(--s8) 0;
+  max-width: 60ch;
+  padding: 0;
 }
 
 .streamEmptyTitle {
-  font: var(--t-section);
+  font: 500 26px/1.3 var(--ui);
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
 .streamEmptyHint {
-  margin-top: 8px;
+  margin-top: 10px;
   font: var(--t-ui);
   color: var(--ink-2);
+}
+
+/* Landing mode (no messages yet): the GPT home pattern — big question with the
+   composer centered beneath; once the conversation starts, the composer sinks. */
+.chatLanding {
+  justify-content: center;
+}
+
+.chatLanding .stream {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--s6);
+}
+
+.chatLanding .composer {
+  border-top: 0;
+  background: transparent;
+  width: 100%;
+}
+
+.chatLanding .composerInner {
+  max-width: 720px;
 }
 
 /* ---- composer -------------------------------------------------------------- */
@@ -499,12 +522,31 @@
   align-items: flex-end;
   gap: var(--s2);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  border-radius: 24px;
   background: var(--bg-surface);
-  padding: 8px 8px 8px 12px;
+  padding: 8px 8px 8px 8px;
 }
 
 .inputWrap:focus-within {
+  border-color: var(--line-strong);
+}
+
+.composerAdd {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  background: transparent;
+}
+
+.composerAdd:hover {
+  color: var(--ink);
   border-color: var(--line-strong);
 }
 
@@ -535,12 +577,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-sm);
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+
+.send:hover {
+  filter: brightness(1.08);
+}
+
+.send:disabled {
+  background: var(--line);
+  color: var(--ink-3);
 }
 
 .send[data-streaming] {
+  background: transparent;
+  border: 1px solid var(--error);
   color: var(--error);
-  border-color: var(--error);
 }
 
 .composerFoot {

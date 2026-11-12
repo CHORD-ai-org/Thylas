@@ -86,6 +86,16 @@ export function Composer({
         />
 
         <div className={s.inputWrap}>
+          <button
+            type="button"
+            className={s.composerAdd}
+            aria-label="Add context"
+            title="Add context"
+            onClick={() => setContextOpen(!contextOpen)}
+            data-composer-add
+          >
+            <IconPlus size={13} />
+          </button>
           <textarea
             ref={inputRef}
             className={s.input}

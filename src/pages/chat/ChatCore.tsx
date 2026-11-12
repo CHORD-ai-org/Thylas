@@ -132,8 +132,10 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
     );
   }
 
+  const landing = conversation.messages.length === 0;
+
   return (
-    <div className={s.chat} data-chat-embedded={embedded || undefined}>
+    <div className={[s.chat, landing ? s.chatLanding : ''].join(' ')} data-chat-embedded={embedded || undefined}>
       <header className={s.header}>
         <span className={s.headerTitle} title={conversation.title}>
           {conversation.title}
