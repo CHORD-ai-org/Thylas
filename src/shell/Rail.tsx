@@ -17,6 +17,7 @@ import {
   IconCompute,
   IconConnect,
   IconFiles,
+  IconLayers,
   IconNotes,
   IconOverview,
   IconProcesses,
@@ -254,6 +255,13 @@ export function Rail() {
       </div>
 
       <nav className={s.railNav} aria-label="Library">
+        <RailItem
+          label="Artifacts"
+          path={routes.artifacts()}
+          icon={<IconLayers />}
+          active={pathname.startsWith('/artifacts')}
+          collapsed={railCollapsed}
+        />
         <RailItem
           label="Notes"
           path={routes.notes()}

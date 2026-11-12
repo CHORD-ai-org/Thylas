@@ -8,6 +8,9 @@ import { BoardsPage, BoardDetailPage } from '../pages/Boards';
 import { ProcessesPage, RunDetailPage } from '../pages/Processes';
 import { NotesPage } from '../pages/Notes';
 import { ChatPage } from '../pages/chat/ChatPage';
+import { ArtifactLibrary } from '../pages/artifacts/ArtifactLibrary';
+import { ArtifactNew } from '../pages/artifacts/ArtifactNew';
+import { ArtifactDetail } from '../pages/artifacts/ArtifactDetail';
 import { UserPage } from '../pages/user/UserPage';
 import { ComputeOverview } from '../pages/compute/ComputeOverview';
 import { ComputeBackends } from '../pages/compute/ComputeBackends';
@@ -55,6 +58,9 @@ export const routerChildren = [
   { path: 'notes/:noteId', element: <NotesPage /> },
   { path: 'chat', element: <ChatPage /> },
   { path: 'chat/:conversationId', element: <ChatPage /> },
+  { path: 'artifacts', element: <ArtifactLibrary /> },
+  { path: 'artifacts/new', element: <ArtifactNew /> },
+  { path: 'artifacts/:artifactId', element: <ArtifactDetail /> },
   /* `backends/new` before the dynamic detail route: React Router prefers a
      static segment, but the order says what was meant. */
   { path: 'compute', element: <ComputeOverview /> },
