@@ -13,7 +13,9 @@
     "lint": "eslint src server",
     "test": "vitest run",
     "e2e": "node scripts/ui-checks.mjs",
-    "ai": "node scripts/ai-checks.mjs"
+    "ai": "node scripts/ai-checks.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.4",
@@ -29,10 +31,13 @@
     "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^10.14.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.72.1",

@@ -15,64 +15,20 @@ import {
   AI_MAX_HISTORY,
   AI_MAX_HISTORY_ITEM,
   AI_MAX_PROMPT,
-  AI_PATH,
-  AI_STATUS_PATH,
-  AI_STREAM_PATH,
   failure,
   isAiHistory,
   readCompletion,
   statusFor,
-  type AiBody,
   type AiErrorKind,
   type AiHistoryItem,
   type AiStatusBody,
 } from '../src/lib/ai.ts';
 import { CONFIG_ERROR_NOT_CONFIGURED, type ServerConfig } from './config.ts';
-
-/**
- * 8000 characters is at most ~32 KB of UTF-8. The wire cap is what stops a
- * caller from streaming a gigabyte into memory before the character check runs.
- */
-const MAX_BODY_BYTES = 64 * 1024;
+import { MAX_BODY_BYTES, readBody, sendJson } from './http.ts';
 
 /** The key never enters a log line and never reaches the client. */
 function scrub(text: string, key: string): string {
   return key ? text.split(key).join('***') : text;
-}
-
-function sendJson(res: ServerResponse, status: number, body: AiBody): void {
-  const payload = JSON.stringify(body);
-  res.statusCode = status;
-  res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader('content-length', Buffer.byteLength(payload));
-  res.setHeader('cache-control', 'no-store');
-  res.end(payload);
-}
-
-/**
- * Resolves with the body, or with `null` when it exceeded MAX_BODY_BYTES. It
- * keeps draining past the cap so the response can still be written: destroying
- * the socket mid-upload turns a readable 413 into a reset connection.
- */
-function readBody(req: IncomingMessage): Promise<string | null> {
-  return new Promise((resolve, reject) => {
-    const chunks: string[] = [];
-    let size = 0;
-    let tooLarge = false;
-    req.setEncoding('utf8');
-    req.on('data', (chunk: string) => {
-      size += Buffer.byteLength(chunk);
-      if (size > MAX_BODY_BYTES) {
-        tooLarge = true;
-        /* Keep reading and discard: a caller that keeps sending cannot hold the
-           process, and the refusal below is still delivered. */
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', () => resolve(tooLarge ? null : chunks.join('')));
-    req.on('error', reject);
-  });
 }
 
 async function safeText(res: Response): Promise<string> {
@@ -448,27 +404,4 @@ export function createAiHandlers(config: ServerConfig): AiHandlers {
   return { status, completion, stream };
 }
 
-/**
- * Routes by exact path for the standalone host. The Vite plugin does not need
- * this: Connect's `use(path, fn)` already splits the three mounts.
- */
-export function handleApiRequest(
-  req: IncomingMessage,
-  res: ServerResponse,
-  handlers: AiHandlers,
-): void {
-  const path = new URL(req.url ?? '/', 'http://localhost').pathname;
-  if (path === AI_STATUS_PATH) {
-    handlers.status(req, res);
-    return;
-  }
-  if (path === AI_STREAM_PATH) {
-    handlers.stream(req, res);
-    return;
-  }
-  if (path === AI_PATH) {
-    handlers.completion(req, res);
-    return;
-  }
-  sendJson(res, 404, failure('contract', 'Unknown API path.'));
-}
+/* Routing lives in `router.ts` (P1-4); this module only implements the AI endpoints. */
