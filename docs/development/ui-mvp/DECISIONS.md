@@ -456,6 +456,24 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-054 · Coworker product foundation: identity ≠ prompt, membership ≠ access, and Thylas never orchestrates
+
+**Status:** accepted in force (Coworker system documentation, 2026-11-12). Product model only — no implementation beyond the artifact detail's Coworker chat-dock action **[I]**.
+**Context:** Coworkers (independent, persistent AI work entities across workspaces) are WAM Joshō's core product concept, with existing anchors only in `product/definition.md`'s responsibility table, `backend/INTEGRATION.md` §4 (A2A), and the artifact docs' coworker roles. No code, no model — the risk is a UI agent inventing definitions.
+**Decision:** product foundation in `docs/product/coworkers/` (README + 8 documents + SCOPE register). The load-bearing rulings, each **[C]**:
+1. A Coworker is an independent, persistent work entity; identity ≠ a system prompt — responsibilities are structured visible config (responsible-for / not-for / good output).
+2. Responsibilities ≠ Toolsets ≠ Methodologies: for / may-do / how-done-well.
+3. Membership ≠ access: per-membership role + grants (resources / artifacts / toolsets); effective access = intersection with the Coworker's own config; context is declared, never ambient.
+4. Artifact relationship = six separate verbs (discover / reference / understand / apply / create / propose); applying a methodology never mutates it; Coworker output enters as attributed drafts/proposals, never overwriting accepted artifacts.
+5. Working experience = five surfaces (conversation, Current Work, resources, artifacts, activity); Current Work is objectives+progress fed by real signals — never a transcript or fake activity.
+6. Three status layers stay separate: availability (active/paused/archived) · runtime execution (WAM's) · current-work state.
+7. Many Coworkers in one workspace ≠ a multi-agent system; A2A is WAM's protocol — Thylas stores handles and renders delivered transcripts only; no global orchestration.
+8. Attribution is permanent across removal/pause/archival; archive is reversible.
+**Alternatives:** a chatbot-with-personality model (loses persistence and access governance); making Coworker a WAM agent wrapper (couples product identity to runtime machinery); a Thylas-side orchestration layer (duplicates WAM, forbidden by `product/definition.md`).
+**Consequence:** a separate UI implementation agent can build the Coworker experience from `docs/product/coworkers/` alone; MVP = records + config + memberships + honest working surfaces on client state, with WAM-dependent features deferred to the contract (SCOPE §6). First live integration remains the artifact detail's Coworker→chat-dock action.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

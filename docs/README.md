@@ -12,6 +12,7 @@
 | --- | --- | --- | --- |
 | 1 | [`product/definition.md`](product/definition.md) | 20 min | What Thylas is, what it is not, who owns what, what v1 must close |
 | 1.5 | [`product/artifacts/`](product/artifacts/README.md) | 25 min | **The Artifact product foundation in force**: definition, taxonomy, user-defined objects, lifecycle, governance, cross-workspace reuse, methodology, external integrations |
+| 1.6 | [`product/coworkers/`](product/coworkers/README.md) | 20 min | **The Coworker product model in force**: definition, identity & responsibilities, workspace & artifact relationships, configuration, working experience, WAM boundary, lifecycle, MVP scope |
 | 2 | [`../design/thylas-ui-design-plan.md`](../design/thylas-ui-design-plan.md) §1, §4, §7 | 15 min | The screens and the three structural decisions (notes, tabs, rooms) |
 | 3 | [`architecture/tech-stack.md`](architecture/tech-stack.md) | 25 min | **The stack in force**: requirements, candidate evaluation, architecture, WAM boundary, ADRs |
 | 3.5 | [`architecture/application.md`](architecture/application.md) | 20 min | The pre-implementation proposal; superseded where it disagrees (see its §0 delta) |

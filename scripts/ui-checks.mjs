@@ -2705,6 +2705,104 @@ async function main() {
     return document.querySelectorAll('[data-artifact-row]').length;
   `), (v) => v >= 9);
   await js(`localStorage.removeItem('thylas:artifacts:v1'); return 1;`);
+
+  // ---- Coworkers: directory, working interface, config, creation ----
+  await js(`localStorage.removeItem('thylas:coworkers:v1'); return 1;`);
+  await goto('/coworkers');
+  check('coworkers: the rail opens the directory with the three seeds', await js(`
+    return {
+      rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Coworkers'),
+      h1: document.querySelector('h1')?.textContent.trim(),
+      rows: document.querySelectorAll('[data-coworker-row]').length,
+    };
+  `), (v) => v.rail && v.h1 === 'Coworkers' && v.rows === 3);
+
+  await fillAria('Search coworkers', 'protocol');
+  check('coworkers: search narrows to the reviewer', await js(`
+    return [...document.querySelectorAll('[data-coworker-row]')].map(r => r.textContent.includes('Protocol Reviewer'));
+  `), [true]);
+  await fillAria('Search coworkers', '');
+
+  await goto('/coworkers/cw-reviewer');
+  check('coworkers: the working interface leads with conversation and honest side panels', await js(`
+    const text = document.body.innerText;
+    return {
+      h1: document.querySelector('h1')?.textContent.trim(),
+      composer: !!document.querySelector('textarea[aria-label="Message"]'),
+      work: text.includes('No work items yet'),
+      pinned: text.includes('Boundary mapping method'),
+      paused: false,
+    };
+  `), (v) => v.h1 === 'Protocol Reviewer' && v.composer && v.work && v.pinned && v.paused === false);
+
+  await fillAria('Message', 'Review the boundary protocol draft.');
+  await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('coworkers: the conversation is the real chat surface', await js(`
+    return document.querySelector('[data-chat-stream]')?.innerText.includes('Review the boundary protocol draft.') ?? false;
+  `), true);
+
+  await goto('/coworkers/cw-reviewer/config');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  await fillAria('Responsible for', 'Reviews protocols AND boundary tables for completeness.');
+  await js(`${helpers} click(byText('button', 'Save changes')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('coworkers: responsibility edits save into the store', await js(`
+    const ta = document.querySelector('[aria-label="Responsible for"]');
+    return {
+      saved: ta ? ta.value.includes('AND boundary tables') : false,
+      saveClosed: ![...document.querySelectorAll('button')].some(b => b.textContent.includes('Save changes')),
+    };
+  `), { saved: true, saveClosed: true });
+
+  await goto('/coworkers/cw-reviewer');
+  check('coworkers: the edit lands in the activity log on the working page', await js(`
+    return document.body.innerText.includes('Updated') && document.body.innerText.includes('responsibilities');
+  `), true);
+
+  await goto(`/coworkers/cw-reviewer/config`);
+  await js('await new Promise(r => setTimeout(r, 300)); return 1;');
+
+  await fillAria('Workspace to join', 'Onda Lab');
+  await js(`${helpers} click(byText('button', 'Add')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('coworkers: membership add works and shows both workspaces', await js(`
+    const text = document.body.innerText;
+    return text.includes('Onda Lab') && text.includes('Research');
+  `), true);
+  await js(`${helpers} click(document.querySelector('[data-remove-membership="ws-onda"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+
+  await js(`${helpers} click(document.querySelector('[data-config-status]')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('coworkers: pause flips availability without touching memberships', await js(`
+    const text = document.body.innerText;
+    return {
+      paused: text.includes('Paused: new conversations and runs are blocked'),
+      kept: text.includes('Research'),
+    };
+  `), { paused: true, kept: true });
+  await js(`${helpers} click(document.querySelector('[data-config-status]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+
+  await goto('/coworkers/new');
+  await fillAria('Coworker name', 'Roadmap Checker');
+  await fillAria('Responsible for', 'Checks roadmap stages against the artifact graph.');
+  await js(`
+    const sel = document.querySelector('select[aria-label="Initial workspace"]');
+    const set = Object.getOwnPropertyDescriptor(sel.constructor.prototype, 'value').set;
+    set.call(sel, 'ws-research'); sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 120));
+    return 1;
+  `);
+  await js(`${helpers} click(byText('button', 'Create coworker')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('coworkers: creation lands on the working interface as active', await js(`
+    return {
+      h1: document.querySelector('h1')?.textContent.trim(),
+      status: document.body.innerText.includes('active'),
+      composer: !!document.querySelector('textarea[aria-label="Message"]'),
+    };
+  `), (v) => v.h1 === 'Roadmap Checker' && v.status && v.composer);
+
+  await goto('/coworkers');
+  check('coworkers: the directory reflects the created coworker', await js(`
+    return document.querySelectorAll('[data-coworker-row]').length;
+  `), (v) => v >= 4);
+  await js(`localStorage.removeItem('thylas:coworkers:v1'); return 1;`);
   await goto('/overview');
 
   } catch (err) {

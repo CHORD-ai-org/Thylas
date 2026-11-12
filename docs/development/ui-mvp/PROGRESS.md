@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-12 08:00 (Artifact page shipped (library/detail/creation); Artifact product foundation docs (D-053); Chat (D-051); backend docs (D-052)).
+Last updated: 2026-11-12 09:40 (Coworker page shipped (directory/working/config); Coworker foundation docs (D-054); Artifact page (D-053); Chat (D-051); backend docs (D-052)).
 
 ---
 
@@ -38,6 +38,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | Backend docs | — | **Completed** 11-11 | 0.5 | D-052 | audit + overview/domain-models/standards/integration docs; `server/config.ts` extraction; SSE passthrough fix. Docs: `docs/development/backend/` |
 | Artifact foundation | — | **Completed** 11-12 | 0.75 | D-053, D-052 | product docs: definition, taxonomy, user-defined objects (USOS), lifecycle, governance, canonical reuse, methodology, external integrations; 23 open questions registered. Docs: `docs/product/artifacts/` |
 | Artifact page | — | **Completed** 11-12 | 0.75 | D-053 | library (hybrid, views+filters), type-adaptive detail (sections, relations, versions, edit→new version), 5-path creation; Coworker action opens the real chat dock; 9 store tests + 12 e2e. Docs: `docs/development/artifacts/` | product docs: definition, taxonomy, user-defined objects (USOS), lifecycle, governance, canonical reuse, methodology, external integrations; 23 open questions registered. Docs: `docs/product/artifacts/` |
+| Coworker foundation | — | **Completed** 11-12 | 0.75 | D-054, D-052 | product docs: definition, identity & responsibilities, workspace & artifact relationships, configuration, working experience, WAM boundary, lifecycle; MVP scope + 9 open questions. Docs: `docs/product/coworkers/` |
+| Coworker page | — | **Completed** 11-12 | 0.75 | D-054 | directory (views+search), working interface (real ChatCore conversation + honest side panels), creation, config (responsibilities/memberships/status); 9 store tests + 11 e2e. Docs: `docs/development/coworkers/` |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
