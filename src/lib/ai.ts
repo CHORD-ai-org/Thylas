@@ -14,7 +14,10 @@ export const AI_PATH = '/api/ai';
 /**
  * The streaming sibling (D-051). Same middleware, same key handling, same error
  * kinds — a separate path so `/api/ai` (and the single-turn Ask panel on it)
- * keeps its contract untouched. The response is SSE; see `AiStreamEvent`.
+ * keeps its contract untouched. The 200 response is the model's own
+ * OpenAI-format SSE (`data: {choices:[…]}` … `data: [DONE]`), piped through
+ * byte-for-byte; the client parses that shape directly. Failures before the
+ * stream starts are JSON bodies in the shared AiErr shape.
  */
 export const AI_STREAM_PATH = '/api/ai/stream';
 
@@ -149,14 +152,10 @@ export function isAiBody(value: unknown): value is AiBody {
 }
 
 /* --------------------------------------------------------------------------
-   The streaming contract. Events travel as SSE `data:` lines, JSON-encoded.
+   The streaming contract: a byte-for-byte passthrough of the model's
+   OpenAI-format SSE. No event types to keep in sync — the pipe is the
+   contract, and only the failure shape (AiErr) is ours.
    -------------------------------------------------------------------------- */
-
-export type AiStreamEvent =
-  | { start: true; model: string }
-  | { delta: string }
-  | { done: true; model: string; ms: number }
-  | { error: AiErr };
 
 export type AiHistoryItem = { role: 'user' | 'assistant'; content: string };
 

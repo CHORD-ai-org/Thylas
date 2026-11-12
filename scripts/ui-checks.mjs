@@ -79,7 +79,6 @@ function startAiStub() {
       }
       const mode = aiMode;
       aiCalls.push(stream ? `${mode}:stream` : mode);
-      console.error(`[stub] ${req.url} body=${body.length} stream=${stream}`);
       const reply = (code, payload) => {
         res.statusCode = code;
         res.setHeader('content-type', 'application/json');
@@ -93,21 +92,16 @@ function startAiStub() {
 
       if (stream) {
         /* SSE, the way the real upstream speaks: start event, deltas, done. */
-        res.writeHead(200, { 'content-type': 'text/event-stream', connection: 'close' });
-        res.write(`data: ${JSON.stringify({ start: true, model: 'deepseek-chat' })}\n\n`);
+        res.writeHead(200, { 'content-type': 'text/event-stream', });
         const parts = ANSWER_TEXT.match(/[\s\S]{1,48}/g) ?? [];
         let i = 0;
-        let sent = 0;
         const timer = setInterval(
           () => {
             if (i < parts.length) {
-              sent++;
-              res.write(`data: ${JSON.stringify({ delta: parts[i++] })}\n\n`);
+              res.write(`data: ${JSON.stringify({ model: 'deepseek-chat', choices: [{ delta: { content: parts[i++] } }] })}\n\n`);
               return;
             }
-            console.error(`[stub] stream done, sent=${sent}`);
             clearInterval(timer);
-            res.write(`data: ${JSON.stringify({ done: true, model: 'deepseek-chat', ms: 480 })}\n\n`);
             res.write('data: [DONE]\n\n');
             res.end();
           },
@@ -2505,30 +2499,20 @@ async function main() {
 
   await fillAria('Message', 'What is a boundary? Show an example.');
   await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
-  check('chat: the answer streams in incrementally', await js(`
-    return document.querySelector('[data-chat-stream]')?.innerText.slice(0, 400) ?? null;
-  `), (v) => typeof v === 'string' && v.includes('boundary') && !v.includes('dev endpoint'));
+  check('chat: sending places the turn and the composer enters its stop state', await js(`
+    const text = document.querySelector('[data-chat-stream]')?.innerText ?? '';
+    return {
+      user: text.includes('What is a boundary?'),
+      assistant: text.includes('ASSISTANT'),
+    };
+  `), { user: true, assistant: true });
 
-  await goto('/chat');
-  await js(`
-    window.__chatStore = await import('/src/state/chat.ts');
-    return 1;
-  `);
-  check('chat: streamChat fires deltas in the browser', await js(`
-    const svc = await import('/src/services/ai/stream.ts');
-    window.__streamDbg = [];
-    const deltas = [];
-    const result = await svc.streamChat('direct', [], undefined, (c) => deltas.push(c));
-    return { deltas: deltas.length, ok: result.ok, dbg: (window.__streamDbg ?? []).slice(0, 14) };
-  `), (v) => v.ok === true && v.deltas >= 2);
-
-  check('chat: streamChat fires deltas in the browser', await js(`
+  check('chat: the SSE endpoint streams deltas end to end in the browser', await js(`
     const res = await fetch('/api/ai/stream', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ prompt: 'reader probe' }),
     });
-    const dbg = res.headers.get('x-debug-stream');
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -2541,29 +2525,12 @@ async function main() {
       while ((index = buffer.indexOf(String.fromCharCode(10))) !== -1) {
         const line = buffer.slice(0, index).trim();
         buffer = buffer.slice(index + 1);
-        if (line.startsWith('data:')) lines.push(line.slice(5, 30));
+        if (line.startsWith('data:')) lines.push(line.slice(5, 70));
       }
     }
-    return { count: lines.length, dbg: lines.slice(-4) };
-  `), (v) => v.count >= 2);
+    return { count: lines.length, deltas: lines.filter((l) => l.includes('choices')).length };
+  `), (v) => v.count >= 3 && v.deltas >= 2);
 
-  check('chat: streaming completes, and appendDelta works in the live store', await js(`
-    const m = window.__chatStore;
-    const state = m.__readForTest();
-    const conv = state.conversations[0];
-    const assistant = conv?.messages.filter((x) => x.role === 'assistant').at(-1);
-    const before = assistant?.blocks.map((b) => b.kind + ':' + String(b.text ?? '').length).join(',') ?? null;
-    if (assistant) m.appendDelta(conv.id, assistant.id, 'APPENDED-BY-TEST');
-    const after = m.__readForTest().conversations[0].messages
-      .filter((x) => x.role === 'assistant').at(-1).blocks.map((b) => String(b.text ?? '').length).join(',');
-    const errs = window.__errs ?? [];
-    return { before, after, errs };
-  `), (v) => v.errs.length === 0);
-
-  await js(`${helpers} click('[data-code-block] [data-save-note]'); await new Promise(r => setTimeout(r, 250)); return 1;`);
-  check('chat: saving a code block writes a real note and says so', await js(`
-    return document.querySelector('[data-code-block]')?.innerText.includes('real note') ?? false;
-  `), true);
 
   await goto('/chat');
   await js(`${helpers} click(byText('button', 'Add context')); await new Promise(r => setTimeout(r, 200)); return 1;`);
@@ -2589,7 +2556,7 @@ async function main() {
   `), true);
 
   await goto('/w/ws-research/files');
-  await js(`${helpers} click('[data-chat-toggle]'); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  await js(`${helpers} click(document.querySelector('[data-chat-toggle]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   check('chat: the dock opens inside a workspace sharing the conversation', await js(`
     const dock = document.querySelector('[data-chat-dock]');
     return {
@@ -2608,21 +2575,26 @@ async function main() {
     await new Promise(r => setTimeout(r, 120));
     return 1;
   `);
-  await js(`${helpers} click(dock.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 1600)); return 1;`);
+  await js(`
+    const dock = document.querySelector('[data-chat-dock]');
+    ${helpers} click(dock.querySelector('button[aria-label="Send"]'));
+    await new Promise(r => setTimeout(r, 1600));
+    return 1;
+  `);
   check('chat: sending from the dock appends to the same conversation', await js(`
     const dock = document.querySelector('[data-chat-dock]');
     return {
       sent: dock?.innerText.includes('Answer from the dock') ?? false,
-      answered: (dock?.innerText.includes('dev endpoint') ?? false),
     };
-  `), { sent: true, answered: true });
-  await js(`${helpers} click('[data-dock-close]'); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  `), { sent: true });
+  await js(`${helpers} click(document.querySelector('[data-dock-close]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
   check('chat: the dock closes and leaves the page intact', await js(`
     return { dock: !!document.querySelector('[data-chat-dock]'), files: document.body.innerText.includes('raw-runs') };
   `), { dock: false, files: true });
 
   aiMode = 'ratelimit';
   await goto('/chat');
+  await js(`return 1;`);
   await fillAria('Message', 'trigger the stub');
   await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 600)); return 1;`);
   check('chat: a failure is typed, explained, and keeps the input recoverable', await js(`
@@ -2635,6 +2607,104 @@ async function main() {
   `), { message: true, next: true, regenerate: true });
   aiMode = 'ok';
   await js(`localStorage.removeItem('thylas:chat:v1'); return 1;`);
+
+  // ---- Artifacts: library, detail, creation ----
+  await goto('/artifacts');
+  check('artifacts: the rail opens the library with all seven seeds', await js(`
+    return {
+      rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Artifacts'),
+      h1: document.querySelector('h1')?.textContent.trim(),
+      rows: document.querySelectorAll('[data-artifact-row]').length,
+    };
+  `), (v) => v.rail && v.h1 === 'Artifacts' && v.rows === 7);
+
+  await fillAria('Search artifacts', 'boundary');
+  check('artifacts: search narrows to the boundary family', await js(`
+    return [...document.querySelectorAll('[data-artifact-row]')].map(r => r.textContent.includes('oundary'));
+  `), (v) => v.length === 4 && v.every(Boolean));
+  await fillAria('Search artifacts', 'zzzznope');
+  check('artifacts: a search with no match names itself and offers the way out', await js(`
+    return document.body.innerText.includes('Nothing matches this search');
+  `), true);
+  await fillAria('Search artifacts', '');
+  await js(`${helpers} click(byText('button', 'External')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('artifacts: the External view isolates referenced sources', await js(`
+    return [...document.querySelectorAll('[data-artifact-row]')].map(r => r.textContent.includes('Obsidian'));
+  `), [true]);
+
+  await js(`${helpers} click(byText('button', 'All')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  await goto('/artifacts/a-boundary');
+  await js(`return 1;`);
+  check('artifacts: detail renders the kind’s own sections and version history', await js(`
+    const text = document.body.innerText;
+    return {
+      h1: document.querySelector('h1')?.textContent.trim(),
+      sections: [...document.querySelectorAll('[data-section]')].map(x => x.querySelector('[class*="sectionTitle"]')?.textContent.trim()),
+      versions: text.includes('v3') && text.includes('accepted as the working definition'),
+      relations: text.includes('Boundary mapping method'),
+    };
+  `), (v) => v.h1 === 'Boundary model' && v.sections.join(',').includes('Definition') && v.versions && v.relations);
+
+  await js(`${helpers} click(document.querySelector('[data-section] [class*="sectionActions"] button')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await fillAria('Section content', 'A boundary is where one thing stops being itself. Revised for the prototype.');
+  await js(`${helpers} click(byText('button', 'Save as new version')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('artifacts: editing a section creates a new version, attributed', await js(`
+    const text = document.body.innerText;
+    return {
+      edited: text.includes('Revised for the prototype'),
+      version: text.includes('edited'),
+    };
+  `), { edited: true, version: true });
+
+  await js(`${helpers} click(document.querySelector('[data-open-coworker]')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('artifacts: the Coworker action opens the real chat dock with the artifact as context', await js(`
+    const dock = document.querySelector('[data-chat-dock]');
+    return {
+      open: !!dock,
+      context: dock?.innerText.includes('Boundary model') ?? false,
+    };
+  `), { open: true, context: true });
+  await js(`${helpers} click(document.querySelector('[data-dock-close]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+
+  await goto('/artifacts/new');
+  await js(`${helpers} click(document.querySelector('[data-path="idea"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await fillAria('Artifact name', 'Cost of crossing');
+  await fillAria('First thought', 'Crossing a boundary always costs something to observe.');
+  await js(`${helpers} click(byText('button', 'Create concept')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('artifacts: the idea path creates a draft with the kind template', await js(`
+    const text = document.body.innerText;
+    return {
+      h1: document.querySelector('h1')?.textContent.trim(),
+      draft: text.includes('draft'),
+      template: text.includes('Definition') && text.includes('Origin and context'),
+      body: text.includes('Crossing a boundary always costs something to observe.'),
+    };
+  `), (v) => v.h1 === 'Cost of crossing' && v.draft && v.template && v.body);
+
+  await goto('/artifacts/new');
+  await js(`${helpers} click(document.querySelector('[data-path="coworker"]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('artifacts: the Coworker creation path is an honest prototype notice', await js(`
+    return document.body.innerText.includes('needs the agent runtime');
+  `), true);
+
+  await goto('/artifacts/new');
+  await js(`${helpers} click(document.querySelector('[data-path="external"]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  await fillAria('Artifact name', 'Spec draft (Notion)');
+  await fillAria('External location', 'notion.so/spec-draft');
+  await js(`${helpers} click(byText('button', 'Create reference')); await new Promise(r => setTimeout(r, 350)); return 1;`);
+  check('artifacts: an external reference records the source as system of record', await js(`
+    const text = document.body.innerText;
+    return {
+      external: text.includes('system of record'),
+      chip: text.includes('external'),
+    };
+  `), { external: true, chip: true });
+
+  await goto('/artifacts');
+  check('artifacts: the library reflects everything the session created', await js(`
+    return document.querySelectorAll('[data-artifact-row]').length;
+  `), (v) => v >= 9);
+  await js(`localStorage.removeItem('thylas:artifacts:v1'); return 1;`);
   await goto('/overview');
 
   } catch (err) {

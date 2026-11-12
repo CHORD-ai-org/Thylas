@@ -51,8 +51,7 @@ export async function streamChat(
       body: JSON.stringify({ prompt, history }),
       signal,
     });
-  } catch (err) {
-    console.log('STREAMCATCH', String(err));
+  } catch {
     /* An aborted request is the caller's own stop; anything else is the wire. */
     if (stopped()) return { ok: true, text: '', model: '', ms: 0, stopped: true };
     return {
@@ -102,36 +101,27 @@ export async function streamChat(
   let model = '';
   let ms = 0;
   let error: AiErr | null = null;
+  const streamStart = Date.now();
 
-  const dbg = (m: string, v: unknown) => {
-    (globalThis as { __streamDbg?: unknown[] }).__streamDbg?.push(m + ':' + String(v).slice(0, 40));
-  };
-  dbg('open', res.status);
+  /* The stream is the model's own OpenAI-format SSE, piped through. */
   const handleEvent = (raw: string): 'done' | null => {
-    dbg('line', raw);
-    if (raw === '[DONE]') return 'done';
+    if (raw === '[DONE]') {
+      ms = Date.now() - streamStart;
+      return 'done';
+    }
     try {
-      const event = JSON.parse(raw) as Record<string, unknown>;
-      if (typeof event.delta === 'string') {
-        text += event.delta;
-        onDelta(event.delta);
-      } else if (event.start === true && typeof event.model === 'string') {
-        model = event.model;
-      } else if (event.done === true) {
-        if (typeof event.model === 'string') model = event.model;
-        if (typeof event.ms === 'number') ms = event.ms;
-        return 'done';
-      } else if (event.error && typeof event.error === 'object') {
-        const err = event.error as { kind?: unknown; message?: unknown; retryable?: unknown };
-        error = failure(
-          typeof err.kind === 'string' ? (err.kind as AiErr['kind']) : 'upstream',
-          typeof err.message === 'string' ? err.message : 'The stream failed.',
-          err.retryable === true,
-        );
-        return 'done';
+      const chunk = JSON.parse(raw) as {
+        model?: string;
+        choices?: { delta?: { content?: string } }[];
+      };
+      if (typeof chunk.model === 'string' && model === '') model = chunk.model;
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (typeof delta === 'string' && delta !== '') {
+        text += delta;
+        onDelta(delta);
       }
     } catch {
-      /* An unparseable line is skipped, not fatal. */
+      /* A keep-alive or unparseable line is skipped, not fatal. */
     }
     return null;
   };
@@ -139,7 +129,6 @@ export async function streamChat(
   try {
     for (;;) {
       const { done, value } = await reader.read();
-      dbg('chunk', value ? value.length : 'null');
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       let index: number;

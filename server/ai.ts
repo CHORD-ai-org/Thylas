@@ -8,7 +8,7 @@
  * later (Q-2). Nothing here is production-shaped on purpose: no retries, no
  * queue, no streaming.
  */
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { request as httpRequest, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { Plugin, PreviewServer, ViteDevServer } from 'vite';
 import {
   AI_MAX_HISTORY,
@@ -17,7 +17,6 @@ import {
   AI_PATH,
   AI_STATUS_PATH,
   AI_STREAM_PATH,
-  AI_TIMEOUT_MS,
   failure,
   isAiHistory,
   readCompletion,
@@ -26,11 +25,8 @@ import {
   type AiErrorKind,
   type AiHistoryItem,
   type AiStatusBody,
-  type AiStreamEvent,
 } from '../src/lib/ai';
-
-const DEFAULT_BASE_URL = 'https://api.deepseek.com';
-const DEFAULT_MODEL = 'deepseek-chat';
+import { CONFIG_ERROR_NOT_CONFIGURED, readConfig, type ServerConfig } from './config';
 
 /**
  * 8000 characters is at most ~32 KB of UTF-8. The wire cap is what stops a
@@ -38,16 +34,9 @@ const DEFAULT_MODEL = 'deepseek-chat';
  */
 const MAX_BODY_BYTES = 64 * 1024;
 
-type Env = Record<string, string | undefined>;
-
 /** The key never enters a log line and never reaches the client. */
 function scrub(text: string, key: string): string {
   return key ? text.split(key).join('***') : text;
-}
-
-function timeoutFrom(env: Env): number {
-  const raw = Number(env.DEEPSEEK_TIMEOUT_MS);
-  return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : AI_TIMEOUT_MS;
 }
 
 function sendJson(res: ServerResponse, status: number, body: AiBody): void {
@@ -138,7 +127,7 @@ function upstreamMessage(kind: AiErrorKind, status: number, detail: string): str
 export async function handleAiRequest(
   req: IncomingMessage,
   res: ServerResponse,
-  env: Env,
+  config: ServerConfig,
 ): Promise<void> {
   if ((req.method ?? 'GET').toUpperCase() !== 'POST') {
     res.setHeader('allow', 'POST');
@@ -146,18 +135,11 @@ export async function handleAiRequest(
     return;
   }
 
-  const key = (env.DEEPSEEK_API_KEY ?? '').trim();
+  const { apiKey: key, baseUrl, model, timeoutMs } = config;
   if (!key) {
     /* A missing key is configuration, not a broken network. Say which variable
        is missing, and do not reach upstream at all. */
-    sendJson(
-      res,
-      statusFor('not_configured'),
-      failure(
-        'not_configured',
-        'No model key on the server. Put DEEPSEEK_API_KEY in .env.local and restart the dev server.',
-      ),
-    );
+    sendJson(res, statusFor('not_configured'), failure('not_configured', CONFIG_ERROR_NOT_CONFIGURED));
     return;
   }
 
@@ -206,9 +188,7 @@ export async function handleAiRequest(
     return;
   }
 
-  const base = (env.DEEPSEEK_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
-  const model = env.DEEPSEEK_MODEL ?? DEFAULT_MODEL;
-  const timeoutMs = timeoutFrom(env);
+  const base = baseUrl;
   const started = Date.now();
 
   let upstream: Response;
@@ -273,10 +253,10 @@ export async function handleAiRequest(
 
 /**
  * The streaming sibling (D-051). Same checks as `handleAiRequest` — key, body,
- * prompt cap — then `stream: true` upstream, re-emitted as our own SSE events
- * (`{start}` → `{delta}×` → `{done}` → `[DONE]`). An error before the stream
- * starts is a normal JSON failure with the same kinds; an error mid-stream is
- * an `{error}` event, because the 200 and the headers are already gone.
+ * prompt cap — then `stream: true` upstream, piped through byte-for-byte. The
+ * client reads the model's own OpenAI-format SSE (`data: {choices:[…]}` …
+ * `data: [DONE]`); nothing is re-framed between the two. An error before
+ * upstream headers is a JSON failure with the same kinds.
  *
  * History arrives as prior turns, capped by the contract; the caller's prompt
  * is the last user message. The key never reaches the client.
@@ -284,12 +264,8 @@ export async function handleAiRequest(
 export async function handleAiStreamRequest(
   req: IncomingMessage,
   res: ServerResponse,
-  env: Env,
+  config: ServerConfig,
 ): Promise<void> {
-  const writeEvent = (event: AiStreamEvent): void => {
-    res.write(`data: ${JSON.stringify(event)}\n\n`);
-  };
-
   const failJson = (kind: AiErrorKind, message: string, retryable?: boolean): void => {
     sendJson(res, statusFor(kind), failure(kind, message, retryable));
   };
@@ -300,12 +276,9 @@ export async function handleAiStreamRequest(
     return;
   }
 
-  const key = (env.DEEPSEEK_API_KEY ?? '').trim();
+  const { apiKey: key, baseUrl: base, model, timeoutMs } = config;
   if (!key) {
-    failJson(
-      'not_configured',
-      'No model key on the server. Put DEEPSEEK_API_KEY in .env.local and restart the dev server.',
-    );
+    failJson('not_configured', CONFIG_ERROR_NOT_CONFIGURED);
     return;
   }
 
@@ -347,11 +320,6 @@ export async function handleAiStreamRequest(
     content: h.content.slice(0, AI_MAX_HISTORY_ITEM),
   }));
 
-  const base = (env.DEEPSEEK_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
-  const model = env.DEEPSEEK_MODEL ?? DEFAULT_MODEL;
-  const timeoutMs = timeoutFrom(env);
-  const started = Date.now();
-
   const messages: { role: 'user' | 'assistant'; content: string }[] = [
     ...history.map((h) => ({ role: h.role, content: h.content })),
     { role: 'user' as const, content: prompt },
@@ -365,134 +333,75 @@ export async function handleAiStreamRequest(
     if (!res.writableEnded) upstreamController.abort();
   });
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(`${base}/chat/completions`, {
+  /* The raw node:http client, deliberately not fetch: the upstream SSE is
+     piped through byte-for-byte — no response re-framing, no connection-pool
+     reuse between the model and the browser. An error before upstream headers
+     is a JSON failure with the shared kinds; after that, the upstream stream
+     is exactly what the client reads (OpenAI-format chunks, then [DONE]). */
+  const up = httpRequest(
+    `${base}/chat/completions`,
+    {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages, stream: true }),
-      signal: AbortSignal.any([upstreamController.signal, AbortSignal.timeout(timeoutMs)]),
-    });
-  } catch (err) {
-    if (upstreamController.signal.aborted) return;
-    const name = err instanceof Error ? err.name : '';
-    const timedOut = name === 'TimeoutError' || name === 'AbortError';
-    failJson(
-      timedOut ? 'timeout' : 'network',
-      timedOut
-        ? `No answer within ${Math.round(timeoutMs / 1000)} s.`
-        : `Could not reach ${base}. The machine may be offline or the host unreachable.`,
-      true,
-    );
-    return;
-  }
-
-  if (!upstream.ok || !upstream.body) {
-    const detail = scrub(readableDetail(await safeText(upstream)), key);
-    const kind: AiErrorKind =
-      upstream.status === 401 || upstream.status === 403
-        ? 'unauthorized'
-        : upstream.status === 429
-          ? 'rate_limited'
-          : 'upstream';
-    const retryable = kind === 'rate_limited' || upstream.status === 408 || upstream.status >= 500;
-    failJson(kind, upstreamMessage(kind, upstream.status, detail), retryable);
-    return;
-  }
-
-  res.statusCode = 200;
-  res.setHeader('content-type', 'text/event-stream; charset=utf-8');
-  res.setHeader('cache-control', 'no-store');
-  res.setHeader('connection', 'keep-alive');
-  /* No buffering between us and the browser: the point is incrementality. */
-  let upstreamBytes = 0;
-  let upstreamChunks = 0;
-  let sentDeltas = 0;
-  res.setHeader('x-debug-stream', 'pending');
-  res.flushHeaders?.();
-
-  writeEvent({ start: true, model });
-
-  const reader = upstream.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let aborted = false;
-
-  const finish = (completed: boolean): void => {
-    /* Debug travels in the body: setHeader after flushHeaders throws. */
-    if (!completed) {
-      res.write(`data: ${JSON.stringify({ debug: `chunks=${upstreamChunks} bytes=${upstreamBytes} deltas=${sentDeltas}` })}\n\n`);
-    }
-    if (completed) {
-      writeEvent({ done: true, model, ms: Date.now() - started });
-      res.write('data: [DONE]\n\n');
-    }
-    res.end();
-  };
-
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      upstreamChunks += 1;
-      upstreamBytes += value?.length ?? 0;
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let index: number;
-      while ((index = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, index).trim();
-        buffer = buffer.slice(index + 1);
-        if (!line.startsWith('data:')) continue;
-        const payload = line.slice(5).trim();
-        if (payload === '[DONE]') {
-          finish(!upstreamController.signal.aborted);
-          return;
-        }
-        try {
-          const chunk = JSON.parse(payload) as {
-            choices?: { delta?: { content?: string } }[];
-          };
-          const delta = chunk.choices?.[0]?.delta?.content;
-          if (typeof delta === 'string' && delta !== '') {
-            if (upstreamController.signal.aborted) {
-              aborted = true;
-              finish(false);
-              return;
-            }
-            sentDeltas += 1;
-            writeEvent({ delta });
-          }
-        } catch {
-          /* A keep-alive or unparseable line is skipped, not fatal. */
-        }
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${key}`,
+        accept: 'text/event-stream',
+      },
+    },
+    (upRes) => {
+      const status = upRes.statusCode ?? 0;
+      if (status !== 200) {
+        let body = '';
+        upRes.setEncoding('utf8');
+        upRes.on('data', (c) => (body += c));
+        upRes.on('end', () => {
+          const kind: AiErrorKind =
+            status === 401 || status === 403
+              ? 'unauthorized'
+              : status === 429
+                ? 'rate_limited'
+                : 'upstream';
+          const retryable = kind === 'rate_limited' || status === 408 || status >= 500;
+          failJson(kind, upstreamMessage(kind, status, scrub(readableDetail(body.trim()), key)), retryable);
+        });
+        return;
       }
-    }
-    finish(!upstreamController.signal.aborted);
-  } catch {
-    if (upstreamController.signal.aborted) {
-      aborted = true;
-      res.write(`data: ${JSON.stringify({ debug: 'abort-path' })}\n\n`);
-      finish(false);
+      res.writeHead(200, {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      res.flushHeaders?.();
+      upRes.pipe(res);
+      upRes.on('end', () => res.end());
+    },
+  );
+  upstreamController.signal.addEventListener('abort', () => up.destroy());
+  const upstreamTimer = setTimeout(() => {
+    up.destroy(new Error('timeout'));
+  }, timeoutMs);
+  up.on('close', () => clearTimeout(upstreamTimer));
+  up.on('error', (err) => {
+    if (upstreamController.signal.aborted) return;
+    if (err.message === 'timeout') {
+      failJson('timeout', `No answer within ${Math.round(timeoutMs / 1000)} s.`, true);
       return;
     }
-    /* Mid-stream failure: the headers are gone, so the error is an event. */
-    res.write(`data: ${JSON.stringify({ debug: 'error-path' })}\n\n`);
-    writeEvent({ error: failure('upstream', 'The stream from the model ended unexpectedly.', true) });
-    res.end();
-    return;
-  } finally {
-    if (!aborted && !res.writableEnded) {
-      /* Defensive: never leave the socket open. */
-      res.end();
-    }
-  }
+    failJson(
+      'network',
+      `Could not reach ${base}. The machine may be offline or the host unreachable.`,
+      true,
+    );
+  });
+  up.end(JSON.stringify({ model, messages, stream: true }));
 }
 /**
  * `overrides` carries the project's `.env` files; a variable the shell already
  * set wins, so a one-off `DEEPSEEK_MODEL=… npm run dev` behaves as expected and
  * a `.env.local` cannot silently redirect a test that sets its own value.
  */
-export function aiMiddleware(overrides: Env = {}): Plugin {
-  const env: Env = { ...overrides, ...process.env };
+export function aiMiddleware(overrides: Record<string, string | undefined> = {}): Plugin {
+  const env: Record<string, string | undefined> = { ...overrides, ...process.env };
+  const config = readConfig(env);
 
   /* Answers "can this endpoint work" without a request to the model and without
      saying anything about the key beyond whether it exists (SP-07b). */
@@ -503,8 +412,8 @@ export function aiMiddleware(overrides: Env = {}): Plugin {
       return;
     }
     const body: AiStatusBody = {
-      configured: (env.DEEPSEEK_API_KEY ?? '').trim() !== '',
-      model: env.DEEPSEEK_MODEL ?? DEFAULT_MODEL,
+      configured: config.apiKey !== '',
+      model: config.model,
     };
     const payload = JSON.stringify(body);
     res.statusCode = 200;
@@ -515,7 +424,7 @@ export function aiMiddleware(overrides: Env = {}): Plugin {
   };
 
   const handler = (req: IncomingMessage, res: ServerResponse): void => {
-    handleAiRequest(req, res, env).catch(() => {
+    handleAiRequest(req, res, config).catch(() => {
       if (res.headersSent) {
         res.end();
         return;
@@ -525,7 +434,7 @@ export function aiMiddleware(overrides: Env = {}): Plugin {
   };
 
   const streamHandler = (req: IncomingMessage, res: ServerResponse): void => {
-    handleAiStreamRequest(req, res, env).catch(() => {
+    handleAiStreamRequest(req, res, config).catch(() => {
       if (res.headersSent) {
         res.end();
         return;

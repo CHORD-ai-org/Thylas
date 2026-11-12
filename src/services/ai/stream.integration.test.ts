@@ -1,6 +1,7 @@
 import { createServer as createHttpServer } from 'node:http';
 import { afterAll, describe, expect, it } from 'vitest';
 import { handleAiStreamRequest } from '../../../server/ai';
+import { readConfig } from '../../../server/config';
 
 /**
  * Level-1 integration: the real stream handler against a stub upstream,
@@ -18,11 +19,10 @@ function startStub(): Promise<string> {
       req.on('data', (c) => (body += c));
       req.on('end', () => {
         res.writeHead(200, { 'content-type': 'text/event-stream' });
-        res.write(`data: ${JSON.stringify({ start: true, model: 'stub-model' })}\n\n`);
         let i = 0;
         const timer = setInterval(() => {
           if (i < UPSTREAM_PARTS.length) {
-            res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: UPSTREAM_PARTS[i++] } }] })}\n\n`);
+            res.write(`data: ${JSON.stringify({ model: 'stub-model', choices: [{ delta: { content: UPSTREAM_PARTS[i++] } }] })}\n\n`);
             return;
           }
           clearInterval(timer);
@@ -49,7 +49,7 @@ describe('the stream handler, end to end through HTTP', () => {
     baseUrl = await startStub();
     env.DEEPSEEK_BASE_URL = baseUrl;
     const httpServer = createHttpServer((req, res) => {
-      void handleAiStreamRequest(req, res, env);
+      void handleAiStreamRequest(req, res, readConfig(env));
     });
     await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', resolve));
     server = httpServer;
@@ -71,11 +71,11 @@ describe('the stream handler, end to end through HTTP', () => {
 
     expect(events.at(-1)).toBe('[DONE]');
     console.log('EVENTS', JSON.stringify(events));
-    expect(events).toContain(JSON.stringify({ start: true, model: 'stub-model' }));
+    /* Passthrough: the handler emits the model's own bytes unchanged. */
     const deltas = events
-      .filter((e) => e.startsWith('{') && JSON.parse(e).delta !== undefined)
-      .map((e) => JSON.parse(e).delta as string);
+      .filter((e) => e.startsWith('{') && JSON.parse(e).choices !== undefined)
+      .map((e) => JSON.parse(e).choices[0].delta.content as string);
     expect(deltas.join('')).toBe('alpha beta gamma');
-    expect(events.some((e) => JSON.parse(e).done === true)).toBe(true);
+    expect(events.some((e) => JSON.parse(e).model === 'stub-model')).toBe(true);
   }, 15000);
 });

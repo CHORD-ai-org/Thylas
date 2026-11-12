@@ -19,14 +19,13 @@ beforeAll(async () => {
     req.on('data', (c) => (body += c));
     req.on('end', () => {
       res.writeHead(200, { 'content-type': 'text/event-stream' });
-      res.write(`data: ${JSON.stringify({ start: true, model: 'deepseek-chat' })}\n\n`);
       let i = 0;
       const parts = ['one ', 'two ', 'three'];
       const timer = setInterval(() => {
         if (i < parts.length) {
           const chunk = parts[i++]!;
           sent.push(chunk);
-          res.write(`data: ${JSON.stringify({ delta: chunk })}\n\n`);
+          res.write(`data: ${JSON.stringify({ model: 'deepseek-chat', choices: [{ delta: { content: chunk } }] })}\n\n`);
           return;
         }
         clearInterval(timer);
@@ -64,7 +63,7 @@ describe('streamChat', () => {
       if (result.ok) {
         expect(result.text).toBe('one two three');
         expect(result.model).toBe('deepseek-chat');
-        expect(result.ms).toBe(42);
+        expect(result.ms).toBeGreaterThan(0);
         expect(result.stopped).toBe(false);
       }
       expect(deltas.join('')).toBe('one two three');
