@@ -428,6 +428,34 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-052 · Backend boundary: one thin application server, docs-first structure, WAM stays prose until an API exists
+
+**Status:** accepted in force (backend structure & documentation system, 2026-11-11).
+**Context:** WAM Joshō preparation asked for a backend structure and documentation system before any backend work. The audit found the entire backend is one Vite middleware file (`server/ai.ts`, three endpoints) with zero server persistence — every domain lives in versioned client envelopes. Scaffolding empty `routes/`/`persistence/`/`wam/` directories would be architecture theatre.
+**Decision:** the backend is a **thin application server** and stays one. The deliverable is documentation that tells future work where things belong: `docs/development/backend/` (OVERVIEW — target tree with an "appears with its first real module" rule, DOMAIN-MODELS — the implemented **[I]** vs proposed **[P]** split for User/Workspace/Conversation/Message/Artifact(+Version)/Coworker/Tool, ENGINEERING-STANDARDS — the six conventions already in the code, INTEGRATION — model API, storage, and the WAM/A2A hard line). The only justified code extraction is `server/config.ts` (typed env reading, one reader per process). Thylas owns application + persistence + presentation; WAM owns planning, shared context, orchestration, and the A2A protocol — Thylas stores connection handles and renders what WAM reports, never re-implements WAM internals. `server/wam/` is created only when a concrete WAM API exists.
+**Alternatives:** (1) scaffold the full future tree with empty modules — architecture theatre the brief itself forbids; (2) fold everything into `src/lib` and skip server structure — Joshō's conversations/artifacts need real persistence soon and it deserves a documented home; (3) design WAM adapter interfaces now — premature abstraction against AGENT.md §1.3.
+**Consequence:** another engineer (or agent) can find where new backend functionality belongs from `server/README.md` + `docs/development/backend/` alone. Client stores keep their envelope shapes and swap their localStorage backing for API calls behind the same validated interface when persistence arrives — no UI rewrite.
+
+---
+
+## D-053 · Artifact product foundation: one noun, emphases not classes, and four separations that carry the system
+
+**Status:** accepted in force (Artifact system documentation, 2026-11-12). Product model only — no implementation beyond what exists **[I]**.
+**Context:** WAM Joshō requires a much broader Artifact concept than "generated documents": persistent, identifiable, evolvable, reusable assets created and used by humans and agents, across workspaces. The existing docs had three fragments: B2 ingestion boundary (WAM supplies content; Thylas assigns id/scope/placement/provenance), the backend domain-model sketch, and the chat artifact block with save-as-note **[I]**.
+**Decision:** product foundation established in `docs/product/artifacts/` (README + 8 documents + open-question register). The load-bearing rulings, each **[C]**:
+1. **One noun.** "Artifact" replaces Asset / Knowledge Object / Executable Object as competing terms; executability is a capability facet, not a class.
+2. **Six categories are emphases, not classes** — tags (several, user-extendable) over one artifact core; one object may span categories.
+3. **Structure is opt-in via the User-defined Semantic Object System:** a spec is itself an artifact; instances pin spec versions; spec evolution never deletes user content.
+4. **Lifecycle separates identity / content / version / status / activity** — status transitions create no versions; versions are append-only and attributed (`authored by · applied by · under authority`); rollback is forward.
+5. **No universal accuracy score.** Seven dimensions (provenance, authorship, evidence, validation, scope, currency, authority) as visible structured metadata; agent-generated content enters as proposals, never auto-accepted.
+6. **Canonical identity + references:** one authoritative definition, one authority; other workspaces hold pinned-or-current references, derived objects, or explicit forks — local use never modifies the source; feedback flows as proposals.
+7. **Methodology / Method Run / Result / Evaluation are four nouns** — runs pin versions, results belong to the running workspace, improvement is proposal-driven, failure is first-class.
+8. **External assets keep their system of record** — Notion/Obsidian integration is reference, explicit import (new native artifact + provenance), or derived; round-trip sync deferred until persistence exists.
+**Alternatives:** fixed per-category schemas (guesses the user's ontology); a Knowledge Object class (wrong for companies and scripts); a universal confidence score (hides the dimensions that matter); auto-trusting agent content (contradicts the honesty rules the product runs on).
+**Consequence:** future artifact implementation has a product contract to build against; the nine-question final review in the README checklist is answerable from the docs alone. Nothing here changes shipped code — chat artifact blocks and save-as-note remain the only artifact persistence **[I]**.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

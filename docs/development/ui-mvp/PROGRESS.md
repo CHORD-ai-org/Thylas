@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-09 23:40 (Compute v2 shipped — IA replaced by D-050; User & Connect shipped, Account superseded by D-049).
+Last updated: 2026-11-12 08:00 (Artifact page shipped (library/detail/creation); Artifact product foundation docs (D-053); Chat (D-051); backend docs (D-052)).
 
 ---
 
@@ -34,6 +34,10 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | Compute v2 | — | **Completed** 11-09 | 1.5 | D-048, SP-01 | Backend/Instance/Workload/Listing model, Overview/Backends/Run/Instances/Activity/Marketplace; Run = Compute Selection (manual + recommended, queued-not-started); deterministic tests; 27 unit + 17 e2e. Docs: `docs/development/compute-v2/` |
 | User & Connect | — | **Completed** 11-09 | 1.0 | SP-01, Compute | User replaces Account (D-049): identity/preferences/environment/security, real landing + density + default-workspace prefs; Connect: Connected/Discover/Custom, four honest tiers, no fake OAuth; 20 unit + 13 e2e. Docs: `docs/development/user-connect/` |
 | SP-08 Account | — | **Superseded** by User & Connect (D-049) | — | — | density persistence shipped inside User |
+| Chat | — | **Completed** 11-09→11-11 | 1.5 | SP-07, D-051 | /chat page + resizable dock, one ChatCore; safe markdown renderer; SSE passthrough stream endpoint; context bar + artifacts-save-as-note; 16 unit + 10 e2e. Docs: `docs/development/chat/` |
+| Backend docs | — | **Completed** 11-11 | 0.5 | D-052 | audit + overview/domain-models/standards/integration docs; `server/config.ts` extraction; SSE passthrough fix. Docs: `docs/development/backend/` |
+| Artifact foundation | — | **Completed** 11-12 | 0.75 | D-053, D-052 | product docs: definition, taxonomy, user-defined objects (USOS), lifecycle, governance, canonical reuse, methodology, external integrations; 23 open questions registered. Docs: `docs/product/artifacts/` |
+| Artifact page | — | **Completed** 11-12 | 0.75 | D-053 | library (hybrid, views+filters), type-adaptive detail (sections, relations, versions, edit→new version), 5-path creation; Coworker action opens the real chat dock; 9 store tests + 12 e2e. Docs: `docs/development/artifacts/` | product docs: definition, taxonomy, user-defined objects (USOS), lifecycle, governance, canonical reuse, methodology, external integrations; 23 open questions registered. Docs: `docs/product/artifacts/` |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |

@@ -81,15 +81,10 @@ async function main() {
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
   const shots = [
-    ['compute-overview', '/compute'],
-    ['compute-backends', '/compute/backends'],
-    ['compute-backend-detail', '/compute/backends/b-slurm'],
-    ['compute-run', '/compute/run'],
-    ['compute-run-results', '/compute/run'],
-    ['compute-instances', '/compute/instances'],
-    ['compute-instance-detail', '/compute/instances/r-aws-h100'],
-    ['compute-activity', '/compute/activity'],
-    ['compute-marketplace', '/compute/marketplace'],
+    ['artifacts-library', '/artifacts'],
+    ['artifacts-detail', '/artifacts/a-boundary'],
+    ['artifacts-methodology', '/artifacts/a-method'],
+    ['artifacts-new', '/artifacts/new'],
   ];
 
   for (const [name, path] of shots) {
