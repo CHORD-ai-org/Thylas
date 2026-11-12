@@ -286,6 +286,15 @@ export const IconCompute = ({ size = 16 }: Props) => (
   </svg>
 );
 
+export const IconCoworker = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <circle cx="6" cy="5.4" r="2.6" />
+    <path d="M1.8 13.4v-1.6a3.4 3.4 0 0 1 3.4-3.4h1.6" />
+    <circle cx="11.4" cy="9.4" r="2.2" />
+    <path d="M8.6 13.6v-.4a2.8 2.8 0 0 1 2.8-2.8h.4a2.8 2.8 0 0 1 2.4 1.4" />
+  </svg>
+);
+
 export const IconLayers = ({ size = 16 }: Props) => (
   <svg {...base(size)} aria-hidden>
     <path d="M3.4 9.6 8 12l4.6-2.4" />

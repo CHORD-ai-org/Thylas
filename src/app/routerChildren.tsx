@@ -9,6 +9,10 @@ import { ProcessesPage, RunDetailPage } from '../pages/Processes';
 import { NotesPage } from '../pages/Notes';
 import { ChatPage } from '../pages/chat/ChatPage';
 import { ArtifactLibrary } from '../pages/artifacts/ArtifactLibrary';
+import { CoworkerDirectory } from '../pages/coworkers/CoworkerDirectory';
+import { CoworkerNew } from '../pages/coworkers/CoworkerNew';
+import { CoworkerDetail } from '../pages/coworkers/CoworkerDetail';
+import { CoworkerConfig } from '../pages/coworkers/CoworkerConfig';
 import { ArtifactNew } from '../pages/artifacts/ArtifactNew';
 import { ArtifactDetail } from '../pages/artifacts/ArtifactDetail';
 import { UserPage } from '../pages/user/UserPage';
@@ -58,6 +62,10 @@ export const routerChildren = [
   { path: 'notes/:noteId', element: <NotesPage /> },
   { path: 'chat', element: <ChatPage /> },
   { path: 'chat/:conversationId', element: <ChatPage /> },
+  { path: 'coworkers', element: <CoworkerDirectory /> },
+  { path: 'coworkers/new', element: <CoworkerNew /> },
+  { path: 'coworkers/:coworkerId', element: <CoworkerDetail /> },
+  { path: 'coworkers/:coworkerId/config', element: <CoworkerConfig /> },
   { path: 'artifacts', element: <ArtifactLibrary /> },
   { path: 'artifacts/new', element: <ArtifactNew /> },
   { path: 'artifacts/:artifactId', element: <ArtifactDetail /> },

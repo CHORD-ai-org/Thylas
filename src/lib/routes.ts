@@ -18,6 +18,9 @@ export const routes = {
   artifacts: () => '/artifacts',
   artifactNew: () => '/artifacts/new',
   artifact: (artifactId: Id) => `/artifacts/${artifactId}`,
+  coworkers: () => '/coworkers',
+  coworkerNew: () => '/coworkers/new',
+  coworker: (coworkerId: Id) => `/coworkers/${coworkerId}`,
   /* User is the person's own surface. Account was renamed, and the old path
      is a redirect — no page keeps the old name. */
   user: (section: 'identity' | 'preferences' | 'environment' | 'security' = 'identity') =>
