@@ -16,6 +16,7 @@ client rendering concern.
 | --- | --- |
 | `config.ts` | The only module that reads environment variables. Typed once per process. |
 | `ai-handler.ts` | The only implementation of the three endpoints. Pure `node:http`; no Vite import. |
+| `routes/profile.ts` + `profile/` | Profile Initialization API: sources → retrieval → extraction → candidate review → confirmed records (see `docs/development/profile/IMPLEMENTATION.md`). |
 | `ai.ts` | Vite adapter: mounts the handlers in `dev` and `preview`. Key scrubbed from every log. |
 | `index.ts` | Standalone host (`npm run api`), default port 8787. Same handlers, no Vite. |
 | `persistence/` | Drizzle schema (3 tables), generated SQL migrations `0000`…`0002` (P1-3/6/7) and the one DB connection (P1-4). |

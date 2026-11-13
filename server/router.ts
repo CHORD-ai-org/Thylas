@@ -10,6 +10,7 @@ import { CHAT_STATE_PATH } from '../src/lib/chat.ts';
 import { CONVERSATIONS_PATH } from '../src/lib/conversations.ts';
 import { FILES_PATH } from '../src/lib/files.ts';
 import { SESSION_PATH } from '../src/lib/session.ts';
+import { PROFILE_PATH } from '../src/lib/profile.ts';
 import { createAiHandlers } from './ai-handler.ts';
 import type { ServerConfig } from './config.ts';
 import { sendJson } from './http.ts';
@@ -17,6 +18,7 @@ import { createDb } from './persistence/client.ts';
 import { createChatRouter } from './routes/chat.ts';
 import { createConversationRouter } from './routes/conversations.ts';
 import { createFilesRouter } from './routes/files.ts';
+import { createDefaultProfileRouter } from './routes/profile.ts';
 import { createSessionHandler } from './session/handler.ts';
 import { createSessionSource } from './session/source.ts';
 import { createLocalStorage } from './storage/local.ts';
@@ -35,6 +37,7 @@ export function createApiRouter(config: ServerConfig): ApiRouter {
   const conversations = createConversationRouter(db, sessionSource);
   const files = createFilesRouter(db, createLocalStorage(config), sessionSource);
   const chat = createChatRouter(db, sessionSource);
+  const profile = createDefaultProfileRouter(config, sessionSource);
 
   return (req, res, next) => {
     const path = new URL(req.url ?? '/', 'http://localhost').pathname;
@@ -43,6 +46,9 @@ export function createApiRouter(config: ServerConfig): ApiRouter {
     if (path === AI_STREAM_PATH) return ai.stream(req, res);
     if (path === AI_PATH) return ai.completion(req, res);
     if (path === SESSION_PATH) return session(req, res);
+    if (path === PROFILE_PATH || path.startsWith(`${PROFILE_PATH}/`)) {
+      return profile(req, res, path);
+    }
     if (path === CHAT_STATE_PATH) return chat(req, res, path);
     if (path === CONVERSATIONS_PATH || path.startsWith(`${CONVERSATIONS_PATH}/`)) {
       return conversations(req, res, path);
