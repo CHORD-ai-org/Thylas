@@ -64,6 +64,12 @@ export const IconAccount = ({ size = 16 }: Props) => (
   </svg>
 );
 
+export const IconBookmark = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <path d="M4 2.6h8v10.8L8 10.9l-4 2.5z" />
+  </svg>
+);
+
 export const IconSearch = ({ size = 16 }: Props) => (
   <svg {...base(size)} aria-hidden>
     <circle cx="7.2" cy="7.2" r="4.2" />

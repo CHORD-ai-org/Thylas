@@ -119,15 +119,17 @@
   overflow: auto;
   display: flex;
   justify-content: center;
-  padding: 44px var(--s6) 96px;
+  padding: 40px var(--s6) 120px;
 }
 
+/* The page IS the document: no card surface, no frame. One readable column,
+   centered; the surrounding space is the app background. */
 .reader {
   width: 100%;
-  max-width: var(--w-read);
-  background: var(--bg-surface);
-  padding: 40px 44px 96px;
-  align-self: stretch;
+  max-width: 760px;
+  background: transparent;
+  padding: 0;
+  align-self: flex-start;
 }
 
 .eyebrow {
@@ -342,6 +344,19 @@
   gap: var(--s3);
 }
 
+.readerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  opacity: 0.55;
+  transition: opacity 160ms ease-in-out;
+}
+
+.readerTools:hover .readerActions,
+.readerTools:focus-within .readerActions {
+  opacity: 1;
+}
+
 /* The title is an input in edit mode and an h1 in reading mode, in the same
    place. One step down from display: a single-line input at 32px cuts a long
    title in half, and the note's own name is the one thing that must stay
@@ -506,3 +521,113 @@
   color: var(--ink);
 }
 
+
+
+/* ---- Obsidian-style sidebar: 56px function rail + collapsible panel ---- */
+
+.navRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 56px;
+  flex: 0 0 56px;
+  padding: var(--s3) 6px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-surface);
+}
+
+.navBtn {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  border: 0;
+  color: var(--ink-3);
+  background: transparent;
+}
+
+.navBtn:hover {
+  color: var(--ink);
+  background: var(--tint-hover);
+}
+
+.navBtnOn {
+  color: var(--ink);
+  background: var(--bg-app);
+}
+
+.navCollapse {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  margin-top: auto;
+  border-radius: var(--r-sm);
+  border: 0;
+  color: var(--ink-3);
+  background: transparent;
+  font: var(--t-ui);
+}
+
+.navCollapse:hover {
+  color: var(--ink);
+  background: var(--tint-hover);
+}
+
+.noteRowWrap {
+  position: relative;
+}
+
+.noteRowWrap .noteRow {
+  padding-right: 26px;
+}
+
+.starBtn {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-xs);
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.noteRowWrap .starBtn {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.noteRowWrap:hover .starBtn,
+.noteRowWrap:focus-within .starBtn,
+.starBtnOn {
+  opacity: 1;
+}
+
+.starBtn:hover,
+.starBtnOn {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .readerWrap {
+    padding: 28px var(--s4) 96px;
+  }
+
+  .list {
+    width: 200px;
+  }
+}

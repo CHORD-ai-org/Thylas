@@ -5,10 +5,12 @@ import { relativeTime } from '../lib/relative';
 import { buildBacklinks, outgoing } from '../lib/markdown/backlinks';
 import { getWorkspace } from '../data/selectors';
 import { createNote, getNoteById, removeNote, renameNote, saveNote, useNotes } from '../state/notes';
+import { isBookmarked, toggleBookmark, useBookmarks } from '../state/bookmarks';
+import { setNotesView, toggleNotesPanel, useNotesUi } from '../state/notesUi';
 import type { Note } from '../data/types';
 import { useApp, useRegisterTab } from '../state/app';
 import { Button, EmptyState, Field } from '../components/ui';
-import { IconPlus } from '../components/icons';
+import { IconBookmark, IconPlus, IconSearch, IconFiles } from '../components/icons';
 import { TabStrip } from '../shell/TabStrip';
 import { ContextPanel } from '../shell/ContextPanel';
 import { NoteReader } from './notes/NoteReader';
@@ -35,9 +37,14 @@ export function NotesPage() {
   const navigate = useNavigate();
   const { panelOpen, markDirty } = useApp();
   const all = useNotes();
+  useBookmarks();
+  const ui = useNotesUi();
   const [scope, setScope] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
+  /* The Search view owns its own term: typing there must not filter the Files
+     list out from under the user. */
+  const [findQuery, setFindQuery] = useState('');
 
   const note = noteId ? all.find((n) => n.id === noteId) : undefined;
 
@@ -77,6 +84,10 @@ export function NotesPage() {
     if (needle === '') return true;
     return n.title.toLowerCase().includes(needle) || n.body.toLowerCase().includes(needle);
   });
+
+  const findNeedle = findQuery.trim().toLowerCase();
+  const searchResults = findNeedle === '' ? [] : all.filter((n) =>
+    n.title.toLowerCase().includes(findNeedle) || n.body.toLowerCase().includes(findNeedle));
 
   const store = (id: string) => getNoteById(id);
 
@@ -240,78 +251,180 @@ export function NotesPage() {
     ? `No note matches “${debounced.trim()}” in ${scope === 'all' ? 'any scope' : (getWorkspace(scope)?.name ?? 'Personal')}.`
     : 'No note in this scope yet.';
 
+  /* Ctrl/Cmd + Shift + B toggles this panel. Ctrl+\ already belongs to the
+     global rail — sharing it would move both surfaces at once. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleNotesPanel();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const bookmarked = all.filter((n) => isBookmarked(n.id));
+
+  /** One row grammar for every sidebar view. The row stays a button — arrow
+      keys, tab order and the e2e journey all depend on `data-note-row`. */
+  const noteRows = (list: Note[], _unused?: undefined) => (
+    <ul className={s.noteList} onKeyDown={onListKeys} aria-label="Note list">
+      {list.map((n, i) => (
+        <li key={n.id} className={s.noteRowWrap}>
+          <button
+            type="button"
+            data-note-row
+            tabIndex={n.id === noteId || (noteId === undefined && i === 0) ? 0 : -1}
+            className={[s.noteRow, n.id === noteId ? s.noteRowOn : ''].join(' ')}
+            aria-current={n.id === noteId ? 'page' : undefined}
+            onClick={() => openNote(n.id)}
+          >
+            <span className={s.noteRowTitle}>{n.title}</span>
+            <span className={s.noteRowMeta}>{scopeLabel(n)} · {relativeTime(n.updatedAt)}</span>
+          </button>
+          <button
+            type="button"
+            className={[s.starBtn, isBookmarked(n.id) ? s.starBtnOn : ''].join(' ')}
+            aria-label={isBookmarked(n.id) ? `Remove ${n.title} from bookmarks` : `Bookmark ${n.title}`}
+            title={isBookmarked(n.id) ? 'Remove bookmark' : 'Add bookmark'}
+            onClick={() => toggleBookmark(n.id)}
+          >
+            {isBookmarked(n.id) ? '★' : '☆'}
+          </button>
+        </li>
+      ))}
+      {list.length === 0 ? <li className={s.listEmpty}>{emptyMessage}</li> : null}
+    </ul>
+  );
+
   return (
     <>
       <TabStrip ctx="notes" variant="notes" />
       <div className={s.body}>
-        <nav className={s.list} aria-label="Notes" data-scroll-region="notes-list">
-          <div className={s.listHead}>
-            <h2 className={s.listTitle}>Notes</h2>
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<IconPlus size={12} />}
-              onClick={() => addNote()}
-              aria-label="New note"
-            >
-              New
-            </Button>
-          </div>
-
-          <input
-            className={s.search}
-            type="search"
-            value={query}
-            placeholder="Search titles and text…"
-            aria-label="Search notes"
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setQuery('');
-            }}
-          />
-
-          <div className={s.filters}>
-            {scopes.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className={[s.filter, scope === id ? s.filterOn : ''].join(' ')}
-                aria-pressed={scope === id}
-                onClick={() => setScope(id)}
-              >
-                {id === 'all' ? 'All' : id === 'personal' ? 'Personal' : (getWorkspace(id)?.name ?? id)}
-              </button>
-            ))}
-          </div>
-
-          <ul className={s.noteList} onKeyDown={onListKeys} aria-label="Note list">
-            {visible.map((n, i) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  data-note-row
-                  tabIndex={n.id === noteId || (noteId === undefined && i === 0) ? 0 : -1}
-                  className={[s.noteRow, n.id === noteId ? s.noteRowOn : ''].join(' ')}
-                  aria-current={n.id === noteId ? 'page' : undefined}
-                  onClick={() => openNote(n.id)}
-                >
-                  <span className={s.noteRowTitle}>{n.title}</span>
-                  <span className={s.noteRowMeta}>
-                    {scopeLabel(n)} · {relativeTime(n.updatedAt)}
-                  </span>
-                </button>
-              </li>
-            ))}
-            {visible.length === 0 ? <li className={s.listEmpty}>{emptyMessage}</li> : null}
-          </ul>
-          <p className={s.listFoot}>{visible.length} of {all.length} notes · {scope === 'all' ? 'every scope you can read' : (getWorkspace(scope)?.name ?? 'Personal')}</p>
+        <nav className={s.navRail} aria-label="Notes sidebar" data-notes-rail>
+          <button
+            type="button"
+            className={[s.navBtn, ui.view === 'files' ? s.navBtnOn : ''].join(' ')}
+            aria-label="Files"
+            aria-pressed={ui.view === 'files'}
+            title="Files"
+            onClick={() => setNotesView('files')}
+            data-notes-view="files"
+          >
+            <IconFiles size={15} />
+          </button>
+          <button
+            type="button"
+            className={[s.navBtn, ui.view === 'search' ? s.navBtnOn : ''].join(' ')}
+            aria-label="Search"
+            aria-pressed={ui.view === 'search'}
+            title="Search"
+            onClick={() => setNotesView('search')}
+            data-notes-view="search"
+          >
+            <IconSearch size={15} />
+          </button>
+          <button
+            type="button"
+            className={[s.navBtn, ui.view === 'bookmarks' ? s.navBtnOn : ''].join(' ')}
+            aria-label="Bookmarks"
+            aria-pressed={ui.view === 'bookmarks'}
+            title="Bookmarks"
+            onClick={() => setNotesView('bookmarks')}
+            data-notes-view="bookmarks"
+          >
+            <IconBookmark size={15} />
+          </button>
+          <button
+            type="button"
+            className={s.navCollapse}
+            aria-label={ui.collapsed ? 'Expand notes panel' : 'Collapse notes panel'}
+            aria-expanded={!ui.collapsed}
+            title="Toggle sidebar (Ctrl+\)"
+            onClick={toggleNotesPanel}
+            data-notes-toggle
+          >
+            {ui.collapsed ? '»' : '«'}
+          </button>
         </nav>
+
+        {!ui.collapsed ? (
+          <div className={s.list} aria-label="Notes" data-scroll-region="notes-list" data-notes-panel>
+            {ui.view === 'files' ? (
+              <>
+                <div className={s.listHead}>
+                  <h2 className={s.listTitle}>Notes</h2>
+                  <Button size="sm" variant="ghost" icon={<IconPlus size={12} />} onClick={() => addNote()} aria-label="New note">
+                    New
+                  </Button>
+                </div>
+                <input
+                  className={s.search}
+                  type="search"
+                  value={query}
+                  placeholder="Search titles and text…"
+                  aria-label="Search notes"
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
+                />
+                <div className={s.filters}>
+                  {scopes.map((id) => (
+                    <button key={id} type="button" className={[s.filter, scope === id ? s.filterOn : ''].join(' ')} aria-pressed={scope === id} onClick={() => setScope(id)}>
+                      {id === 'all' ? 'All' : id === 'personal' ? 'Personal' : (getWorkspace(id)?.name ?? id)}
+                    </button>
+                  ))}
+                </div>
+                {noteRows(visible, undefined)}
+                <p className={s.listFoot}>{visible.length} of {all.length} notes · {scope === 'all' ? 'every scope you can read' : (getWorkspace(scope)?.name ?? 'Personal')}</p>
+              </>
+            ) : null}
+
+            {ui.view === 'search' ? (
+              <>
+                <div className={s.listHead}><h2 className={s.listTitle}>Search</h2></div>
+                <input
+                  className={s.search}
+                  type="search"
+                  value={findQuery}
+                  placeholder="Titles and text…"
+                  aria-label="Find in notes"
+                  onChange={(e) => setFindQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setFindQuery(''); }}
+                />
+                {findQuery.trim() !== '' ? noteRows(searchResults, undefined) : (
+                  <p className={s.listEmpty}>Type to search note titles and text.</p>
+                )}
+              </>
+            ) : null}
+
+            {ui.view === 'bookmarks' ? (
+              <>
+                <div className={s.listHead}><h2 className={s.listTitle}>Bookmarks</h2></div>
+                {bookmarked.length === 0 ? (
+                  <p className={s.listEmpty}>No bookmarks yet. Star a note to keep it here.</p>
+                ) : noteRows(bookmarked, undefined)}
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         <main className={s.readerWrap} data-scroll-region="notes-reader">
           {note ? (
             <article className={s.reader}>
               <div className={s.readerTools}>
                 <p className={s.eyebrow}>Note · {scopeLabel(note)}</p>
+                <div className={s.readerActions}>
+                  <button
+                    type="button"
+                    className={[s.starBtn, isBookmarked(note.id) ? s.starBtnOn : ''].join(' ')}
+                    aria-label={isBookmarked(note.id) ? 'Remove bookmark' : 'Add bookmark'}
+                    title={isBookmarked(note.id) ? 'Remove bookmark' : 'Add bookmark'}
+                    onClick={() => toggleBookmark(note.id)}
+                    data-note-star
+                  >
+                    {isBookmarked(note.id) ? '★' : '☆'}
+                  </button>
                 {editing ? (
                   <Button size="sm" onClick={exitEdit}>
                     Done
@@ -321,6 +434,7 @@ export function NotesPage() {
                     Edit
                   </Button>
                 )}
+                </div>
               </div>
 
               {editing ? (
