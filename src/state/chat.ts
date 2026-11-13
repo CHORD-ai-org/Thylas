@@ -1,128 +1,53 @@
 /**
  * The Chat store: conversations, their messages as blocks, declared context,
- * and the dock's presentation state (D-051).
+ * and the dock's presentation state (D-051, P1-7).
  *
  * One store serves both surfaces — the /chat page and the dock beside any
- * route render the same active conversation. Persistence is the house
- * envelope: versioned, validated on read, capped (20 conversations, 200
- * messages each — the oldest quietly dropped), seeds-free.
+ * route render the same active conversation. Types and validated reads come
+ * from `src/lib/chat.ts`, so the server route imports the same contract.
+ *
+ * P1-7: `VITE_CHAT_SOURCE=local|api` switches the persistence backing. The
+ * default `local` path is byte-for-byte the original behaviour. In `api` mode
+ * every commit stays optimistic and synchronous (all action signatures are
+ * unchanged); the network write is a throttled background side effect and the
+ * local envelope is always kept as a fallback. Streaming deltas never hit the
+ * network — only the finished turn does.
  *
  * Nothing here talks to the model: streaming is the caller's job, driven
  * through `beginAssistantMessage` / `appendDelta` / `finishAssistantMessage`.
  */
 import { useSyncExternalStore } from 'react';
 import type { AiErr } from '../lib/ai';
+import {
+  DOCK_DEFAULT,
+  DOCK_MAX,
+  DOCK_MIN,
+  MAX_CONVERSATIONS,
+  MAX_MESSAGES,
+  isConversation,
+  type Block,
+  type ContextSource,
+  type Conversation,
+  type Message,
+  type State,
+} from '../lib/chat';
+import { createChatClient } from '../services/chat/client';
+
+export { DOCK_MIN, DOCK_MAX } from '../lib/chat';
+export type { SourceKind, ContextSource, Block, Message, Conversation, State } from '../lib/chat';
 
 const KEY = 'thylas:chat:v1';
+const MIGRATED_KEY = 'thylas:chat:migrated:v1';
+const SYNC_DELAY_MS = 300;
 
-const MAX_CONVERSATIONS = 20;
-const MAX_MESSAGES = 200;
-export const DOCK_MIN = 300;
-export const DOCK_MAX = 640;
-const DOCK_DEFAULT = 400;
-
-export type SourceKind = 'workspace' | 'file' | 'note' | 'board' | 'integration';
-
-export type ContextSource = {
-  id: string;
-  kind: SourceKind;
-  name: string;
-  /** One honest line, e.g. "connected · retrieval not implemented". */
-  detail?: string;
-};
-
-export type Block =
-  | { kind: 'text'; text: string; streaming?: boolean }
-  | { kind: 'artifact'; title: string; artifactKind: 'code' | 'note'; content: string; savedAs?: string }
-  | { kind: 'evidence'; name: string; sourceType: string; route?: string }
-  | { kind: 'status'; label: string; state: 'active' | 'done' | 'failed' };
-
-export type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  at: number;
-  blocks: Block[];
-  /** Model + wall time, shown in the assistant footer. Absent on failures. */
-  meta?: { model: string; ms: number };
-  error?: AiErr;
-};
-
-export type Conversation = {
-  id: string;
-  title: string;
-  createdAt: number;
-  messages: Message[];
-  context: ContextSource[];
-};
-
-export type State = {
-  conversations: Conversation[];
-  activeId: string | null;
-  dock: { open: boolean; width: number };
-};
+const MODE: 'local' | 'api' =
+  (import.meta.env.VITE_CHAT_SOURCE as string | undefined) === 'api' ? 'api' : 'local';
 
 const EMPTY: State = {
   conversations: [],
   activeId: null,
   dock: { open: false, width: DOCK_DEFAULT },
 };
-
-const SOURCE_KINDS: readonly SourceKind[] = ['workspace', 'file', 'note', 'board', 'integration'];
-
-function isBlock(value: unknown): value is Block {
-  if (typeof value !== 'object' || value === null) return false;
-  const b = value as Partial<Block>;
-  if (b.kind === 'text') return typeof b.text === 'string';
-  if (b.kind === 'artifact')
-    return (
-      typeof b.title === 'string' &&
-      (b.artifactKind === 'code' || b.artifactKind === 'note') &&
-      typeof b.content === 'string'
-    );
-  if (b.kind === 'evidence')
-    return typeof b.name === 'string' && typeof b.sourceType === 'string';
-  if (b.kind === 'status')
-    return typeof b.label === 'string' && (b.state === 'active' || b.state === 'done' || b.state === 'failed');
-  return false;
-}
-
-function isMessage(value: unknown): value is Message {
-  if (typeof value !== 'object' || value === null) return false;
-  const m = value as Partial<Message>;
-  return (
-    typeof m.id === 'string' &&
-    (m.role === 'user' || m.role === 'assistant') &&
-    typeof m.at === 'number' &&
-    Array.isArray(m.blocks) &&
-    m.blocks.every(isBlock) &&
-    m.blocks.length <= 32
-  );
-}
-
-function isContextSource(value: unknown): value is ContextSource {
-  if (typeof value !== 'object' || value === null) return false;
-  const s = value as Partial<ContextSource>;
-  return (
-    typeof s.id === 'string' &&
-    typeof s.kind === 'string' &&
-    SOURCE_KINDS.includes(s.kind as SourceKind) &&
-    typeof s.name === 'string'
-  );
-}
-
-function isConversation(value: unknown): value is Conversation {
-  if (typeof value !== 'object' || value === null) return false;
-  const c = value as Partial<Conversation>;
-  return (
-    typeof c.id === 'string' &&
-    typeof c.title === 'string' &&
-    typeof c.createdAt === 'number' &&
-    Array.isArray(c.messages) &&
-    c.messages.every(isMessage) &&
-    Array.isArray(c.context) &&
-    c.context.every(isContextSource)
-  );
-}
 
 function clampWidth(w: number): number {
   return Math.min(DOCK_MAX, Math.max(DOCK_MIN, Math.round(w)));
@@ -158,15 +83,101 @@ function read(): State {
 let snapshot: State = read();
 const listeners = new Set<() => void>();
 
-function commit(next: State): void {
-  snapshot = next;
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ version: 1, ...snapshot }));
-    } catch {
-      /* quota: the session keeps its conversations in memory only */
-    }
+function persistLocal(next: State): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ version: 1, ...next }));
+  } catch {
+    /* quota: the session keeps its conversations in memory only */
   }
+}
+
+/* ---- P1-7: background remote persistence ---- */
+
+const chatClient = createChatClient();
+let remoteVersion = 0;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let booting = false;
+
+function scheduleSync(): void {
+  if (MODE !== 'api' || booting) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    void flushSync();
+  }, SYNC_DELAY_MS);
+}
+
+async function flushSync(): Promise<void> {
+  if (MODE !== 'api' || booting) return;
+  const result = await chatClient.putState({
+    expectedVersion: remoteVersion,
+    conversations: snapshot.conversations,
+  });
+  if (!result.ok) {
+    /* The local envelope is already written. Never lose it on a failed sync. */
+    console.warn('[chat] remote sync failed — local envelope kept');
+    return;
+  }
+  remoteVersion = result.version;
+}
+
+/** First switch to `api`: import the old envelope once, then hydrate from the server. */
+async function bootstrap(): Promise<void> {
+  if (MODE !== 'api') return;
+  booting = true;
+  try {
+    const remote = await chatClient.getState();
+    if (!remote.ok) {
+      console.warn('[chat] could not load remote state — local envelope kept');
+      return;
+    }
+    remoteVersion = remote.version;
+    const migrated = typeof localStorage !== 'undefined' && localStorage.getItem(MIGRATED_KEY) === '1';
+
+    if (remote.conversations.length === 0 && !migrated && snapshot.conversations.length > 0) {
+      const put = await chatClient.putState({
+        expectedVersion: remoteVersion,
+        conversations: snapshot.conversations,
+      });
+      if (put.ok) {
+        remoteVersion = put.version;
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem(MIGRATED_KEY, '1');
+          } catch {
+            /* quota: the envelope is intact, it will be re-imported next time */
+          }
+        }
+      } else {
+        console.warn('[chat] envelope import failed — local copy kept');
+      }
+      return;
+    }
+
+    if (remote.conversations.length > 0) {
+      const ids = new Set(remote.conversations.map((c) => c.id));
+      commit(
+        {
+          ...snapshot,
+          conversations: remote.conversations,
+          activeId:
+            snapshot.activeId && ids.has(snapshot.activeId)
+              ? snapshot.activeId
+              : (remote.conversations[0]?.id ?? null),
+        },
+        { sync: false },
+      );
+    }
+  } finally {
+    booting = false;
+  }
+}
+
+function commit(next: State, options: { sync?: boolean } = {}): void {
+  snapshot = next;
+  persistLocal(next);
+  if (MODE === 'api' && options.sync !== false) scheduleSync();
   for (const listener of listeners) listener();
 }
 
@@ -178,6 +189,8 @@ function subscribe(listener: () => void): () => void {
 }
 
 const getSnapshot = (): State => snapshot;
+
+if (MODE === 'api') void bootstrap();
 
 /* --------------------------------------------------------------------------
    Reads
@@ -387,6 +400,14 @@ export function finishAssistantMessage(conversationId: string, messageId: string
       }),
     })),
   );
+  /* The stream is over: flush once now instead of waiting out the throttle. */
+  if (MODE === 'api' && !booting) {
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+    }
+    void flushSync();
+  }
 }
 
 /** Removes the last assistant turn so its question can be asked again. */
