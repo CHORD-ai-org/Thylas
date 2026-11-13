@@ -5,15 +5,15 @@ import { describe, expect, it } from 'vitest';
 import * as schema from './schema.ts';
 
 /**
- * P1-3 acceptance, without Docker: PGlite is Postgres compiled to WASM, so the
- * generated SQL and drizzle's migration bookkeeping are exercised for real.
- * A real Postgres host is checked by `npm run db:migrate` once one is running.
+ * P1-3 / P1-6 acceptance, without Docker: PGlite is Postgres compiled to WASM,
+ * so the generated SQL and drizzle's migration bookkeeping are exercised for
+ * real. A real Postgres host is checked by `npm run db:migrate` once one runs.
  */
 const MIGRATIONS = './server/persistence/migrations';
 
-describe('P1-3 chat migration', () => {
+describe('chat + files migrations', () => {
   it(
-    'applies on an empty database, survives a second run, and accepts a message',
+    'applies both migrations twice on an empty database and accepts rows',
     async () => {
       const client = new PGlite();
       const db = drizzle(client, { schema });
@@ -25,7 +25,7 @@ describe('P1-3 chat migration', () => {
         "select tablename from pg_tables where schemaname = 'public' order by tablename",
       );
       expect(tables.rows.map((r) => r.tablename)).toEqual(
-        expect.arrayContaining(['conversations', 'messages']),
+        expect.arrayContaining(['conversations', 'messages', 'files']),
       );
 
       await db.insert(schema.conversations).values({
@@ -38,10 +38,20 @@ describe('P1-3 chat migration', () => {
         conversationId: 'c-1',
         position: 0,
         role: 'user',
-        blocks: [{ type: 'text', text: 'hi' }],
+        blocks: [{ kind: 'text', text: 'hi' }],
       });
-      const count = await client.query<{ n: string }>('select count(*)::text as n from messages');
-      expect(count.rows[0]?.n).toBe('1');
+      await db.insert(schema.files).values({
+        id: 'f-1',
+        workspaceId: 'ws-1',
+        name: 'report.txt',
+        kind: 'txt',
+        sizeBytes: 5,
+        storageKey: 'ws-1/f-1',
+      });
+      const messages = await client.query<{ n: string }>('select count(*)::text as n from messages');
+      const files = await client.query<{ n: string }>('select count(*)::text as n from files');
+      expect(messages.rows[0]?.n).toBe('1');
+      expect(files.rows[0]?.n).toBe('1');
 
       await client.close();
     },

@@ -8,6 +8,20 @@
       "when": 1794484369813,
       "tag": "0000_tired_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794536153496,
+      "tag": "0001_classy_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794538152777,
+      "tag": "0002_windy_exiles",
+      "breakpoints": true
     }
   ]
 }
