@@ -16,6 +16,7 @@ import { CoworkerConfig } from '../pages/coworkers/CoworkerConfig';
 import { ArtifactNew } from '../pages/artifacts/ArtifactNew';
 import { ArtifactDetail } from '../pages/artifacts/ArtifactDetail';
 import { UserPage } from '../pages/user/UserPage';
+import { ProfileInit } from '../pages/user/ProfileInit';
 import { ComputeOverview } from '../pages/compute/ComputeOverview';
 import { ComputeBackends } from '../pages/compute/ComputeBackends';
 import { ComputeAddBackend } from '../pages/compute/ComputeAddBackend';
@@ -85,6 +86,7 @@ export const routerChildren = [
   { path: 'account', element: <Navigate to={routes.user()} replace /> },
   { path: 'account/:section', element: <Navigate to={routes.user()} replace /> },
   { path: 'user', element: <Navigate to={routes.user()} replace /> },
+  { path: 'user/profile', element: <ProfileInit /> },
   { path: 'user/:section', element: <UserPage /> },
   { path: 'connect', element: <ConnectConnected /> },
   { path: 'connect/discover', element: <ConnectDiscover /> },

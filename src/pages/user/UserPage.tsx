@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { Link, NavLink, useParams } from 'react-router-dom';
 import { routes } from '../../lib/routes';
 import { RECENT, USER } from '../../data/mock';
 import type { Workspace } from '../../data/types';
@@ -77,6 +77,11 @@ export function UserPage() {
     <PlainLayout wide>
       <header className={s.head}>
         <h1 className={s.title}>User</h1>
+        <div style={{ marginTop: 10 }}>
+          <Link className={s.linkArrow} to={routes.profileInit()} data-profile-init>
+            Initialize profile from public sources
+          </Link>
+        </div>
         <p className={s.sub}>
           The person using Thylas: identity, preferences, and a view of their own environment.
           Compute owns machines, Connect owns integrations, and neither is managed here.

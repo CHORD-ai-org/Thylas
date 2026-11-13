@@ -455,3 +455,14 @@ a.envRow:active {
     position: static;
   }
 }
+
+/* Entry into the Profile Initialization flow (User page head). */
+.linkArrow {
+  font: var(--t-ui);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.linkArrow:hover {
+  border-bottom-color: var(--ink);
+}
