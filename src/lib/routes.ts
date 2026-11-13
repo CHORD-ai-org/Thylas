@@ -23,6 +23,7 @@ export const routes = {
   coworker: (coworkerId: Id) => `/coworkers/${coworkerId}`,
   /* User is the person's own surface. Account was renamed, and the old path
      is a redirect — no page keeps the old name. */
+  profileInit: () => '/user/profile',
   user: (section: 'identity' | 'preferences' | 'environment' | 'security' = 'identity') =>
     `/user/${section}`,
   /* Connect is the integration center: two detail shapes, one per noun. */
