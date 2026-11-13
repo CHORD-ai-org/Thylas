@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Capture Thylas compute pages for review. */
+/** Capture the Profile Initialization wizard for visual review. */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,16 +11,16 @@ const outDir = join(here, '..', 'design', 'reference', 'chatgpt');
 mkdirSync(outDir, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe'].filter(existsSync)[0];
-const profile = mkdtempSync(join(tmpdir(), 'compute-shot-'));
+const profile = mkdtempSync(join(tmpdir(), 'profile-shot-'));
 
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--hide-scrollbars',
-  '--remote-debugging-port=9239', `--user-data-dir=${profile}`,
+  '--remote-debugging-port=9240', `--user-data-dir=${profile}`,
   '--window-size=1440,900', 'about:blank',
 ], { stdio: 'ignore' });
 await sleep(1500);
 
-const list = await (await fetch('http://localhost:9239/json')).json();
+const list = await (await fetch('http://localhost:9240/json')).json();
 const page = list.find((t) => t.type === 'page');
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener('open', r, { once: true }));
@@ -39,25 +39,27 @@ const send = (method, params = {}) => {
   ws.send(JSON.stringify({ id: callId, method, params }));
   return new Promise((resolve) => pending.set(callId, { resolve }));
 };
+const evaluate = (expression) => send('Runtime.evaluate', { expression, returnByValue: true });
 await send('Page.enable');
-await send('Runtime.enable');
-let errors = [];
-ws.addEventListener('message', (ev) => {
-  const msg = JSON.parse(ev.data);
-  if (msg.method === 'Runtime.exceptionThrown') errors.push(String(msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text).slice(0, 400));
-  if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') errors.push(msg.params.args.map(a => a.value ?? a.description ?? '').join(' ').slice(0, 400));
-});
 
-for (const [name, path, settle] of [
-  ['compute-after', '/compute', 3000],
-]) {
-  await send('Page.navigate', { url: `http://localhost:5190${path}` });
-  await sleep(settle);
+for (const [name, withSource] of [['profile-intro', false], ['profile-sources', true]]) {
+  await send('Page.navigate', { url: 'http://localhost:5191/user' });
+  await sleep(1200);
+  await evaluate(`document.cookie = 'thylas_session=dev:u-shot-' + Date.now() + ':ws-1; path=/'; 'ok'`);
+  await send('Page.navigate', { url: 'http://localhost:5191/user/profile' });
+  await sleep(1500);
+  if (withSource) {
+    await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.textContent.includes('Add information sources')); if (b) b.click(); return 'ok'; })()`);
+    await sleep(350);
+    await evaluate(`(() => { const i = document.querySelector('input[aria-label="Source URL"]'); if (!i) return 'no'; const set = Object.getOwnPropertyDescriptor(i.constructor.prototype, 'value').set; set.call(i, 'https://example.com/about'); i.dispatchEvent(new Event('input', { bubbles: true })); return 'ok'; })()`);
+    await sleep(200);
+    await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Add source'); if (b) b.click(); return 'ok'; })()`);
+    await sleep(900);
+  }
   const s = await send('Page.captureScreenshot', { format: 'png' });
   if (s?.data) { writeFileSync(join(outDir, `${name}.png`), Buffer.from(s.data, 'base64')); console.log('shot', name); }
 }
 
-console.log('ERRORS:', JSON.stringify(errors));
 ws.close();
 chrome.kill();
 process.exit(0);

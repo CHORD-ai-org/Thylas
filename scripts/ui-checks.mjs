@@ -2810,6 +2810,101 @@ async function main() {
     return document.querySelectorAll('[data-coworker-row]').length;
   `), (v) => v >= 4);
   await js(`localStorage.removeItem('thylas:coworkers:v1'); return 1;`);
+
+  // ---- Notes sidebar: function rail, search, bookmarks, collapse ----
+  await js(`localStorage.removeItem('thylas:notes-ui:v1'); localStorage.removeItem('thylas:bookmarks:v1'); return 1;`);
+  await goto('/notes');
+  await js('await new Promise(r => setTimeout(r, 400)); return 1;');
+  check('notes: the sidebar opens with three named views', await js(`
+    return {
+      rail: [...document.querySelectorAll('[data-notes-view]')].map(b => b.getAttribute('data-notes-view')),
+      active: document.querySelector('[data-notes-view="files"]')?.getAttribute('aria-pressed'),
+      panel: !!document.querySelector('[data-notes-panel]'),
+    };
+  `), (v) => v.rail.join(',') === 'files,search,bookmarks' && v.active === 'true' && v.panel);
+
+  await js(`${helpers} click(document.querySelector('[data-notes-view="search"]')); await new Promise(r => setTimeout(r, 500)); return 1;`);
+  await fillAria('Find in notes', 'tokenizer');
+  await js('await new Promise(r => setTimeout(r, 300)); return 1;');
+  check('notes: the Search view finds text in note bodies', await js(`
+    return {
+      heading: document.querySelector('[data-notes-panel] h2')?.textContent.trim(),
+      rows: document.querySelectorAll('[data-note-row]').length,
+    };
+  `), (v) => v.heading === 'Search' && v.rows > 0);
+
+  await js(`${helpers} click(document.querySelector('[data-notes-view="bookmarks"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('notes: Bookmarks starts with an honest empty state', await js(`
+    return document.querySelector('[data-notes-panel]')?.innerText.includes('No bookmarks yet') ?? false;
+  `), true);
+
+  await js(`${helpers} click(document.querySelector('[data-notes-view="files"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await js(`${helpers} click(byText('button', 'Method — how we measure')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('notes: the document area is full-bleed — no card surface or padding shell', await js(`
+    const el = document.querySelector('[class*="reader"]:not([class*="readerWrap"]):not([class*="readerEmpty"]):not([class*="readerTools"]):not([class*="readerActions"])');
+    const cs = el ? getComputedStyle(el) : null;
+    return cs ? { bg: cs.backgroundColor, pad: cs.paddingTop } : null;
+  `), (v) => v !== null && (v.bg === 'rgba(0, 0, 0, 0)' || v.bg === 'transparent') && v.pad === '0px');
+
+  await js(`${helpers} click(document.querySelector('[data-note-star]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await js(`${helpers} click(document.querySelector('[data-notes-view="bookmarks"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('notes: starring a note puts it in Bookmarks and survives a reload', await js(`
+    return {
+      rows: document.querySelectorAll('[data-notes-panel] [data-note-row]').length,
+      name: document.querySelector('[data-notes-panel] [data-note-row]')?.textContent.includes('Method') ?? false,
+    };
+  `), (v) => v.rows === 1 && v.name);
+  await goto('/notes');
+  await js('await new Promise(r => setTimeout(r, 300)); return 1;');
+  check('notes: the chosen view persists across a reload', await js(`
+    return document.querySelector('[data-notes-view="bookmarks"]')?.getAttribute('aria-pressed');
+  `), 'true');
+
+  await js(`${helpers} click(document.querySelector('[data-notes-toggle]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('notes: the panel collapses while the function rail stays', await js(`
+    return {
+      panel: !!document.querySelector('[data-notes-panel]'),
+      rail: !!document.querySelector('[data-notes-rail]'),
+    };
+  `), { panel: false, rail: true });
+  await js(`${helpers} click(document.querySelector('[data-notes-toggle]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('notes: the panel expands again', await js(`
+    return !!document.querySelector('[data-notes-panel]');
+  `), true);
+  await js(`localStorage.removeItem('thylas:notes-ui:v1'); localStorage.removeItem('thylas:bookmarks:v1'); return 1;`);
+
+  // ---- Profile Initialization: real API, honest failure on unreachable source ----
+  await goto('/user');
+  await js(`document.cookie = 'thylas_session=dev:u-profile-' + Date.now() + ':ws-1; path=/'; return 1;`);
+  await js('await new Promise(r => setTimeout(r, 300)); return 1;');
+  check('profile: the User page starts initialization', await js(`
+    return !!document.querySelector('[data-profile-init]');
+  `), true);
+  await goto('/user/profile');
+  await js('await new Promise(r => setTimeout(r, 400)); return 1;');
+  check('profile: the wizard opens on the introduction step', await js(`
+    return {
+      step: !!document.querySelector('[data-profile-step="intro"]'),
+      h1: document.querySelector('h1')?.textContent.trim(),
+    };
+  `), (v) => v.step && v.h1 === 'Set up your profile');
+  await js(`${helpers} click(byText('button', 'Add information sources')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  await fillAria('Source URL', 'https://example.invalid/profile');
+  await js(`${helpers} click(byText('button', 'Add source')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('profile: a submitted source appears with a real pending status', await js(`
+    const text = document.querySelector('[data-profile-step="sources"]')?.innerText ?? '';
+    return text.includes('example.invalid') && text.includes('pending');
+  `), true);
+  await js(`${helpers} click(byText('button', 'Discover information')); await new Promise(r => setTimeout(r, 1000)); return 1;`);
+  check('profile: discovery reports a real failure without faking candidates', await js(`
+    const text = document.body.innerText;
+    return {
+      step: !!document.querySelector('[data-profile-step="review"]') || !!document.querySelector('[data-profile-step="discovering"]'),
+      candidates: document.querySelectorAll('[data-candidate]').length,
+      failed: text.includes('failed'),
+    };
+  `), (v) => v.step && v.candidates === 0);
+
   await goto('/overview');
 
   } catch (err) {
