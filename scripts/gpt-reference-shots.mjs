@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Capture the Thylas chat page in landing + conversation states (GPT-style sample). */
+/** Capture Thylas compute pages for review. */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,16 +11,16 @@ const outDir = join(here, '..', 'design', 'reference', 'chatgpt');
 mkdirSync(outDir, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe'].filter(existsSync)[0];
-const profile = mkdtempSync(join(tmpdir(), 'thylas-shot-'));
+const profile = mkdtempSync(join(tmpdir(), 'compute-shot-'));
 
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--hide-scrollbars',
-  '--remote-debugging-port=9238', `--user-data-dir=${profile}`,
+  '--remote-debugging-port=9239', `--user-data-dir=${profile}`,
   '--window-size=1440,900', 'about:blank',
 ], { stdio: 'ignore' });
 await sleep(1500);
 
-const list = await (await fetch('http://localhost:9238/json')).json();
+const list = await (await fetch('http://localhost:9239/json')).json();
 const page = list.find((t) => t.type === 'page');
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener('open', r, { once: true }));
@@ -40,39 +40,24 @@ const send = (method, params = {}) => {
   return new Promise((resolve) => pending.set(callId, { resolve }));
 };
 await send('Page.enable');
-await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });
+await send('Runtime.enable');
+let errors = [];
+ws.addEventListener('message', (ev) => {
+  const msg = JSON.parse(ev.data);
+  if (msg.method === 'Runtime.exceptionThrown') errors.push(String(msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text).slice(0, 400));
+  if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') errors.push(msg.params.args.map(a => a.value ?? a.description ?? '').join(' ').slice(0, 400));
+});
 
-const shot = async (name) => {
+for (const [name, path, settle] of [
+  ['compute-after', '/compute', 3000],
+]) {
+  await send('Page.navigate', { url: `http://localhost:5190${path}` });
+  await sleep(settle);
   const s = await send('Page.captureScreenshot', { format: 'png' });
   if (s?.data) { writeFileSync(join(outDir, `${name}.png`), Buffer.from(s.data, 'base64')); console.log('shot', name); }
-};
+}
 
-await send('Page.navigate', { url: 'http://localhost:5190/chat' });
-await sleep(2500);
-await send('Runtime.evaluate', { expression: "localStorage.removeItem('thylas:chat:v1'); location.reload(); 'ok'" });
-await sleep(2200);
-await send('Runtime.evaluate', { expression: `(() => {
-  const btn = [...document.querySelectorAll('button')].find(b => b.textContent.includes('New conversation'));
-  if (btn) btn.click();
-  return 'clicked';
-})()`, returnByValue: true });
-await sleep(500);
-await shot('thylas-chat-landing');
-
-await send('Runtime.evaluate', { expression: `(() => {
-  const ta = document.querySelector('textarea[aria-label="Message"]');
-  if (!ta) return 'no composer';
-  const set = Object.getOwnPropertyDescriptor(ta.constructor.prototype, 'value').set;
-  set.call(ta, 'What is a boundary? Show an example.');
-  ta.dispatchEvent(new Event('input', { bubbles: true }));
-  return 'typed';
-})()`, returnByValue: true });
-await sleep(300);
-await send('Runtime.evaluate', { expression: `(() => { const b = document.querySelector('button[aria-label="Send"]'); if (b) b.click(); return 'sent'; })()`, returnByValue: true });
-await sleep(2500);
-await shot('thylas-chat-conversation');
-
+console.log('ERRORS:', JSON.stringify(errors));
 ws.close();
 chrome.kill();
 process.exit(0);

@@ -30,6 +30,7 @@ Thumbs.db
 .env.*.local
 
 # Scratch files
+.tmp/
 *.log
 *.tmp
 *.bak

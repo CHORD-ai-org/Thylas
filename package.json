@@ -15,7 +15,8 @@
     "e2e": "node scripts/ui-checks.mjs",
     "ai": "node scripts/ai-checks.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "api:check": "node scripts/api-checks.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.4",

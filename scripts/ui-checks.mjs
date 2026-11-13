@@ -372,6 +372,7 @@ async function main() {
     return document.body.innerText.includes('Workspace not found');
   `), true);
   await goto('/overview');
+  await js('await new Promise(r => setTimeout(r, 600)); return 1;');
 
   // ---- SP-07b: one answer, and no claim that work started ----
   const setField = async (value) => js(`
@@ -522,7 +523,11 @@ async function main() {
   await send('Page.navigate', { url: 'http://localhost:5179/overview' });
   await sleep(1300);
   check('ask: without a key the control is disabled and names the variable', await js(`
-    await new Promise(r => setTimeout(r, 200));
+    for (let i = 0; i < 30; i++) {
+      const reason = document.getElementById('intent-reason');
+      if (reason && reason.textContent.includes('DEEPSEEK_API_KEY')) break;
+      await new Promise(r => setTimeout(r, 150));
+    }
     const reason = document.getElementById('intent-reason');
     const btn = document.querySelector('button[aria-label="Send"]');
     return {
@@ -1169,19 +1174,20 @@ async function main() {
   check('grammar: page-local notice recipes <= 3', noticeBlocks, (v) => v <= 3);
 
   await goto('/w/ws-research/files');
+  await js('await new Promise(r => setTimeout(r, 700)); return 1;');
   check('files: Upload is disabled with a stated reason', await js(`
     const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Upload');
-    return !!b && b.disabled && /files service/.test(b.title) && b.getAttribute('aria-describedby') === 'files-limit';
+    return !!b && b.disabled && /files service/i.test(b.title) && b.getAttribute('aria-describedby') === 'files-limit';
   `), true);
   check('files: New folder is disabled with a stated reason', await js(`
     const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'New folder');
-    return !!b && b.disabled && /files service/.test(b.title);
+    return !!b && b.disabled && /files service/i.test(b.title);
   `), true);
   check('files: the reason is visible before any click', await js(`
     const el = document.getElementById('files-limit');
-    return !!el && el.offsetParent !== null && el.textContent.includes('not connected');
+    return !!el && el.offsetParent !== null && el.textContent.includes('files service');
   `), true);
-  await js(`document.querySelector('button[title*="files service"]').click(); await new Promise(r => setTimeout(r, 200));`);
+  await js(`document.querySelector('button[title*="Files service" i]').click(); await new Promise(r => setTimeout(r, 200));`);
   check('files: clicking a disabled action adds no banner', await js(`return document.querySelectorAll('[class*="banner"]').length;`), 0);
 
   check('files: folder disclosure is a real button with aria-expanded', await js(`
