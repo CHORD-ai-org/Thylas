@@ -182,7 +182,7 @@ export function FilesPage() {
             size="sm"
             icon={<IconUpload size={13} />}
             disabled
-            title="Needs the files service — not connected in this build"
+            title="Files service is running — upload is not wired in this UI yet"
             aria-describedby="files-limit"
           >
             Upload
@@ -191,7 +191,7 @@ export function FilesPage() {
             size="sm"
             variant="ghost"
             disabled
-            title="Needs the files service — not connected in this build"
+            title="Files service is running — upload is not wired in this UI yet"
             aria-describedby="files-limit"
           >
             New folder
@@ -205,7 +205,7 @@ export function FilesPage() {
       </div>
 
       <p className={g.limit} id="files-limit">
-        Uploading and creating folders need the files service — not connected in this build.
+        The files service is running, but this UI still reads seed data; upload and folders are not wired yet.
       </p>
 
       <div className={s.body}>

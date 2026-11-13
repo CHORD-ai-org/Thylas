@@ -35,7 +35,7 @@ export function ComputeOverview() {
   return (
     <PlainLayout size="console">
       <ComputeShell
-        sub="Execution environments for computational work. The question Compute answers is where work should run — start with Run, configure Backends when you need a new environment, acquire in the Marketplace when the pool is not enough. Nothing starts or provisions in this build."
+        sub="Execution environments for computational work. Start with Run; nothing here starts or provisions."
         actions={
           <Link to={routes.computeRun()} className={s.linkArrow}>
             Run something
@@ -65,7 +65,7 @@ export function ComputeOverview() {
 
         {attention.length > 0 ? (
           <div className={s.attention}>
-            <p className={s.attentionLine}>Things that need a decision before they are useful:</p>
+            <p className={s.attentionLine}>Needs attention</p>
             <div className={s.attentionList}>
               {attention.map((item) => (
                 <Link key={item.name + item.why} to={item.to} className={s.attentionItem}>
@@ -85,7 +85,7 @@ export function ComputeOverview() {
             <Section
               title="Execution environments"
               aside={<Link to={routes.computeBackends()} className={s.linkArrow}>Backends</Link>}
-              note="A backend is how work executes — not a machine. Connecting one creates no instance; Slurm and Kubernetes take work without exposing any."
+              note="A backend executes work; connecting creates no instance."
             >
               <ul className={s.rows}>
                 {backends.map((b) => (
@@ -173,8 +173,7 @@ export function ComputeOverview() {
 
             <div className={s.marketTeaser}>
               <p className={s.marketTeaserText}>
-                The pool is not enough? The Marketplace lists GPU capacity from providers at representative sample rates —
-                acquired machines are used through a backend.
+                Need more capacity? The Marketplace lists GPU capacity at sample rates.
               </p>
               <Link to={routes.computeMarketplace()} className={s.linkArrow}>
                 Marketplace
@@ -195,7 +194,7 @@ function SessionLog() {
   const { log } = useCompute();
   const entries = log.slice(0, 5);
   if (entries.length === 0) {
-    return <p className={s.quiet}>Nothing has been configured, connected or chosen yet. Every decision lands here.</p>;
+    return <p className={s.quiet}>Nothing decided yet.</p>;
   }
   return (
     <div className={s.log}>

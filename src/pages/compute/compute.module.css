@@ -272,34 +272,26 @@
 /* ---- overview ---------------------------------------------------------- */
 
 .stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--line-strong);
-  border-bottom: 1px solid var(--line-strong);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  padding: 10px 0;
 }
 
 .stat {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  padding: 12px 14px 12px 0;
-}
-
-.stat + .stat {
-  padding-left: 14px;
-  border-left: 1px solid var(--line);
+  gap: 8px;
 }
 
 .statValue {
-  font: 500 20px/1 var(--mono);
+  font: 500 15px/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 .statLabel {
   font: var(--t-caption);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   color: var(--ink-3);
 }
 
@@ -308,16 +300,13 @@
 }
 
 .attention {
-  margin-top: var(--s6);
-  border: 1px solid var(--line-strong);
-  border-left: 2px solid var(--accent);
-  border-radius: var(--r-sm);
-  padding: 12px 14px;
+  margin-top: var(--s5);
+  padding: 0;
 }
 
 .attentionLine {
   font: var(--t-ui);
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .attentionList {
@@ -371,9 +360,7 @@
   justify-content: space-between;
   gap: var(--s3);
   margin-top: var(--s4);
-  padding: 12px 14px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r-sm);
+  padding: 0;
 }
 
 .marketTeaserText {
