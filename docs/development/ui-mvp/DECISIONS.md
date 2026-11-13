@@ -489,6 +489,36 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-056 · P1-5 session: one replaceable source, a dev stand-in now, fail closed when an issuer is set
+
+**Status:** accepted in force (session and authorisation, 2026-11-13).
+**Context:** CHORD IdP is not reachable, and P1-5 needs a real 401 / 403 acceptance. `tech-stack.md:401-403` puts sign-in and session in CHORD; Thylas holds a session and never implements password flows. B1 requires the check at execution, and permission-aware UI reads flags returned by the server.
+**Decision:** one replaceable `SessionSource` in `server/session/source.ts`. With no `CHORD_ISSUER` an explicit dev stand-in reads a `thylas_session` cookie in `dev:<userId>:<workspaceIds>` form. With an issuer set the source is `pending-idp` and fails closed — every protected request gets 401, never a silent dev fallback. `GET /api/session` returns identity and membership flags. Every `/api/conversations*` request checks session → membership → write; a non-member gets 403, never an empty list. Swapping in CHORD changes one module, not the routes.
+**Alternatives:** inventing a local login / password flow (forbidden by `tech-stack.md:401-403`); shipping no guard until the IdP arrives (P1-5, P1-7 and P1-8 all stay blocked and CRUD is wide open); hard-coding one fake user inside the routes (the check gets rewritten at every call site when CHORD lands).
+**Consequence:** 401 / 403 are verified today over real HTTP with a dev cookie; the three AI endpoints stay unchanged. The dev cookie is dev-only and must never be accepted by a deployment with an issuer configured. P1-5 is done except for the real IdP verifier; P1-6 storage is settled by D-057.
+
+---
+
+## D-057 · P1-6 files: local directory now, no presigned URL, UI stays on seed data
+
+**Status:** accepted in force (file storage, 2026-11-13).
+**Context:** N3 (`application.md:289`) assumes signed direct upload with a 5 GB ceiling and a 100 MB through-API fallback; N4 says Thylas owns folders and storage is flat. No storage provider exists, `STORAGE_BUCKET` is empty, and `readBody()` has a 64 KB cap. `Files.tsx:184` disables Upload with a "not connected" reason. D-056's closing note about an unset storage provider is superseded by this decision.
+**Decision:** bytes go to a local directory named by `STORAGE_DIR`, flat as `<root>/<wsId>/<fileId>`, streamed through `pipeBodyToFile()` with a 100 MB cap and 413 past it. One `files` table (`0001` migration) holds metadata; `folder_id` stays a string, no `folders` table. Five `/api/files*` endpoints reuse D-056's session → membership → write order. The UI is untouched this round: `Files.tsx` keeps its disabled buttons and its reason line is reworded so it no longer claims the service is missing. Signed direct upload, 5 GB, resumable chunks and S3/R2 are deferred; `STORAGE_BUCKET` stays reserved.
+**Alternatives:** S3-compatible presigned URL now (needs credentials and a running MinIO or remote host); metadata-only (fails P1-6's upload acceptance); wiring the Files UI now (mixes P1-6 with P1-7's read/write swap and needs dev cookie injection).
+**Consequence:** "upload then list" is verified over real HTTP against PGlite and a temp directory; `npm run api:check` covers 12 checks. The deferral from N3 is deliberate and dated. When an S3 host exists, `server/storage/local.ts` is the one module to replace. `docs/planning/file-plan.md` §2/§3/M2 are annotated as superseded.
+
+---
+
+## D-058 · P1-7 chat: one shared contract, two backends, and no UI rewrite
+
+**Status:** accepted in force (chat persistence, 2026-11-13).
+**Context:** `src/state/chat.ts` was a synchronous module-level store whose actions return a `Message` the UI uses immediately; SSE deltas committed on every chunk. The server's `conversations`/`messages` tables could not hold context, the four `kind` Block variants, `meta` or `error`. No real Postgres is running yet.
+**Decision:** one contract `src/lib/chat.ts` holds the types and validated reads; the store re-exports them so no UI import changes. `0002` adds `context`/`sync_version` to conversations and `at_ms`/`meta`/`error` to messages, with `blocks` retyped to the four-variant union. `GET|PUT /api/chat/state` reuse the two existing tables with an optimistic `expectedVersion` (409 on conflict). `VITE_CHAT_SOURCE=local|api` defaults to `local`, byte-for-byte unchanged; `api` keeps every commit optimistic and synchronous, throttles the network write to 300 ms, flushes once on a finished turn, and imports the old envelope once without deleting it. `activeId` and `dock` stay local.
+**Alternatives:** a whole-envelope JSONB table (fast but leaves P1-3's tables redundant and relationships unclear); awaiting the DB in every action (rewrites all UI call sites); waiting for Docker before starting (blocks P1-8 too).
+**Consequence:** UI files have zero diff and `chat.test.ts` passes untouched. 44 files / 379 tests and 14 `api:check` checks are green. Real-DB end-to-end sync and the browser's dev-cookie injection are still pending, as is honest UI feedback for a failed background sync (today it logs a warning and keeps the local envelope).
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

@@ -1,6 +1,7 @@
 # Thylas — Source File Plan
 
 **Status:** proposed. Nothing here is written yet.
+> **Superseded on 2026-11-13 by [`../development/backend/P1-6.md`](../development/backend/P1-6.md) (D-057)** for the upload path: §2 `services/files/upload.ts`, §3 and M2 describe a signed-URL/resumable flow that Phase 1 does not ship. P1-6 streams bytes to a local `STORAGE_DIR`; presigned direct upload is deferred.
 **Date:** 2026-11-07
 **Depends on:** `docs/architecture/application.md` (stack, layering, state ownership), `docs/product/definition.md` (capabilities).
 **Rule for this document:** a file earns a line by having a non-obvious responsibility or a boundary. Files whose job is obvious from their name and directory are grouped into one rule.

@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-12 22:20 (Backend Phase 1 P1-0…P1-4: D-055, standalone Node host, typed config, Drizzle chat tables, conversations CRUD; Coworker page shipped; Coworker foundation docs (D-054); Artifact page (D-053); Chat (D-051); backend docs (D-052)).
+Last updated: 2026-11-13 18:05 (Backend Phase 1 **complete** P1-0…P1-8: AUDIT.md rewritten against running code, docs/README.md indexes backend/, check + 44 files / 379 tests + 14 api:check + 302/302 e2e green; Coworker page shipped; Coworker foundation docs (D-054); Artifact page (D-053); Chat (D-051); backend docs (D-052)).
 
 ---
 
@@ -44,6 +44,11 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
 | Backend Phase 1 · P1-0…P1-4 | — | **Completed** 11-12 | 1.5 | D-055 | D-055 recorded; one router, two hosts; typed config; Drizzle chat tables + migration; `conversations` CRUD with a shared `src/lib` contract, 3 real-HTTP tests; 33 files / 323 tests green; SPA still served. Real Postgres CLI + CHORD IdP pending. Docs: `docs/development/backend/PHASE-1.md` |
+| Backend Phase 1 · next steps 1–2 | — | **Completed** 11-12 | 0.5 | D-055 | `scripts/api-checks.mjs` + `npm run api:check` (7 checks on free ports); `src/services/conversations/client.ts` + 6 tests; 34 files / 329 tests green. Docs: `docs/development/backend/PHASE-1.md` §7 |
+| Backend Phase 1 · P1-5 | — | **Completed** 11-13 | 0.5 | D-056 | Replaceable session source (dev cookie / pending-idp fail closed), `GET /api/session` membership flags, 401 + 403 on conversations, list filtered by membership; 36 files / 340 tests + 10 api:check green. Real IdP verifier pending. Docs: `docs/development/backend/PHASE-1.md` |
+| Backend Phase 1 · P1-6 | — | **Completed** 11-13 | 1.0 | D-057 | Local `STORAGE_DIR` byte store, `files` table + `0001` migration, 5 `/api/files*` endpoints with 401/403, streamed 100MB cap, soft delete, rewired Files copy; 40 files / 359 tests + 12 api:check green. Presigned upload and real Postgres deferred. Docs: `docs/development/backend/P1-6.md` |
+| Backend Phase 1 · P1-7 | — | **Completed** 11-13 | 1.0 | D-058 | One `src/lib/chat.ts` contract, `0002` migration, `GET\|PUT /api/chat/state` on existing tables with 409 version guard, dual-mode store (`local` default byte-identical), one-time envelope import; UI files zero diff, `chat.test.ts` untouched; 44 files / 379 tests + 14 api:check green. Real-DB sync and dev-cookie injection pending. Docs: `docs/development/backend/P1-7.md` |
+| Backend Phase 1 · P1-8 | — | **Completed** 11-13 | 0.25 | — | `AUDIT.md` rewritten against running code (23 server files, 7 paths / 16 operations, 3 tables, real 401/403/503 responses, 9 stale claims listed with line numbers (3 corrected in place); `docs/README.md` indexes `backend/`; `ROADMAP.md` status current. `check` / 44 files 379 tests / 14 api:check / 302 e2e all green; 2 pre-existing lint errors remain. Docs: `docs/development/backend/AUDIT.md` |
 
 10b–10f are sequenced by `docs/design/optimization-plan.md` (W0–W6, 6.5 days including 0.25 doc debt, per-wave exit evidence).
 

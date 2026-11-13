@@ -29,6 +29,7 @@
 | 13.5 | [`planning/ui-mvp-plan.md`](planning/ui-mvp-plan.md) | 10 min | **The plan in force for the next four weeks**: four sprints, task IDs, gates, stop rules |
 | 13.6 | [`../plan/`](../plan/README.md) | as needed | The same plan decomposed into 12 executable sub-plans with status board |
 | 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
+| 15 | [`development/backend/`](development/backend/PHASE-1.md) | 15 min | **Backend as built (2026-11-13)**: five-phase roadmap, Phase 1 units P1-0…P1-8, `AUDIT.md` for the current API/tables, `P1-6.md` / `P1-7.md` for the two deviations |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
 
@@ -129,15 +130,17 @@ Grouped by what they block. Details in the referenced documents.
 
 ## 5. What is still missing from this documentation set
 
-Deliberately not written, so their absence is a decision rather than an oversight:
+Deliberately not written, so their absence is a decision rather than an oversight.
+**2026-11-13:** the 11-07 wording in rows 4–5 was wrong — Thylas now has a backend
+and a database. Those two rows are updated in place rather than deleted.
 
 | Not written | Because | When it becomes necessary |
 | --- | --- | --- |
 | A pricing or packaging document | No pricing exists, and inventing it would harden guesses into requirements | Before M5 |
 | An organisation administration spec | Blocked on N2 (who owns authz). Writing it now would describe a service that may not exist | After N2 is answered |
 | A canvas interaction spec with numeric thresholds as tests | The thresholds exist in `design/…plan.md` §8.2; turning them into acceptance tests needs the canvas to exist | M3b gate |
-| An API contract for Thylas's own backend | Thylas may have no backend. §5 of the architecture doc is the client-side proposal; a server contract depends on N5 | After N3/N5 |
-| A migration or data model document | There is no database yet, and the entity model is 5 objects in `design/…plan.md` §4.1 | M1, if a backend is confirmed |
+| An API contract for Thylas's own backend | **Written 11-13**: `development/backend/AUDIT.md` §2 lists 7 paths / 16 operations; contracts live in `src/lib/{ai,chat,conversations,files,session}.ts` | Done, P1-1…P1-7 |
+| A migration or data model document | **Written 11-13**: `server/persistence/schema.ts` (3 tables) + `0000`…`0002` SQL; see `AUDIT.md` §3 | Done, P1-3 / P1-6 / P1-7 |
 | An i18n plan | No language requirement has been stated. Chinese typography is not free: line heights, punctuation, and a serif with CJK coverage | Before M3, per `file-plan` §7 |
 
 ---

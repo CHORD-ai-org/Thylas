@@ -108,6 +108,7 @@ Four levels, in order of proximity:
 | Situation | Correct form |
 | --- | --- |
 | Capability absent because a service is missing (upload, create, submit, run control) | Render the control **disabled** with `title` = "Needs the files service — not connected in this build". Nothing happens on click because nothing can |
+| Service exists but the UI is not wired to it (P1-6 files API, D-057) | Keep the control **disabled** with `title` = "Files service is running — upload is not wired in this UI yet", plus one caption saying the UI still reads seed data. Never claim the service is missing |
 | Capability absent because WAM does not expose it | Render **nothing** (mirrored-control rule) |
 | Action valid in principle but out of scope for this build (new board, upload) | Do not render the affordance. Absence is honest; a disabled button invites a support request |
 | Action would leave the app (billing, invoices) | Render as a link that says where it goes |

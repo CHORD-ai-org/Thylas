@@ -1,7 +1,7 @@
 # Backend roadmap — 五个阶段
 
-**状态：** 2026-11-12 记录；Phase 1 已开工，P1-0 … P1-4 完成。
-**当前后端（P1-1 后）：** `server/` 5 个文件，3 个端点 + 独立 Node 服务；仍无数据库、无鉴权、无文件存储，数据仍在浏览器 `src/state/*`。
+**状态：** 2026-11-12 记录；**Phase 1 于 11-13 完成（P1-0 … P1-8）**。
+**当前后端（P1-8 后）：** `server/` 23 个 `.ts` 文件；7 个 API 路径 / 16 个操作、3 张表 + 3 个迁移、dev session 的 401/403、本地目录文件存储、chat 双模式。真库 CLI、CHORD IdP verifier、S3 直传未验。逐条事实以 [`AUDIT.md`](AUDIT.md) 为准。
 **不是同一份：** `docs/planning/roadmap.md` 是 2026-11-07 的 UI MVP 里程碑 M0–M6。
 
 ---
