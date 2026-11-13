@@ -1,7 +1,7 @@
 /**
  * Server configuration, read once per process. The only module that knows
  * which environment variables the backend needs — handlers receive typed
- * values and never touch `env` directly (D-052, P1-2).
+ * values and never touch `env` directly (D-052, P1-2, P1-6).
  *
  * Precedence follows the existing rule: a variable the shell already set wins
  * over `.env`-file overrides, so a one-off `DEEPSEEK_MODEL=… npm run dev`
@@ -24,8 +24,10 @@ export type ServerConfig = {
   port: number;
   /** Postgres connection string. Empty means persistence is not configured yet. */
   databaseUrl: string;
-  /** Target bucket for signed direct uploads (N3). Empty means not configured. */
+  /** Target bucket for signed direct uploads (N3), reserved for a future S3 host. */
   storageBucket: string;
+  /** Local root for uploaded bytes (P1-6). Empty means files API answers 503. */
+  storageDir: string;
   /** CHORD identity provider issuer (N2). Empty means not configured. */
   chordIssuer: string;
 };
@@ -49,6 +51,7 @@ export function readConfig(env: Env): ServerConfig {
     port: readPositiveInt(env, 'PORT', DEFAULT_PORT, 65535),
     databaseUrl: (env.DATABASE_URL ?? '').trim(),
     storageBucket: (env.STORAGE_BUCKET ?? '').trim(),
+    storageDir: (env.STORAGE_DIR ?? '').trim(),
     chordIssuer: (env.CHORD_ISSUER ?? '').trim(),
   };
 }
