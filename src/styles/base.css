@@ -1,4 +1,5 @@
 @import './tokens.css';
+@import './themes.css';
 
 *,
 *::before,
@@ -13,6 +14,9 @@ body,
 }
 
 html {
+  /* Theme changes animate the ground, not the layout. */
+  background: var(--bg-app);
+  transition: background-color 150ms ease-in-out;
   /* 400/500/600 are the only weights that exist; never synthesise others */
   font-synthesis: none;
   -webkit-text-size-adjust: 100%;
