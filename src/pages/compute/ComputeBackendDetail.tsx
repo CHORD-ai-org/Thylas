@@ -106,7 +106,7 @@ export function ComputeBackendDetail() {
             <Section title={backend.instances === 'exposed' ? `Instances (${instances.length})` : 'Instances'}>
               {backend.instances === 'exposed' ? (
                 instances.length === 0 ? (
-                  <p className={s.quiet}>No machines are attached yet. An SSH backend lists machines; it does not create them.</p>
+                  <p className={s.quiet}>No machines attached.</p>
                 ) : (
                   <ul className={s.rows}>
                     {instances.map((i) => (

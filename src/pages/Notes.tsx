@@ -376,7 +376,7 @@ export function NotesPage() {
                   ))}
                 </div>
                 {noteRows(visible, undefined)}
-                <p className={s.listFoot}>{visible.length} of {all.length} notes · {scope === 'all' ? 'every scope you can read' : (getWorkspace(scope)?.name ?? 'Personal')}</p>
+                <p className={s.listFoot}>{visible.length} of {all.length} notes</p>
               </>
             ) : null}
 
@@ -469,10 +469,7 @@ export function NotesPage() {
 
               {conflict ? (
                 <div className={s.conflict} role="alert">
-                  <p className={s.conflictText}>
-                    This note was saved elsewhere while you were writing. Your text is still here —
-                    nothing has been overwritten.
-                  </p>
+                  <p className={s.conflictText}>Your text is still here — nothing has been overwritten.</p>
                   <div className={s.conflictActions}>
                     <Button
                       size="sm"
@@ -622,11 +619,7 @@ export function NotesPage() {
                   )}
                 </div>
               </div>
-            ) : (
-              <p className={s.panelNote}>
-                Notes lists every note you can read, with a scope filter. It owns nothing.
-              </p>
-            )}
+            ) : null}
           </ContextPanel>
         ) : null}
       </div>

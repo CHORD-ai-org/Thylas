@@ -118,10 +118,7 @@ export function ProfileInit() {
             <Link to={routes.user()} className={a.backLink}>User</Link> / Profile initialization
           </p>
           <h1 className={a.title}>Set up your profile</h1>
-          <p className={a.sub}>
-            You provide public sources. The system extracts candidates; only what you confirm
-            becomes your profile.
-          </p>
+          <p className={a.sub}>Only confirmed items become your profile.</p>
         </div>
         <div className={a.headActions}>
           <Button size="sm" onClick={cancel} disabled={busy}>Skip for now</Button>
@@ -141,11 +138,7 @@ export function ProfileInit() {
       {step === 'intro' ? (
         <section className={a.section} data-profile-step="intro">
           <h2 className={a.sectionTitle}>A profile built from sources you choose</h2>
-          <p className={a.quiet}>
-            Add a personal site, GitHub profile, or public article. Public pages only; nothing is
-            searched by name, and nothing is written without your confirmation. You can run this
-            again later — confirmed information is never silently overwritten.
-          </p>
+          <p className={a.quiet}>Public pages only; nothing is searched by name.</p>
           <p className={a.quiet} style={{ marginTop: 8 }}>
             LinkedIn and other login-walled pages cannot be retrieved here. Model-extracted items
             are labelled Explicit or Inferred; inferred items are never accepted automatically.
@@ -212,10 +205,7 @@ export function ProfileInit() {
       {step === 'discovering' ? (
         <section className={a.section} data-profile-step="discovering">
           <h2 className={a.sectionTitle}>Retrieving sources</h2>
-          <p className={a.quiet}>
-            Each submitted page is fetched and read, then the model proposes candidates. This step
-            ends when every source has reported a real result — no simulated progress.
-          </p>
+          <p className={a.quiet}>Each source reports a real result.</p>
           <ul className={a.rows}>
             {state?.sources.map((source) => (
               <li key={source.id} className={p.sourceRow}>
@@ -230,12 +220,9 @@ export function ProfileInit() {
       {step === 'review' ? (
         <section className={a.section} data-profile-step="review">
           <h2 className={a.sectionTitle}>Candidate profile</h2>
-          <p className={a.quiet}>
-            Confirm, edit, or reject. Nothing enters your profile until you commit. Confidence is a
-            model self-report, not verified truth.
-          </p>
+          <p className={a.quiet}>Confidence is a model self-report.</p>
           {pending.length === 0 ? (
-            <EmptyState title="No candidates to review" hint="Every source reported a problem, or all items were already handled. Check the source list, or finish with what you have." />
+            <EmptyState title="No candidates to review" hint="Check the sources, or finish with what you have." />
           ) : (
             <>
               <div className={p.batchBar}>

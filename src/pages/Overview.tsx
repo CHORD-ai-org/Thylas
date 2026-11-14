@@ -109,9 +109,6 @@ function AiPanel({
     return (
       <div className={s.askIdle}>
         <p className={s.askLede}>Answers one question with DeepSeek. It does not start a process.</p>
-        <p className={s.askNote}>
-          One turn: no tools, no memory of the last question, nothing saved when you leave.
-        </p>
       </div>
     );
   }
@@ -367,9 +364,6 @@ export function Overview() {
                   </li>
                 ))}
               </ul>
-              <p className={s.quiet}>
-                Nothing else is waiting. The other runs are working on their own.
-              </p>
             </>
           )}
         </section>
@@ -378,10 +372,6 @@ export function Overview() {
       <section className={s.block}>
         <SectionLabel aside={String(list.length)}>Workspaces</SectionLabel>
         <WorkspaceGrid autoCreate={params.get('new') === '1'} />
-        <p className={s.footNote}>
-          A workspace keeps its own files, boards and runs. A new one starts empty and lives on
-          this machine; deleting one deletes what is inside it.
-        </p>
       </section>
 
       <section className={s.block}>

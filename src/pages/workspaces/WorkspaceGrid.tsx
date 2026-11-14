@@ -76,9 +76,7 @@ export function WorkspaceGrid({ autoCreate = false }: { autoCreate?: boolean }) 
   return (
     <>
       {list.length === 0 ? (
-        <p className={s.empty}>
-          No workspaces yet. A workspace keeps its own files, boards and runs.
-        </p>
+        <p className={s.empty}>No workspaces yet.</p>
       ) : null}
 
       <div className={s.grid}>

@@ -51,7 +51,7 @@ export function ConnectConnected() {
         {integrations.length === 0 ? (
           <EmptyState
             title="No connections"
-            hint="Everything connected in the sample has been disconnected in this session. Nothing reconnects here: authorization happens with the provider."
+            hint="Nothing is connected. Reconnection needs the provider."
             action={<Link to={routes.connectDiscover()} className={s.linkArrow}>Browse Discover</Link>}
           />
         ) : (
@@ -85,10 +85,7 @@ export function ConnectConnected() {
           </ul>
         )}
 
-        <p className={s.footNote}>
-          A connection grants only the scopes that were granted — never everything the app can
-          do. What each connection may and may not do is on its detail page.
-        </p>
+        <p className={s.footNote}>Only granted scopes apply.</p>
       </ConnectShell>
     </PlainLayout>
   );
@@ -107,10 +104,10 @@ export function ConnectIntegrationDetail() {
   if (!integration) {
     return (
       <PlainLayout wide>
-        <ConnectShell title="Connection not found" sub="This connection does not exist, or it was disconnected in this session.">
+        <ConnectShell title="Connection not found" sub="This connection does not exist.">
           <EmptyState
             title="No such connection"
-            hint="Disconnected connections do not come back here; authorization happens with the provider."
+            hint="Disconnected connections do not come back here."
             action={<Link to={routes.connect()} className={s.linkArrow}>Back to Connected</Link>}
           />
         </ConnectShell>
@@ -159,10 +156,7 @@ export function ConnectIntegrationDetail() {
             <span className={s.sectionAside}>{scopes.length} of {app?.scopes.length ?? 0} catalog scopes granted</span>
           </div>
           {scopes.length === 0 ? (
-            <p className={s.sectionNote}>
-              No scopes: this connection holds no account — the app serves public data. There is
-              nothing to authorize and nothing to revoke.
-            </p>
+            <p className={s.sectionNote}>No scopes.</p>
           ) : (
             <>
               <div className={s.scopeList}>
@@ -173,9 +167,6 @@ export function ConnectIntegrationDetail() {
                   </div>
                 ))}
               </div>
-              <p className={s.sectionNote}>
-                Only these scopes apply. The app can do nothing beyond them through Thylas.
-              </p>
             </>
           )}
         </div>
@@ -222,10 +213,7 @@ export function ConnectIntegrationDetail() {
               ))}
             </div>
           ) : (
-            <p className={s.sectionNote}>
-              No activity is recorded for this connection. A record would need a runtime that
-              actually calls the app; this build has none.
-            </p>
+            <p className={s.sectionNote}>No activity recorded.</p>
           )}
         </div>
 
@@ -309,7 +297,7 @@ export function ConnectDiscover() {
     <PlainLayout wide>
       <ConnectShell
         title="Discover"
-        sub="Applications Thylas could integrate with. Four states exist, and they are stated, not implied: available, connected, coming soon, unsupported."
+        sub="Available, connected, coming soon, unsupported."
       >
         <div className={s.toolbar}>
           <div className={s.toolbarMain}>
@@ -340,7 +328,7 @@ export function ConnectDiscover() {
         {groups.length === 0 ? (
           <EmptyState
             title="No app matches this search"
-            hint="Connected apps do not appear here — they live in Connected. Coming-soon and unsupported entries never disappear, because the boundary is a fact."
+            hint="Connected apps live in Connected."
             action={
               <Button size="sm" onClick={() => setFilter(EMPTY_CATALOG_FILTER)}>
                 Clear search
@@ -401,7 +389,7 @@ export function ConnectAppDetail() {
         <ConnectShell title="Application not found">
           <EmptyState
             title="No such application"
-            hint="The catalog holds a fixed set of entries; this is not one of them."
+            hint="Not in the catalog."
             action={<Link to={routes.connectDiscover()} className={s.linkArrow}>Back to Discover</Link>}
           />
         </ConnectShell>
@@ -450,10 +438,6 @@ export function ConnectAppDetail() {
               ))}
             </div>
           )}
-          <p className={s.sectionNote}>
-            A connection grants a subset of these, chosen at authorization. It never grants
-            everything the app can do.
-          </p>
         </div>
 
         <div className={s.section}>
@@ -553,7 +537,7 @@ export function ConnectCustom() {
     <PlainLayout wide>
       <ConnectShell
         title="Custom integrations"
-        sub="An entry point for connections the catalog does not hold. Registration is local and honest: a record of intent, not a working call."
+        sub="Registration is local: a record of intent, not a working call."
       >
         <div className={s.section}>
           <div className={s.sectionHead}>
@@ -578,10 +562,6 @@ export function ConnectCustom() {
               </button>
             ))}
           </div>
-          <p className={s.sectionNote}>
-            OAuth and API key are not here on purpose: they are methods, chosen below the kinds.
-            Treating them as kinds is how an MCP server ends up configured like a Google account.
-          </p>
         </div>
 
         <div className={s.section}>

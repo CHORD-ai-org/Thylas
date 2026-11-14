@@ -108,7 +108,7 @@ export function ComputeWorkloadDetail() {
               </div>
             </Section>
 
-            <Section title="Actions" note="State changes are local and labelled. Nothing here signals a real executor.">
+            <Section title="Actions" note="Local state only; no executor.">
               <div className={s.sideActions}>
                 {workload.state === 'running' ? (
                   <Button size="sm" onClick={() => setWorkloadState(workload.id, 'cancelled')}>

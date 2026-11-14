@@ -35,7 +35,7 @@ export function ComputeInstances() {
     <PlainLayout size="console">
       <ComputeShell
         title="Instances"
-        sub="The concrete machines behind exposed backends — local, SSH, acquired. Environments that provision their own capacity (Slurm, serverless) are not listed here; they are targeted directly in Run."
+        sub="Machines behind exposed backends."
       >
         <div className={s.toolbar}>
           <div className={s.toolbarMain}>
@@ -99,7 +99,7 @@ export function ComputeInstances() {
             {visible.length} instance{visible.length === 1 ? '' : 's'}
           </span>
           <span className={s.resultNote}>
-            Unreachable machines report availability unknown — and no utilization, ever.
+            Unknown availability; no utilization.
           </span>
         </div>
 

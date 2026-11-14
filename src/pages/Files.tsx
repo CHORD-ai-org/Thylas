@@ -79,9 +79,7 @@ function TombstonePanel({ tab, onDismiss }: { tab: Tab; onDismiss: () => void })
   return (
     <div className={s.panelInner}>
       <h3 className={s.panelName}>{tab.label}</h3>
-      <p className={s.panelQuiet}>
-        This file was deleted. Its tab stayed open so you can see where it was.
-      </p>
+      <p className={s.panelQuiet}>This file was deleted.</p>
       <div className={s.panelActions}>
         <Button size="sm" onClick={onDismiss}>
           Dismiss
@@ -294,7 +292,7 @@ export function FilesPage() {
           {items.length === 0 ? (
             <EmptyState
               title="This folder is empty"
-              hint="Files arrive here by upload, by import, or as the output of a process."
+              hint="No files yet."
             />
           ) : (
             <div className={s.tbody} role="rowgroup">
@@ -368,7 +366,7 @@ export function FileDetailPage() {
   );
 
   if (!file || !ws) {
-    return <EmptyState title="File not found" hint="It may have been deleted. The tab stays open so you can see where it was." />;
+    return <EmptyState title="File not found" hint="This tab stays open so you can see where it was." />;
   }
 
   return (
@@ -392,10 +390,7 @@ export function FileDetailPage() {
       <div className={s.sheetWrap}>
         <div className={s.sheet}>
           <p className={s.sheetLine}>No file bytes are stored in this build.</p>
-          <p className={s.sheetHint}>
-            A preview would render here from the storage service. Until then this surface shows the
-            file's identity, not its content — a broken viewer would be a worse lie.
-          </p>
+          <p className={s.sheetHint}>No preview in this build.</p>
           <div className={s.sheetRule} />
           <div className={s.sheetFields}>
             <Field label="Kind">{file.kind.toUpperCase()}</Field>

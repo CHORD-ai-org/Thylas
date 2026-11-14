@@ -46,14 +46,14 @@ export function ComputeRun() {
     <PlainLayout size="console">
       <ComputeShell
         title="Run"
-        sub="Choose where work runs. Describe the work, get a recommendation you can argue with, or pick the target yourself — both doors open the same pool. Confirming records a queued run; nothing starts in this build."
+        sub="Choose where work runs. Nothing starts in this build."
       >
         {chosen ? (
           <div className={s.assignedBand} role="status" data-run-assigned>
             <p className={s.assignedTitle}>Queued “{chosen.name}” on {chosen.targetName}.</p>
             <p className={s.assignedNote}>
-              The run has a target and no executor — Thylas does not start work in this build. It is in{' '}
-              <Link to={routes.computeActivity()} className={s.linkArrow}>Activity</Link> as queued.
+              Queued; does not start work in this build.{' '}
+              <Link to={routes.computeActivity()} className={s.linkArrow}>Activity</Link>
             </p>
           </div>
         ) : null}
@@ -213,11 +213,7 @@ export function ComputeRun() {
             {!submitted ? (
               <div className={s.findIntro}>
                 <p className={s.findIntroTitle}>Describe the work to see targets.</p>
-                <p className={s.findIntroBody}>
-                  The recommendation is a sort with reasons, not a scheduler: hard requirements filter, then fit, then
-                  locality, then waste. A target from an environment without instances (Slurm, a serverless backend) can
-                  always take work — the wait belongs to its scheduler, not to a machine.
-                </p>
+                <p className={s.findIntroBody}>Ranked by requirements, fit, then locality.</p>
               </div>
             ) : ranked.length === 0 ? (
               <div className={s.band} role="status">

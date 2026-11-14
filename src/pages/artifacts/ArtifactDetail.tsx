@@ -50,7 +50,7 @@ export function ArtifactDetail() {
       <PlainLayout size="console">
         <EmptyState
           title="No such artifact"
-          hint="It was deleted in this session, or the link is older than the library."
+          hint="Deleted in this session."
           action={<Link to={routes.artifacts()} className={s.linkArrow}>Back to Artifacts</Link>}
         />
       </PlainLayout>
@@ -118,8 +118,7 @@ export function ArtifactDetail() {
 
       {external ? (
         <p className={s.externalBand}>
-          External artifact — the source below stays its system of record. Thylas holds a
-          reference; nothing syncs in this build.
+          External artifact — the source is its system of record; nothing syncs in this build.
           <a
             className={s.linkArrow}
             href={

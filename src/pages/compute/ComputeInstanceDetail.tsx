@@ -34,7 +34,7 @@ export function ComputeInstanceDetail() {
         <ComputeShell title="Instance not found">
           <EmptyState
             title="No such instance"
-            hint="It was removed or terminated in this session, or the link is older than the pool."
+            hint="Removed or terminated in this session."
             action={<Link to={routes.computeInstances()} className={s.linkArrow}>Back to Instances</Link>}
           />
         </ComputeShell>
@@ -92,7 +92,7 @@ export function ComputeInstanceDetail() {
               </div>
             </Section>
 
-            <Section title="Utilization" note="Exists only while the machine can be seen. Absence is the honest state.">
+            <Section title="Utilization">
               <Utilization instance={instance} />
             </Section>
 
@@ -149,10 +149,7 @@ export function ComputeInstanceDetail() {
               {instance.acquiredVia && confirming ? (
                 <div className={s.confirm} role="group" aria-label={`Terminate ${instance.name}`} data-instance-confirm>
                   <p className={s.confirmTitle}>Terminate “{instance.name}”?</p>
-                  <p className={s.confirmWhat}>
-                    It leaves the pool immediately. A managed machine stops billing when terminated — nothing was billed
-                    here, because nothing here is real.
-                  </p>
+                  <p className={s.confirmWhat}>It leaves the pool immediately. Nothing was billed here.</p>
                   <div className={s.confirmActions}>
                     <Button size="sm" className={s.danger} onClick={() => { terminateInstance(instance.id); navigate(routes.computeInstances()); }}>
                       Terminate
@@ -170,7 +167,7 @@ export function ComputeInstanceDetail() {
                 </p>
               ) : null}
               <p className={s.sectionNote}>
-                Connection attempts are simulated and deterministic. No SSH session is opened, no agent is installed.
+                Connection attempts are simulated; no SSH session is opened.
               </p>
             </Section>
           </div>

@@ -106,7 +106,7 @@ export function CommandPalette() {
     <div className={s.scrim} onMouseDown={closePalette} role="presentation">
       <div
         ref={dialogRef}
-        className={s.palette}
+        className={[s.palette, 'glass'].join(' ')}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"

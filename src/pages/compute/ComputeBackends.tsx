@@ -35,7 +35,7 @@ export function ComputeBackends() {
     <PlainLayout size="console">
       <ComputeShell
         title="Backends"
-        sub="An execution environment, not a machine: configuring one creates no instance. Slurm and Kubernetes take work directly — the cluster provisions; Local and SSH expose machines you can point at."
+        sub="Configuring creates no instance."
         actions={
           <Link to={routes.computeAddBackend()} className={s.linkArrow}>
             Add a backend
@@ -43,7 +43,7 @@ export function ComputeBackends() {
         }
       >
         <p className={s.marketNote}>
-          Connection tests are simulated in this build and deterministic: a host whose name contains{' '}
+          Simulated and deterministic: a host whose name contains{' '}
           <code style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>unreachable</code> never answers, everything else does. No
           backend here has actually been contacted.
         </p>
@@ -114,10 +114,6 @@ export function ComputeBackends() {
           ),
         )}
 
-        <p className={s.footNote}>
-          Disabling a backend removes its targets from Run without touching its configuration. Removing one takes its
-          instances out of the pool with it — two different actions, and only one is destructive.
-        </p>
       </ComputeShell>
     </PlainLayout>
   );

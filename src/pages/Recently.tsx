@@ -35,10 +35,7 @@ export function Recently() {
     <PlainLayout wide>
       <header className={s.head}>
         <h1 className={s.title}>Recently</h1>
-        <p className={s.sub}>
-          Everything you opened, edited, ran or uploaded — one row per object, most recent first.
-          This is an index over your work, not the work itself.
-        </p>
+        <p className={s.sub}>One row per object, most recent first.</p>
       </header>
 
       <div className={s.filters} role="tablist" aria-label="Filter by type">
@@ -84,9 +81,6 @@ export function Recently() {
         {items.length === 0 ? <p className={s.empty}>No {type} in the last 50 events.</p> : null}
       </section>
 
-      <p className={s.foot}>
-        Capped at 50 rows. Nothing is stored here that cannot be rebuilt from the objects themselves.
-      </p>
     </PlainLayout>
   );
 }

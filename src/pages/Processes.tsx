@@ -75,7 +75,7 @@ export function ProcessesPage() {
     }, 700);
   };
 
-  if (!ws) return <EmptyState title="Workspace not found" hint="Recently lists what you can still reach." />;
+  if (!ws) return <EmptyState title="Workspace not found" hint="This workspace is gone." />;
 
   return (
     <WorkspaceLayout wsId={wsId}>
@@ -103,7 +103,7 @@ export function ProcessesPage() {
               No WAM endpoint exists in this build, so the sentence is permanent
               and there is nothing to press. */}
           <p className={s.toolbarNote}>
-            Runs start in WAM. No WAM endpoint is connected in this build.
+            No WAM endpoint is connected in this build.
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export function ProcessesPage() {
               {rows.length === 0 ? (
                 <EmptyState
                   title={FILTER_EMPTY[filter]}
-                  hint="The state is in the link. Switch the filter, or show everything in this workspace."
+                  hint="Switch the filter, or show everything."
                   action={
                     filter === 'all' ? undefined : (
                       <Button size="sm" onClick={() => setFilter('all')}>
@@ -213,7 +213,7 @@ export function RunDetailPage() {
   );
 
   if (!run) {
-    return <EmptyState title="Run not found" hint="WAM owns run history. This build only knows the sample runs." />;
+    return <EmptyState title="Run not found" hint="This build knows only the sample runs." />;
   }
 
   const simulate = () => {
@@ -264,10 +264,6 @@ export function RunDetailPage() {
                 </li>
               ))}
             </ul>
-            <p className={s.panelQuiet}>
-              WAM reads these. Thylas passes identity, not credentials, and keeps no copy of the
-              reasoning that used them.
-            </p>
           </div>
 
           <div className={s.panelSection}>
@@ -286,11 +282,7 @@ export function RunDetailPage() {
             </div>
             {/* Said before the click, not after it: these buttons change the
                 browser's copy of the run and nothing else. */}
-            <p className={s.panelQuiet}>
-              Only capabilities this run exposes are drawn — a missing one is an absent button,
-              never a disabled one. Pressing one sets this browser's copy of the run; nothing is
-              sent to WAM in this build.
-            </p>
+            <p className={s.panelQuiet}>Nothing is sent to WAM in this build.</p>
             {local ? (
               <Button size="sm" variant="ghost" onClick={() => clearRunState(run.id)}>
                 Restore the sample

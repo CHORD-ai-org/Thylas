@@ -69,7 +69,7 @@ export function NoteReader({
       {blocks.length === 0 ? (
         <p className={s.p}>
           <span className={s.placeholder}>
-            This note is empty. It has been created and saved; writing comes next.
+            This note is empty.
           </span>
         </p>
       ) : null}

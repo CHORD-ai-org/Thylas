@@ -62,10 +62,7 @@ export function ArtifactNew() {
         /* The honest prototype: no agent runtime exists behind this path. */
         <div className={s.form} data-coworker-prototype>
           <p className={s.hint}>
-            Creating with a Coworker needs the agent runtime — it is not connected in this
-            build. Nothing here can start a conversation yet, so no fake chat is offered.
-            Start with an idea instead; a Coworker can pick it up later from the detail
-            page's Coworker action.
+            Creating with a Coworker needs the agent runtime — it is not connected in this build.
           </p>
           <div className={s.formActions}>
             <Button size="sm" onClick={() => setPath(null)}>
@@ -148,7 +145,7 @@ function NativeForm({
           className={s.editorBody}
           aria-label="First thought"
           value={firstBody}
-          placeholder={`Start writing — the rest of the ${KIND_LABEL[kind].toLowerCase()} sections are created empty and can be filled anytime.`}
+          placeholder="Start writing…"
           onChange={(e) => setFirstBody(e.target.value)}
           rows={6}
         />

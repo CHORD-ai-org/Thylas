@@ -83,10 +83,6 @@ export function UserPage() {
             Initialize profile from public sources
           </Link>
         </div>
-        <p className={s.sub}>
-          The person using Thylas: identity, preferences, and a view of their own environment.
-          Compute owns machines, Connect owns integrations, and neither is managed here.
-        </p>
       </header>
 
       <div className={s.layout}>
@@ -114,11 +110,7 @@ export function UserPage() {
               <h2 className={s.sectionTitle} id="user-identity">
                 Identity
               </h2>
-              <p className={s.sectionSub}>
-                Identity comes from the CHORD identity provider; Thylas holds only a session
-                and one name you may write over it with.
-              </p>
-
+              <p className={s.sectionSub}>Name shown in this app only.</p>
               <div className={s.identity}>
                 <span className={s.avatarBig} aria-hidden>
                   {USER.initials.slice(0, 1)}
@@ -234,11 +226,6 @@ export function UserPage() {
               <h2 className={s.sectionTitle} id="user-prefs">
                 Preferences
               </h2>
-              <p className={s.sectionSub}>
-                Density, theme, landing page, default workspace, and the name above are real and
-                apply immediately. Language packs are not shipped.
-              </p>
-
               <div className={s.prefRow} data-pref-theme>
                 <div>
                   <p className={s.prefLabel}>Theme</p>
@@ -273,7 +260,6 @@ export function UserPage() {
               <div className={s.prefRow}>
                 <div>
                   <p className={s.prefLabel}>Row density</p>
-                  <p className={s.prefHint}>Table and list rows. Applies immediately, and stays for the next visit.</p>
                 </div>
                 <div className={s.prefControl}>
                   <div className={s.segmented} role="group" aria-label="Row density">
@@ -295,7 +281,6 @@ export function UserPage() {
               <div className={s.prefRow}>
                 <div>
                   <p className={s.prefLabel}>Landing page</p>
-                  <p className={s.prefHint}>Where the app opens. Takes effect the next time you arrive at the root.</p>
                 </div>
                 <div className={s.prefControl}>
                   <select
@@ -316,7 +301,6 @@ export function UserPage() {
               <div className={s.prefRow}>
                 <div>
                   <p className={s.prefLabel}>Default workspace</p>
-                  <p className={s.prefHint}>Shown in My environment and used where a default is asked for. Nothing is auto-opened.</p>
                 </div>
                 <div className={s.prefControl}>
                   <select
@@ -338,7 +322,7 @@ export function UserPage() {
               <div className={s.prefRow}>
                 <div>
                   <p className={s.prefLabel}>Notifications</p>
-                  <p className={s.prefHint}>A process that needs input would surface here. Prototype — no notification service exists.</p>
+                  <p className={s.prefHint}>No notification service exists.</p>
                 </div>
                 <div className={s.prefControl}>
                   <button type="button" className={s.prototypeSwitch} disabled title="No notification service is connected in this build.">
@@ -354,11 +338,6 @@ export function UserPage() {
               <h2 className={s.sectionTitle} id="user-env">
                 My environment
               </h2>
-              <p className={s.sectionSub}>
-                A view, not a manager. Machines are owned by Compute; workspaces are owned by
-                themselves. Everything here links out.
-              </p>
-
               <div className={s.envList}>
                 {prefs.defaultWorkspace ? (
                   <a className={s.envRow} href={routes.files(prefs.defaultWorkspace)}>
@@ -416,12 +395,6 @@ export function UserPage() {
               <h2 className={s.sectionTitle} id="user-sec">
                 Security & sessions
               </h2>
-              <p className={s.sectionSub}>
-                What this build actually has: one local profile in one browser. Authentication,
-                device management and remote sign-out belong to an identity service that is not
-                connected here, so nothing pretends to do them.
-              </p>
-
               <div className={s.sessionRow}>
                 <span className={s.sessionText}>
                   <span className={s.sessionTitle}>This browser</span>
@@ -451,7 +424,7 @@ export function UserPage() {
               <div className={s.prefRow}>
                 <div>
                   <p className={s.prefLabel}>Sign out</p>
-                  <p className={s.prefHint}>There is no session to end: no auth service is connected, so this build holds no credentials.</p>
+                  <p className={s.prefHint}>No auth service is connected.</p>
                 </div>
                 <Button size="sm" disabled title="No auth service is connected in this build.">
                   Sign out
@@ -460,7 +433,7 @@ export function UserPage() {
 
               <EmptyState
                 title="No security events"
-                hint="Events would come from the identity service. This page does not invent them."
+                hint="No events in this build."
               />
             </section>
           ) : null}

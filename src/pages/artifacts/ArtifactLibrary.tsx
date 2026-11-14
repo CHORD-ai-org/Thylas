@@ -68,8 +68,7 @@ export function ArtifactLibrary() {
           <p className={s.eyebrow}>LIBRARY</p>
           <h1 className={s.title}>Artifacts</h1>
           <p className={s.sub}>
-            Concepts, methods, tools, products, evidence — the things work produces and
-            later work reuses. Prototype data; edits persist in this browser.
+            Prototype data; edits persist in this browser.
           </p>
         </div>
         <div className={s.headActions}>
@@ -182,7 +181,7 @@ export function ArtifactLibrary() {
         query.trim() !== '' ? (
           <EmptyState
             title="Nothing matches this search"
-            hint="Search covers names, summaries and types. Clear it to see the full library."
+            hint="Clear the search to see the full library."
             action={
               <Button size="sm" onClick={() => setQuery('')}>
                 Clear search
@@ -192,7 +191,7 @@ export function ArtifactLibrary() {
         ) : filtered ? (
           <EmptyState
             title="Nothing matches these filters"
-            hint="The library holds artifacts across every type — loosen a filter or reset."
+            hint="Loosen a filter or reset."
             action={
               <Button
                 size="sm"
@@ -209,7 +208,7 @@ export function ArtifactLibrary() {
         ) : (
           <EmptyState
             title="No artifacts yet"
-            hint="Create the first one — an idea, a method, a tool, or a reference to something external."
+            hint="Create the first artifact."
             action={
               <Link to={routes.artifactNew()} className={s.linkArrow}>
                 Create Artifact

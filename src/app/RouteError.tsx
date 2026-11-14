@@ -15,8 +15,7 @@ export function RouteError() {
       <p className={s.code}>Something in this surface failed</p>
       <h1 className={s.title}>{message}</h1>
       <p className={s.hint}>
-        The rail still works: this boundary is per route, so the rest of the application is intact.
-        Reload to retry — no state was lost, because none of this build's state is on a server.
+        Reload to retry.
       </p>
       <Button size="sm" onClick={() => window.location.reload()}>
         Reload

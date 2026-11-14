@@ -35,7 +35,7 @@ export function ComputeMarketplace() {
     <PlainLayout size="console">
       <ComputeShell
         title="Marketplace"
-        sub="Where more capacity comes from. Acquiring is a separate act from executing: a machine obtained here is used through a backend — SSH today, Kubernetes when one is attached."
+        sub="Sample rates for GPU capacity."
       >
         <p className={s.marketNote} data-market-banner>
           Prices and availability below are <strong>representative samples</strong>, not live data. No billing, no
@@ -119,7 +119,7 @@ export function ComputeMarketplace() {
         {visible.length === 0 ? (
           <EmptyState
             title="Nothing matches these filters"
-            hint="The catalog holds six representative configurations. Loosen one, or check back when real provider data is connected."
+            hint="Loosen a filter or reset."
           />
         ) : (
           <ul className={s.rows}>
@@ -188,7 +188,7 @@ export function ComputeListingDetail() {
         <ComputeShell title="Listing not found">
           <EmptyState
             title="No such listing"
-            hint="The catalog holds a fixed set of representative configurations."
+            hint="Representative configurations only."
             action={<Link to={routes.computeMarketplace()} className={s.linkArrow}>Back to Marketplace</Link>}
           />
         </ComputeShell>
@@ -239,7 +239,7 @@ export function ComputeListingDetail() {
               </div>
             </Section>
 
-            <Section title="How you would use it" note="Capacity is only useful through an execution backend. This listing works with:">
+            <Section title="How you would use it" note="Works with:">
               <ul className={s.rows}>
                 {listing.useVia.map((t) => (
                   <li key={t} className={s.row}>
@@ -254,10 +254,7 @@ export function ComputeListingDetail() {
                   </li>
                 ))}
               </ul>
-              <p className={s.sectionNote}>
-                The rate covers the machine only. Egress, storage beyond the sample, and whatever the provider bills
-                separately are not represented here.
-              </p>
+              <p className={s.sectionNote}>Sample rate; no egress or storage included.</p>
             </Section>
           </div>
 

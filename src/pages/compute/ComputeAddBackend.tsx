@@ -24,12 +24,12 @@ export function ComputeAddBackend() {
     <PlainLayout size="console">
       <ComputeShell
         title={selected ? `Add ${selected.name}` : 'Add a backend'}
-        sub="Configuring an execution interface. It creates no machine and contacts nothing until you run a test — and the test itself is simulated here."
+        sub="Configuring creates no machine. The test is simulated here."
         actions={<Link to={routes.computeBackends()} className={s.backLink}>Backends</Link>}
       >
         {!selected ? (
           <>
-            <Section title="Types with a flow" note="Local is configured the moment Thylas starts; pick one of these to set up.">
+            <Section title="Types with a flow">
               <div className={s.kindGrid}>
                 {BACKEND_CATALOG.filter((c) => c.configured && c.type !== 'local').map((entry) => (
                   <Link key={entry.id} to={`${routes.computeAddBackend()}?type=${entry.type}`} className={s.kindCard}>
@@ -112,7 +112,7 @@ export function BackendConfigForm({
 
   if (source.fields.length === 0) {
     return (
-      <EmptyState title="Nothing to configure" hint="This type has no fields; it is either built in or has no flow yet." />
+      <EmptyState title="Nothing to configure" hint="No fields for this type." />
     );
   }
 

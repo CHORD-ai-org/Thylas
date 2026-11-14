@@ -38,7 +38,7 @@ export function BoardsPage() {
   const ws = getWorkspace(wsId);
   const boards = boardsIn(wsId);
 
-  if (!ws) return <EmptyState title="Workspace not found" hint="Recently lists what you can still reach." />;
+  if (!ws) return <EmptyState title="Workspace not found" hint="This workspace is gone." />;
 
   return (
     <WorkspaceLayout wsId={wsId}>
@@ -95,7 +95,7 @@ export function BoardsPage() {
             </button>
           ))}
           {boards.length === 0 ? (
-            <EmptyState title="No boards yet" hint="A board holds cards, sections, and labelled edges inside one workspace." />
+            <EmptyState title="No boards yet" hint="Create the first board." />
           ) : null}
         </div>
       </div>
@@ -113,7 +113,7 @@ export function BoardDetailPage() {
   );
 
   if (!board) {
-    return <EmptyState title="Board not found" hint="It may have been deleted. The tab stays open so the loss is visible." />;
+    return <EmptyState title="Board not found" hint="This tab stays open so the loss is visible." />;
   }
 
   // Keyed so switching boards starts from that board's scene instead of
@@ -389,7 +389,7 @@ function BoardCanvas({ wsId, board }: { wsId: string; board: Board }) {
 
           {empty ? (
             <p className={s.canvasHint}>
-              Double-click anywhere to place the first card. Nothing here is generated for you.
+              Double-click to place the first card.
             </p>
           ) : null}
 
@@ -853,10 +853,6 @@ function BoardPanel({
             }}
           />
         </label>
-        <p className={s.panelHint}>
-          Drag the round handle on the curve to bend it; double-click the handle to straighten it. An
-          edge is a claim about reading order — it is not a dependency the system runs.
-        </p>
         <div className={s.panelActions}>
           <Button size="sm" variant="ghost" icon={<IconTrash size={12} />} onClick={editor.deleteSelection}>
             Delete edge
@@ -906,10 +902,6 @@ function BoardPanel({
             Delete
           </Button>
         </div>
-        <p className={s.panelHint}>
-          Arrow keys move 1px, shift 10px. F folds. Hover the card and drag a side dot to connect it
-          to another object.
-        </p>
       </div>
     );
   }
@@ -947,10 +939,6 @@ function BoardPanel({
             Delete
           </Button>
         </div>
-        <p className={s.panelHint}>
-          Drag a section by its name capsule. Cards stay inside it: dropping one inside another
-          section moves it across, and the frame grows to hold what it owns.
-        </p>
       </div>
     );
   }
@@ -1003,10 +991,6 @@ function BoardPanel({
         <Field label="Edges">{scene.edges.length}</Field>
         <Field label="Live results">{boards}</Field>
       </div>
-      <p className={s.liveNote}>
-        A card can be bound to a process artifact. The binding is read-only. Thylas does not compute
-        here.
-      </p>
       <div className={s.keys}>
         <div><Kbd>drag</Kbd> move · snap keeps one axis</div>
         <div><Kbd>drag empty</Kbd> marquee · <Kbd>shift</Kbd> adds</div>

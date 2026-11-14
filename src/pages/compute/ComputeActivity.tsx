@@ -23,7 +23,7 @@ export function ComputeActivity() {
     <PlainLayout size="console">
       <ComputeShell
         title="Activity"
-        sub="Computational work and where it was aimed. Running and queued work is real relative to this build — chosen targets, no executor."
+        sub="Chosen targets, no executor."
       >
         <div className={s.toolbarChips} role="group" aria-label="Filter by state">
           <Link to={routes.computeActivity()} className={[s.chip, !state ? s.chipOn : ''].join(' ')}>

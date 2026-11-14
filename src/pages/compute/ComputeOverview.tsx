@@ -35,7 +35,7 @@ export function ComputeOverview() {
   return (
     <PlainLayout size="console">
       <ComputeShell
-        sub="Execution environments for computational work. Start with Run; nothing here starts or provisions."
+        sub="Execution environments. Nothing here starts or provisions."
         actions={
           <Link to={routes.computeRun()} className={s.linkArrow}>
             Run something
@@ -85,7 +85,7 @@ export function ComputeOverview() {
             <Section
               title="Execution environments"
               aside={<Link to={routes.computeBackends()} className={s.linkArrow}>Backends</Link>}
-              note="A backend executes work; connecting creates no instance."
+              note="Connecting creates no instance."
             >
               <ul className={s.rows}>
                 {backends.map((b) => (
@@ -112,7 +112,7 @@ export function ComputeOverview() {
 
             <Section title="Running now" aside={<Link to={routes.computeActivity()} className={s.linkArrow}>Activity</Link>}>
               {running.length === 0 ? (
-                <p className={s.quiet}>Nothing is running. Work chosen in Run queues here when it is confirmed.</p>
+                <p className={s.quiet}>Nothing is running.</p>
               ) : (
                 <ul className={s.rows}>
                   {running.map((w) => {
@@ -149,7 +149,7 @@ export function ComputeOverview() {
               note="Idle machines a run could take right now."
             >
               {usable.length === 0 ? (
-                <p className={s.quiet}>No machine is both connected and idle. The Slurm backend takes work anyway — the scheduler waits for its own capacity.</p>
+                <p className={s.quiet}>No connected idle machine. Slurm takes work anyway.</p>
               ) : (
                 <ul className={s.rows}>
                   {usable.map((i) => (
@@ -173,7 +173,7 @@ export function ComputeOverview() {
 
             <div className={s.marketTeaser}>
               <p className={s.marketTeaserText}>
-                Need more capacity? The Marketplace lists GPU capacity at sample rates.
+                More GPU capacity at sample rates in the Marketplace.
               </p>
               <Link to={routes.computeMarketplace()} className={s.linkArrow}>
                 Marketplace

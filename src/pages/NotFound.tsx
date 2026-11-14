@@ -12,8 +12,7 @@ export function NotFound() {
         <p className={s.code}>404 · no such place</p>
         <h1 className={s.title}>This URL is not part of the application.</h1>
         <p className={s.hint}>
-          Every visible surface has a URL, and every URL below points at one. If a link brought you
-          here, the object was probably deleted — the workspace it lived in still exists.
+          This link points to an object that was deleted.
         </p>
         <div className={s.actions}>
           <Button variant="primary" onClick={() => navigate(routes.overview())}>
