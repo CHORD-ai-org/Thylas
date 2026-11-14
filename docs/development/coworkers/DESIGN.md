@@ -210,6 +210,11 @@ Stages are conceptual, not mandatory separate pages (brief Phase 2).
 | Environment | Adds a workspace, picks grants | Membership record with explicit grants; default = nothing | **Confirmed** (membership add/remove shipped) |
 | First Encounter | Gives one small task | Runs through the existing real chat; shows what actually happened, with the trace visible | **Proposed**; see §9 |
 
+**11-14 19:32:** the user asked to turn creation into a wizard. Implementation plan
+(5 recommended steps, W-1…W-6, five open decisions):
+[`CREATION-WIZARD.md`](CREATION-WIZARD.md). The table above stays the product-level
+stage list; today's shipped flow is still the single form in `CoworkerNew.tsx`.
+
 ### 4.3 Visual identity — avatar generation (read `AVATAR-VISUAL-SYSTEM.md`)
 
 **Confirmed** — today's mark is initials + id-derived hue; product docs say optional
@@ -517,9 +522,15 @@ vector memory, backend/frontend rewrite, new endpoints presented as existing.
 | **Q-D** | "Executable" Mind Framework / Methodology | Brief says a Methodology should be executable, not descriptive. Existing `[C]` gives reasoning/execution to WAM and keeps Thylas as record + declared config. | Decide what "operationalizable" means in Thylas before adding any field. A field that changes nothing must not ship. |
 | **Q-E** | Coworker persistence | `SCOPE.md Q4` still open; D-059 chose per-user server files for **User** state only. | Choose table vs file for Coworker records when #2 starts. |
 
-**Confirmed** — none of these five is resolved by this document. `THINKING.md` requires
-"Do NOT silently convert proposals into finalized architecture"; `AGENT.md §1.4/§8`
-requires preserving uncertainty.
+**11-14 19:32 update on Q-C:** the user asked for a plan to turn Coworker creation
+into a wizard, so the IA direction is now given. Stage count, natural-language
+Blueprint, avatar step and editable Mind Framework are still **Open**. Plan:
+[`CREATION-WIZARD.md`](CREATION-WIZARD.md) (documentation only, no code started).
+Q-A / Q-B / Q-D / Q-E are unchanged.
+
+**Confirmed** — Q-A / Q-B / Q-D / Q-E remain unresolved; Q-C has a direction but no
+settled stage design. `THINKING.md` requires "Do NOT silently convert proposals into
+finalized architecture"; `AGENT.md §1.4/§8` requires preserving uncertainty.
 
 ---
 

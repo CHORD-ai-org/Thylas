@@ -10,6 +10,7 @@ product model.
 | 2 | [`IMPLEMENTATION.md`](IMPLEMENTATION.md) | 11-12, shipped | The four pages, the v1 store, honesty rules, verification numbers (309 unit / 302 e2e at the time). |
 | 3 | [`AVATAR-VISUAL-SYSTEM.md`](AVATAR-VISUAL-SYSTEM.md) | 11-14, v1.0 style guide | Fixed vs customizable avatar elements, prompt anchors, negative prompt, `thylas-coworker-avatar` skill workflow, validation checklist. **No avatar code exists.** |
 | 4 | [`DESIGN.md`](DESIGN.md) | 11-14, design specification + one isolated implementation | The 8 task-brief deliverables: Vision, Domain Model, Creation UX (incl. avatar), Mind Framework & Methodology, Collaboration Model, Minimal Scenario, Local/Cloud Notes, Roadmap. Every decision labelled. §9.2 implemented under D-060. |
+| 5 | [`CREATION-WIZARD.md`](CREATION-WIZARD.md) | 11-14, **plan only, not started** | Turn `/coworkers/new` from one form into a 5-step wizard: current-state audit, reusable `ProfileInit` pattern, stage design, file list, e2e acceptance, 5 open decisions, W-1…W-6 units, risks. |
 
 ## Current code facts
 
