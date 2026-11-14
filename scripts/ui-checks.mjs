@@ -98,7 +98,7 @@ function startAiStub() {
         const timer = setInterval(
           () => {
             if (i < parts.length) {
-              res.write(`data: ${JSON.stringify({ model: 'deepseek-chat', choices: [{ delta: { content: parts[i++] } }] })}\n\n`);
+              res.write(`data: ${JSON.stringify({ model: 'deepseek/deepseek-chat', choices: [{ delta: { content: parts[i++] } }] })}\n\n`);
               return;
             }
             clearInterval(timer);
@@ -115,7 +115,7 @@ function startAiStub() {
 
       setTimeout(
         () => {
-          reply(200, { model: 'deepseek-chat', choices: [{ message: { content: ANSWER_TEXT } }] });
+          reply(200, { model: 'deepseek/deepseek-chat', choices: [{ message: { content: ANSWER_TEXT } }] });
         },
         mode === 'slow' ? 3000 : 320,
       );
@@ -131,6 +131,7 @@ async function main() {
     process.exit(2);
   }
 
+
   let server = null;
   const aiStub = await startAiStub();
   if (!(await up())) {
@@ -141,10 +142,17 @@ async function main() {
       env: {
         ...process.env,
         /* A stub key, so the endpoint is configured and the surface is live; the
-           upstream is the local stub, so nothing leaves the machine. */
+           upstream is the local stub, so nothing leaves the machine.
+           Every provider key is set explicitly, including the empty ones: the
+           project's own .env.local may hold a real key, and this run must not
+           depend on it. */
         DEEPSEEK_API_KEY: 'sk-e2e-stub',
         DEEPSEEK_BASE_URL: `http://127.0.0.1:${AI_STUB_PORT}`,
         DEEPSEEK_TIMEOUT_MS: '5000',
+        OPENAI_API_KEY: '',
+        ANTHROPIC_API_KEY: '',
+        OPENROUTER_API_KEY: '',
+        KIMI_API_KEY: '',
       },
     });
     for (let i = 0; i < 60 && !(await up()); i++) await sleep(500);
@@ -182,7 +190,7 @@ async function main() {
     try {
       const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
       page = list.find((t) => t.type === 'page') ?? null;
-    } catch {
+    } catch (e) {
       await sleep(200);
     }
   }
@@ -489,7 +497,7 @@ async function main() {
       active: document.activeElement ? document.activeElement.tagName + '/' + (document.activeElement.getAttribute('aria-label') ?? '') : 'none',
       panel: el ? el.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120) : null,
     };
-  `), (v) => typeof v.panel === 'string' && v.panel.includes('Answers one question with DeepSeek') && v.panel.includes('does not start a process'));
+  `), (v) => typeof v.panel === 'string' && v.panel.includes('Answers one question with the selected model') && v.panel.includes('does not start a process'));
   check('ask: the send control is an icon button with a name', await js(`
     const b = document.querySelector('button[aria-label="Send"]');
     if (!b) return null;
@@ -521,7 +529,7 @@ async function main() {
   check('ask: the footer states model, endpoint kind and latency', await js(`
     const el = document.querySelector('aside[data-panel-context] [class*="answerFoot"]');
     return el ? el.textContent.trim() : null;
-  `), (v) => typeof v === 'string' && /^deepseek-chat · dev endpoint · \d+ ms$/.test(v));
+  `), (v) => typeof v === 'string' && /^(deepseek\/)+deepseek-chat · dev endpoint · \d+ ms$/.test(v));
   check('ask: the latency is the stub delay, not a constant', await js(`
     const el = document.querySelector('aside[data-panel-context] [class*="answerFoot"]');
     return parseInt((el ? el.textContent : '').split('·').pop(), 10);
@@ -584,7 +592,15 @@ async function main() {
   keylessServer = spawn('npm', ['run', 'dev', '--', '--port', '5179', '--strictPort'], {
     stdio: 'ignore',
     shell: process.platform === 'win32',
-    env: { ...process.env, DEEPSEEK_API_KEY: '', DEEPSEEK_BASE_URL: `http://127.0.0.1:${AI_STUB_PORT}` },
+    env: {
+      ...process.env,
+      DEEPSEEK_API_KEY: '',
+      OPENAI_API_KEY: '',
+      ANTHROPIC_API_KEY: '',
+      OPENROUTER_API_KEY: '',
+      KIMI_API_KEY: '',
+      DEEPSEEK_BASE_URL: `http://127.0.0.1:${AI_STUB_PORT}`,
+    },
   });
   const keylessUp = async () => {
     try {
@@ -600,14 +616,14 @@ async function main() {
   check('ask: without a key the control is disabled and names the variable', await js(`
     for (let i = 0; i < 30; i++) {
       const reason = document.getElementById('intent-reason');
-      if (reason && reason.textContent.includes('DEEPSEEK_API_KEY')) break;
+      if (reason && reason.textContent.includes('provider key')) break;
       await new Promise(r => setTimeout(r, 150));
     }
     const reason = document.getElementById('intent-reason');
     const btn = document.querySelector('button[aria-label="Send"]');
     return {
       disabled: btn ? btn.disabled : 'missing',
-      names: reason ? reason.textContent.includes('DEEPSEEK_API_KEY') : false,
+      names: reason ? reason.textContent.includes('provider key') : false,
     };
   `), (v) => v.disabled === true && v.names === true);
   keylessServer.kill();
@@ -904,6 +920,23 @@ async function main() {
     return [...document.querySelectorAll('[data-ws-row]')].map(r => r.getAttribute('aria-label'));
   `), (v) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'string' && /^[^,]+, (personal|organisation) workspace/.test(n)));
 
+  check('rail: the account lives at the bottom, not in the navigation list', await js(`
+    return {
+      profile: !!document.querySelector('[data-rail-user]'),
+      navUser: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'User'),
+      last: [...document.querySelectorAll('[data-rail-item]')].map(a => a.textContent.trim()).filter(Boolean).pop(),
+    };
+  `), { profile: true, navUser: false, last: 'Chat' });
+
+  await js(`${helpers} click(document.querySelector('[data-ws-section]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('rail: the Workspace group collapses', await js(`
+    return { rows: document.querySelectorAll('[data-ws-row]').length, expanded: document.querySelector('[data-ws-section]')?.getAttribute('aria-expanded') };
+  `), (v) => v.rows === 0 && v.expanded === 'false');
+  await js(`${helpers} click(document.querySelector('[data-ws-section]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('rail: the Workspace group expands again', await js(`
+    return document.querySelectorAll('[data-ws-row]').length;
+  `), (v) => v >= 2);
+
   /* Named, not global: Notes in the rail and Notes in the strip are two doors
      to one room, which is fine. The three names below were one control each,
      duplicated — that is what makes a screen reader hear the same thing twice. */
@@ -912,8 +945,8 @@ async function main() {
       .filter(el => el.offsetParent !== null)
       .map(el => (el.getAttribute('aria-label') || el.textContent || '').replace(/ +/g, ' ').trim().toLowerCase());
     const count = (n) => names.filter(x => x === n).length;
-    return { collapse: count('collapse sidebar'), create: count('create workspace') };
-  `), { collapse: 1, create: 1 });
+    return { collapse: count('collapse sidebar'), create: count('create workspace'), brand: count('toggle sidebar') };
+  `), { collapse: 0, create: 1, brand: 1 });
 
   await js(`${helpers} window.dispatchEvent(new KeyboardEvent('keydown', {key:'\\\\', metaKey:true, bubbles:true})); await new Promise(r => setTimeout(r, 300));`);
   check('panel: hidden by shortcut', await js(`return !!document.querySelector('aside[data-panel-context]');`), false);
@@ -988,7 +1021,7 @@ async function main() {
     'focus-visible': true,
   });
 
-  await js(`${helpers} click(byText('button', 'Collapse sidebar')); await new Promise(r => setTimeout(r, 400));`);
+  await js(`${helpers} click(document.querySelector('[data-rail-brand]')); await new Promise(r => setTimeout(r, 400));`);
   check('rail: collapses', await js(`return document.querySelector('[data-rail]').getAttribute('data-rail');`), 'collapsed');
   await send('Page.reload');
   await sleep(1200);
@@ -2318,10 +2351,12 @@ async function main() {
     return {
       rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Compute'),
       h1: document.querySelector('h1')?.textContent.trim(),
-      stats: [...document.querySelectorAll('[class*="statLabel"]')].map(l => l.textContent.trim()),
+      sections: ['Running instances', 'Default destination', 'Configured', 'More compute options'].filter(h => text.includes(h)),
+      tiles: document.querySelectorAll('[data-configured-card]').length,
+      options: document.querySelectorAll('[data-option-card]').length,
       envs: text.includes('This machine') && text.includes('Cluster (Slurm)') && text.includes('Kubernetes'),
     };
-  `), (v) => v.rail && v.h1 === 'Compute' && v.stats.includes('Backends ready') && v.stats.includes('Usable now') && v.envs === true);
+  `), (v) => v.rail && v.h1 === 'Compute' && v.sections.length === 4 && v.tiles >= 4 && v.options > 0 && v.envs === true);
 
   await goto('/compute/backends');
   check('compute: backends separate configuration from machines and mark the boundary', await js(`
@@ -2447,7 +2482,7 @@ async function main() {
 
   await goto('/account');
   check('user: the old account path redirects, and the rail names User', await js(`
-    const rail = [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'User');
+    const rail = !!document.querySelector('[data-rail-user]');
     return { path: location.pathname, rail, h1: document.querySelector('h1')?.textContent.trim() };
   `), (v) => v.path.startsWith('/user') && v.rail === true && v.h1 === 'User');
 
@@ -2475,6 +2510,7 @@ async function main() {
   await fillAria('Landing page', 'overview');
 
   await goto('/user/environment');
+  await js('await new Promise(r => setTimeout(r, 400)); return 1;');
   check('user: my environment links out to Compute instead of duplicating it', await js(`
     const text = document.body.innerText.replace(new RegExp(String.fromCharCode(10), 'g'), ' ');
     return {
@@ -2578,7 +2614,7 @@ async function main() {
       })),
       model: document.querySelector('[data-model-btn]')?.textContent.trim(),
     };
-  `), (v) => v.rail && v.empty && v.created && v.model === 'deepseek-chat');
+  `), (v) => v.rail && v.empty && v.created && v.model === 'deepseek/deepseek-chat');
 
   await fillAria('Message', 'What is a boundary? Show an example.');
   await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
