@@ -1,8 +1,19 @@
 # Backend — repository audit
 
-**Written 2026-11-13 (P1-8).** Replaces the 11-11 snapshot in this file. Every fact
+**Written 2026-11-13 18:05 (P1-8).** Replaces the 11-11 snapshot in this file. Every fact
 below was read from the running code. The old snapshot survives as `PHASE-1.md` §0
 and in git history; it said "the entire backend is one Vite middleware file".
+
+> **11-13 21:00 update.** External commits added the Profile Initialization pipeline
+> (`server/profile/*`, `server/routes/profile.ts`, `src/lib/profile.ts`, `/user/profile`).
+> The numbers in §1, §2 and §7 are the 18:05 snapshot. **As of 11-14 08:20** the
+> counts are 30 server `.ts` files, 9 path constants / 25 operations (Phase 2 A1
+> added `GET|PATCH /api/user`), 50 test files / 424 tests, 16 `api:check` checks,
+> 315 e2e assertions. A1's User state uses a per-user server file, not a table
+> (D-059) — `server/user/store.ts`; the 3 tables in §3 are unchanged.
+> Full capability audit: `PHASE-2-USER.md` §0. Pipeline details:
+> `docs/development/profile/IMPLEMENTATION.md`. §7's verification numbers are kept
+> as the dated P1-8 record, not rewritten.
 
 ## 0. The short version
 

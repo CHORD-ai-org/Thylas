@@ -519,6 +519,16 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-059 · Phase 2 User state: server-side per-user file, no `users` table yet, default stays local
+
+**Status:** accepted in force (User persistence, 2026-11-14).
+**Context:** `PHASE-2-USER.md` Q1 was open. `DATABASE_URL` is empty, so `createDb()` returns null and every DB route answers 503; a `users` table + `0003` migration cannot prove "refresh and re-login keep the name" on this machine. The Profile pipeline (`server/profile/store.ts`) already proves a real server-side per-user JSON store with 401 isolation and idempotent writes. The User module needs the same acceptance without a second DB connection.
+**Decision:** User state goes to `<STORAGE_DIR>/user/<userId>.json` (or `.workbuddy/user/` when `STORAGE_DIR` is unset), a separate file from Profile so neither overwrites the other. `GET|PATCH /api/user` reuse the D-056 session source and the typed-failure shape; no `users` table, no `0003`, no IdP field copies. `VITE_USER_SOURCE=local|api` defaults to `local`, byte-for-byte unchanged; `api` keeps the local envelope as fallback, hydrates once at startup, and syncs commits in the background. This round implements **A1 (displayName only)**; prefs stay A2.
+**Alternatives:** `users` table + `0003` (correct long-term, but 503 on this machine and Docker daemon is down); folding User into `ProfileState` (changes the existing profile contract the wizard depends on); local-only (fails Phase 2's persistence acceptance).
+**Consequence:** refresh/re-login is verifiable locally over real HTTP; no new table or migration; the file store is single-instance, so moving to Postgres later replaces one module (`server/user/store.ts`) plus a migration. The dev cookie remains an explicit stand-in — an issuer still fails closed. A1 does not touch identity fields owned by CHORD, avatar, or security controls.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |

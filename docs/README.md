@@ -29,7 +29,8 @@
 | 13.5 | [`planning/ui-mvp-plan.md`](planning/ui-mvp-plan.md) | 10 min | **The plan in force for the next four weeks**: four sprints, task IDs, gates, stop rules |
 | 13.6 | [`../plan/`](../plan/README.md) | as needed | The same plan decomposed into 12 executable sub-plans with status board |
 | 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
-| 15 | [`development/backend/`](development/backend/PHASE-1.md) | 15 min | **Backend as built (2026-11-13)**: five-phase roadmap, Phase 1 units P1-0…P1-8, `AUDIT.md` for the current API/tables, `P1-6.md` / `P1-7.md` for the two deviations |
+| 15 | [`development/backend/`](development/backend/PHASE-1.md) | 15 min | **Backend as built (2026-11-13)**: five-phase roadmap, Phase 1 units P1-0…P1-8, `AUDIT.md` for the API/tables, `P1-6.md` / `P1-7.md` for the two deviations |
+| 16 | [`development/backend/PHASE-2-USER.md`](development/backend/PHASE-2-USER.md) | 20 min | **Phase 2 User module**: five-domain spec, MVP/Deferred, capability audit, Q2–Q7 (Q1 closed by D-059); plan in `PHASE-2-USER-PLAN.md` — A0 + A1 shipped |
 
 If you read only one: `product/definition.md` §8 (responsibility matrix). If you read two: add §9 (the three boundaries that break first).
 

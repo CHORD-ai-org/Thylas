@@ -98,3 +98,16 @@ upload is deferred (`P1-6.md` §1, D-057).
 the browser envelope unchanged; `api` syncs optimistically with a 300 ms
 throttle and an `expectedVersion` guard (409 on conflict). The contract is
 `src/lib/chat.ts`. Old `{type}` blocks are normalised on read.
+
+## User (Phase 2 A1, D-059)
+
+`GET|PATCH /api/user` reads and writes the one field Thylas owns here — the
+display name. The user id comes only from the session; the client never sends
+one, so a caller cannot address another user's file. `server/user/store.ts`
+writes `<STORAGE_DIR>/user/<userId>.json` (or `.workbuddy/user/` when unset),
+a separate file from the Profile pipeline. No `users` table and no migration
+yet: this deployment has no `DATABASE_URL`, and a table would answer 503 here.
+`VITE_USER_SOURCE=local` (default) keeps the browser envelope unchanged;
+`api` hydrates once and syncs name changes in the background, always keeping
+the local copy. The contract is `src/lib/user.ts`. Replacing the file store
+with Postgres later changes one module.

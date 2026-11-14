@@ -1,7 +1,7 @@
 # Backend roadmap — 五个阶段
 
 **状态：** 2026-11-12 记录；**Phase 1 于 11-13 完成（P1-0 … P1-8）**。
-**当前后端（P1-8 后）：** `server/` 23 个 `.ts` 文件；7 个 API 路径 / 16 个操作、3 张表 + 3 个迁移、dev session 的 401/403、本地目录文件存储、chat 双模式。真库 CLI、CHORD IdP verifier、S3 直传未验。逐条事实以 [`AUDIT.md`](AUDIT.md) 为准。
+**当前后端（11-14 08:20）：** `server/` 30 个 `.ts` 文件；9 个 API 路径 / 25 个操作（含 Profile 管线 7 个、A1 的 `GET|PATCH /api/user`）、3 张表 + 3 个迁移、dev session 的 401/403、本地目录文件存储、chat 与 user 双模式。P1-8 之后有外部提交加入 `server/profile/*`、`server/routes/profile.ts` 与 `src/pages/user/ProfileInit.tsx`；逐条见 [`AUDIT.md`](AUDIT.md)（18:05 快照，头部有更新注记）与 [`PHASE-2-USER.md`](PHASE-2-USER.md) §0。真库 CLI、CHORD IdP verifier、S3 直传未验。
 **不是同一份：** `docs/planning/roadmap.md` 是 2026-11-07 的 UI MVP 里程碑 M0–M6。
 
 ---
@@ -15,6 +15,8 @@
 
 ### Phase 2 — Core Entities
 实现四个核心对象：User、Workspace、Coworker、Artifact。建立它们之间必要的关系，支持创建、编辑、查询、归档，以及 Workspace 成员和 Coworker 的基本访问权限。
+
+**User 模块（11-14：文档 + A0 + A1 落地）**：规格 [`PHASE-2-USER.md`](PHASE-2-USER.md)、实施分类与路线图 [`PHASE-2-USER-PLAN.md`](PHASE-2-USER-PLAN.md)。Q1 已由 D-059 拍板（服务端 per-user 文件，暂不建 `users` 表）；A1 的 displayName 持久化已验 PATCH→GET。Profile Initialization 管线已由外部提交实现，专门文档在 `docs/development/profile/`。A2 prefs / A3 记录展示未开工。
 
 ### Phase 3 — Working Experience
 实现 Conversation、Message 和 Current Work。支持用户与 Coworker 对话、历史记录持久化、基础上下文注入，以及工作状态的创建和更新。MVP 阶段直接连接 DeepSeek API，不引入 WAM。

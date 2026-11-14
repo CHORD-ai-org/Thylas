@@ -2,7 +2,7 @@
 
 **Rule of this file:** it describes the repository, not intentions. If a line here disagrees with `git log` or the running app, the file is wrong.
 
-Last updated: 2026-11-13 18:05 (Backend Phase 1 **complete** P1-0…P1-8: AUDIT.md rewritten against running code, docs/README.md indexes backend/, check + 44 files / 379 tests + 14 api:check + 302/302 e2e green; Coworker page shipped; Coworker foundation docs (D-054); Artifact page (D-053); Chat (D-051); backend docs (D-052)).
+Last updated: 2026-11-14 08:20 (Phase 2 User: D-059 closes Q1, A1 displayName server persistence landed; 50 files / 424 tests + 16 api:check + 315/315 e2e green; external commits added Profile Initialization pipeline and notes bookmarking; Backend Phase 1 complete P1-0…P1-8; Coworker page shipped; Coworker foundation docs (D-054); Artifact page (D-053); Chat (D-051); backend docs (D-052)).
 
 ---
 
@@ -51,6 +51,8 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | Backend Phase 1 · P1-6 | — | **Completed** 11-13 | 1.0 | D-057 | Local `STORAGE_DIR` byte store, `files` table + `0001` migration, 5 `/api/files*` endpoints with 401/403, streamed 100MB cap, soft delete, rewired Files copy; 40 files / 359 tests + 12 api:check green. Presigned upload and real Postgres deferred. Docs: `docs/development/backend/P1-6.md` |
 | Backend Phase 1 · P1-7 | — | **Completed** 11-13 | 1.0 | D-058 | One `src/lib/chat.ts` contract, `0002` migration, `GET\|PUT /api/chat/state` on existing tables with 409 version guard, dual-mode store (`local` default byte-identical), one-time envelope import; UI files zero diff, `chat.test.ts` untouched; 44 files / 379 tests + 14 api:check green. Real-DB sync and dev-cookie injection pending. Docs: `docs/development/backend/P1-7.md` |
 | Backend Phase 1 · P1-8 | — | **Completed** 11-13 | 0.25 | — | `AUDIT.md` rewritten against running code (23 server files, 7 paths / 16 operations, 3 tables, real 401/403/503 responses, 9 stale claims listed with line numbers (3 corrected in place); `docs/README.md` indexes `backend/`; `ROADMAP.md` status current. `check` / 44 files 379 tests / 14 api:check / 302 e2e all green; 2 pre-existing lint errors remain. Docs: `docs/development/backend/AUDIT.md` |
+| Backend Phase 2 · User docs + A0 | — | **Completed** 11-13 | 0.5 | — | `PHASE-2-USER.md` (5-domain spec, MVP/Deferred, capability audit, Q1–Q7) + `PHASE-2-USER-PLAN.md` (A/B/C, ordered plan, roadmap); A0: `src/lib/user.ts` shared contract + 9 tests, `src/state/user.ts` re-exports with unchanged behaviour, UI zero diff. 47 files / 404 tests + 14 api:check + 314 e2e green. Docs: `docs/development/backend/PHASE-2-USER.md` |
+| Backend Phase 2 · A1 displayName | — | **Completed** 11-14 | 0.75 | D-059 | Q1 closed: per-user server file instead of a `users` table. `GET\|PATCH /api/user`, `server/user/store.ts`, `src/services/user/client.ts`, `VITE_USER_SOURCE=local\|api` with hydrate + 300 ms background sync (local envelope kept). 20 new tests; 50 files / 424 tests + 16 api:check + 315 e2e green; UI zero diff; no DB migration. A2 prefs / A3 records pending. Docs: `docs/development/backend/PHASE-2-USER-PLAN.md` §7 |
 
 10b–10f are sequenced by `docs/design/optimization-plan.md` (W0–W6, 6.5 days including 0.25 doc debt, per-wave exit evidence).
 
