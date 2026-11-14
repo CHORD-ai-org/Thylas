@@ -157,3 +157,42 @@ describe('tombstones', () => {
     expect(store.__readForTest().removed).toEqual(['a-boundary']);
   });
 });
+
+describe('covers', () => {
+  it('stores an explicit hue and keeps it across a reload', async () => {
+    const { store } = await fresh();
+    const created = store.createArtifact({
+      kind: 'concept',
+      name: 'Covered',
+      summary: '',
+      firstTitle: 'Definition',
+      firstBody: '',
+      author: 'Ceaser',
+      cover: { hue: 'teal' },
+    });
+    expect(created.cover).toEqual({ hue: 'teal' });
+    vi.resetModules();
+    const reloaded = await import('./artifacts');
+    expect(reloaded.artifactById(created.id)!.cover).toEqual({ hue: 'teal' });
+  });
+
+  it('drops a stored hue that is not on the whitelist, keeping the artifact', async () => {
+    const { store } = await fresh();
+    store.createArtifact({
+      kind: 'methodology',
+      name: 'Hand edited',
+      summary: '',
+      firstTitle: 'Purpose',
+      firstBody: '',
+      author: 'Ceaser',
+    });
+    const raw = JSON.parse(storage.get('thylas:artifacts:v1')!);
+    raw.added[0].cover = { hue: 'magenta', symbol: 'poem' };
+    storage.set('thylas:artifacts:v1', JSON.stringify(raw));
+    vi.resetModules();
+    const reloaded = await import('./artifacts');
+    const kept = reloaded.artifactsView().find((a) => a.name === 'Hand edited')!;
+    expect(kept).toBeDefined();
+    expect(kept.cover).toBeUndefined();
+  });
+});

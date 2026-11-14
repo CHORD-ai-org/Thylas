@@ -11,10 +11,12 @@ import {
   ARTIFACTS,
   KIND_SECTIONS,
   type Artifact,
+  type ArtifactCover,
   type ArtifactKind,
   type ArtifactSection,
   type ArtifactStatus,
 } from '../data/artifacts';
+import { sanitizeCover } from '../lib/cover';
 
 const KEY = 'thylas:artifacts:v1';
 
@@ -107,7 +109,14 @@ function read(): State {
       edits,
       sectionBodies,
       statusOverrides,
-      added: Array.isArray(p.added) ? p.added.filter(isArtifact) : [],
+      added: Array.isArray(p.added)
+        ? p.added.filter(isArtifact).map((a) => {
+            /* Cover is optional and white-listed: a stored hue or symbol we do
+               not know is dropped, not rendered. */
+            const cover = sanitizeCover(a.cover);
+            return cover ? { ...a, cover } : { ...a, cover: undefined };
+          })
+        : [],
       removed: strList(p.removed).filter((id) => ARTIFACTS.some((a) => a.id === id)),
       log: Array.isArray(p.log)
         ? p.log.filter((d) => typeof d === 'object' && d !== null && typeof (d as { text?: unknown }).text === 'string')
@@ -201,8 +210,10 @@ export function createArtifact(input: {
   firstBody: string;
   author: string;
   source?: Artifact['source'];
+  cover?: ArtifactCover;
 }): Artifact {
   const now = Date.now();
+  const cover = sanitizeCover(input.cover);
   const artifact: Artifact = {
     id: entry('a'),
     kind: input.kind,
@@ -220,6 +231,7 @@ export function createArtifact(input: {
     })),
     relations: [],
     versions: [{ v: 1, at: now, by: input.author, note: 'created' }],
+    ...(cover ? { cover } : {}),
   };
   commit({
     ...snapshot,
