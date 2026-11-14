@@ -4,6 +4,7 @@ import {
   AI_STATUS_PATH,
   failure,
   isAiStatusBody,
+  type AiSelection,
   type AiStatusBody,
 } from '../../lib/ai';
 import { toAnswer } from './map';
@@ -34,7 +35,11 @@ export async function probe(): Promise<AiStatusBody | null> {
  * typed result; it never reads a key, never sees an upstream URL, and never
  * throws — every failure is a value the UI can render with a retry decision.
  */
-export async function ask(prompt: string, signal?: AbortSignal): Promise<AskResult> {
+export async function ask(
+  prompt: string,
+  signal?: AbortSignal,
+  selection?: AiSelection | null,
+): Promise<AskResult> {
   /* Refused here rather than at the server so the reader is not charged a round
      trip for a request that cannot succeed. The same numbers, one message. */
   if (prompt.trim().length > AI_MAX_PROMPT) {
@@ -52,7 +57,10 @@ export async function ask(prompt: string, signal?: AbortSignal): Promise<AskResu
     res = await fetch(AI_PATH, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        prompt,
+        ...(selection ? { provider: selection.provider, model: selection.model } : {}),
+      }),
       signal,
     });
   } catch {

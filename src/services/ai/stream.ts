@@ -6,6 +6,7 @@ import {
   failure,
   type AiErr,
   type AiHistoryItem,
+  type AiSelection,
 } from '../../lib/ai';
 
 /**
@@ -14,7 +15,7 @@ import {
  * and a partial answer is reported as a partial answer, not as an error.
  */
 export type StreamResult =
-  | { ok: true; text: string; model: string; ms: number; stopped: boolean }
+  | { ok: true; text: string; model: string; provider?: string; ms: number; stopped: boolean }
   | { ok: false; text: string; error: AiErr; stopped: boolean };
 
 export function historyFor(
@@ -31,6 +32,7 @@ export async function streamChat(
   history: AiHistoryItem[],
   signal: AbortSignal | undefined,
   onDelta: (chunk: string) => void,
+  selection?: AiSelection | null,
 ): Promise<StreamResult> {
   const stopped = () => signal?.aborted ?? false;
 
@@ -48,7 +50,11 @@ export async function streamChat(
     res = await fetch(AI_STREAM_PATH, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt, history }),
+      body: JSON.stringify({
+        prompt,
+        history,
+        ...(selection ? { provider: selection.provider, model: selection.model } : {}),
+      }),
       signal,
     });
   } catch {
@@ -102,6 +108,10 @@ export async function streamChat(
   let ms = 0;
   let error: AiErr | null = null;
   const streamStart = Date.now();
+  /* The server states the effective selection in headers, so the label does
+     not have to be guessed from the stream bytes. */
+  const provider = res.headers.get('x-thylas-provider') ?? '';
+  const headerModel = res.headers.get('x-thylas-model') ?? '';
 
   /* The stream is the model's own OpenAI-format SSE, piped through. */
   const handleEvent = (raw: string): 'done' | null => {
@@ -112,8 +122,15 @@ export async function streamChat(
     try {
       const chunk = JSON.parse(raw) as {
         model?: string;
+        error?: { message?: string };
         choices?: { delta?: { content?: string } }[];
       };
+      /* A provider that fails mid-stream says so in a frame; the text so far
+         still stands, but the answer is not a success. */
+      if (chunk.error && typeof chunk.error.message === 'string') {
+        error = failure('upstream', chunk.error.message, true);
+        return 'done';
+      }
       if (typeof chunk.model === 'string' && model === '') model = chunk.model;
       const delta = chunk.choices?.[0]?.delta?.content;
       if (typeof delta === 'string' && delta !== '') {
@@ -150,13 +167,17 @@ export async function streamChat(
     }
   }
 
+  /* The label follows the server's effective selection: the header states the
+     model that was called, the stream only states what the provider echoed. */
+  const effectiveModel = headerModel || model;
+
   if (stopped()) {
     /* A stop is not a failure: the partial answer is the result. */
-    return { ok: true, text, model, ms, stopped: true };
+    return { ok: true, text, model: effectiveModel, provider: provider || undefined, ms, stopped: true };
   }
   if (error) return { ok: false, text, error, stopped: false };
-  if (text === '' && model === '') {
+  if (text === '' && effectiveModel === '') {
     return { ok: false, text: '', error: failure('upstream', 'The endpoint answered with nothing.', true), stopped: false };
   }
-  return { ok: true, text, model, ms, stopped: false };
+  return { ok: true, text, model: effectiveModel, provider: provider || undefined, ms, stopped: false };
 }

@@ -10,6 +10,8 @@ export type { AiBody, AiErr, AiErrorKind, AiOk } from '../../lib/ai';
 export type Answer = {
   text: string;
   model: string;
+  /** The provider that answered, when the server named one. */
+  provider?: string;
   ms: number;
 };
 

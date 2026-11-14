@@ -15,5 +15,8 @@ export function toAnswer(body: unknown): AskResult {
     };
   }
   if (!body.ok) return { ok: false, error: body };
-  return { ok: true, answer: { text: body.text, model: body.model, ms: body.ms } };
+  return {
+    ok: true,
+    answer: { text: body.text, model: body.model, provider: body.provider, ms: body.ms },
+  };
 }
