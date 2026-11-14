@@ -1,7 +1,23 @@
 # API 完善计划 — 多模型提供方（OpenAI / Anthropic / OpenRouter / Kimi …）
 
-**Date:** 2026-11-14 · 状态：**计划，待拍板** · 不涉及实现
+**Date:** 2026-11-14 · 状态：**已执行（P0–P4、P6；P5 BYOK 未做，理由见下）**
 **目标**：用户可在 Thylas 内选择并使用多家模型提供方，而当前只有服务端钉死的 DeepSeek。
+
+> **执行记录（2026-11-14）。** 三个待拍板的决策已按本计划的建议定案并写入
+> `docs/development/backend/AUDIT.md` §8.1：
+>
+> | # | 决策 | 结论 | 记录 |
+> | --- | --- | --- | --- |
+> | D1 | 让用户可以使用 = ①env 配多 key ②BYOK ③都要 | **①**。BYOK 需要真认证与按用户隔离的密钥存储（当前只有 dev cookie、无 DB），作为独立阶段，不塞进本阶段 | D-061 |
+> | D2 | Anthropic 的非 OpenAI SSE | **服务端归一化**：`content_block_delta` 转成 `choices[0].delta.content`，浏览器零改动。OpenAI 兼容方保留逐字节透传快路径 | D-062 |
+> | D3 | 模型选择存在哪里 | **全局 prefs**：`prefs.model = {provider, model} | null`。未选 → 服务端 default；存的选择在服务端不再可用时丢弃并回落 default | D-063 |
+>
+> 交付物：实现细节见 [`AI-PROVIDERS.md`](AI-PROVIDERS.md)，决策记录见
+> [`AUDIT.md`](AUDIT.md) §8.1。P5（BYOK）未实现——它是独立阶段，不是本阶段的一个开关。
+> 本计划 §8 的未决项中，1/2/3/4/5/6 已按本计划建议定案；7（Kimi 直连）已核实：
+> Moonshot 直连 base 为 `https://api.moonshot.cn/v1`，OpenAI 兼容，模型 `kimi-k2.6` / `kimi-k2.5`。
+> 动态模型目录（未决 3 的另一半）与跨 provider 自动回退（未决 6）仍未实现，理由见
+> `AI-PROVIDERS.md` §7。
 
 ## 1. 审计（逐项核实，未假设）
 

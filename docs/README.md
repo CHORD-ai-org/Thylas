@@ -30,6 +30,7 @@
 | 13.6 | [`../plan/`](../plan/README.md) | as needed | The same plan decomposed into 12 executable sub-plans with status board |
 | 14 | [`brand/branding-desk.md`](brand/branding-desk.md) | 20 min | The central visual identity reference |
 | 15 | [`development/backend/`](development/backend/PHASE-1.md) | 15 min | **Backend as built (2026-11-13)**: five-phase roadmap, Phase 1 units P1-0…P1-8, `AUDIT.md` for the API/tables, `P1-6.md` / `P1-7.md` for the two deviations |
+| 15.5 | [`development/backend/AI-PROVIDERS.md`](development/backend/AI-PROVIDERS.md) | 10 min | **Model providers (11-14)**: one server, several providers — env variables, the allowlist, the picker, what Anthropic needs that the others do not; decisions D-061…D-063 in `AUDIT.md` §8.1 |
 | 16 | [`development/backend/PHASE-2-USER.md`](development/backend/PHASE-2-USER.md) | 20 min | **Phase 2 User module**: five-domain spec, MVP/Deferred, capability audit, Q2–Q7 (Q1 closed by D-059); plan in `PHASE-2-USER-PLAN.md` — A0 + A1 shipped |
 | 17 | [`development/coworkers/`](development/coworkers/README.md) | 25 min | **Coworker (11-14)**: `DESIGN.md` — 8 task-brief deliverables, labelled decisions, ER/flow/sequence diagrams, 5 open conflicts; `AVATAR-VISUAL-SYSTEM.md` — avatar generation style + skill workflow; plus the shipped `PLAN` / `IMPLEMENTATION` record |
 

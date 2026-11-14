@@ -164,6 +164,30 @@ This table is the current answer.
 
 Decision records: D-055 (stack), D-056 (session), D-057 (storage), D-058 (chat mode).
 
+## 8.1 Multi-provider model access — D-061 … D-063 (2026-11-14)
+
+**What changed.** One server, several model providers. The provider is chosen by
+the operator (env) and by the reader (the picker). The wire contract, the
+error taxonomy and the streaming shape stay the same for every provider.
+
+| Decision | Statement |
+| --- | --- |
+| **D-061** | A provider is a whitelist entry, never an endpoint. The browser may name a provider and a model; `server/ai/providers/catalog.ts` resolves both against what the operator configured. An unknown provider or a model outside the allowlist is `contract`; a provider without a key is `not_configured`. The keys stay in the server environment. |
+| **D-062** | Anthropic's own event stream is re-framed into OpenAI SSE **on the server**, so the browser keeps parsing one shape. This revises D-051 for that one provider; the OpenAI-compatible providers still pipe their bytes through unchanged. The translation lives in `server/ai/providers/anthropic.ts` and nowhere else. |
+| **D-063** | The reader's choice is a global preference (`prefs.model = {provider, model}`), not per conversation. A stored choice the server no longer serves is dropped on read and the server default takes over. The label is `provider/model`, because two providers can serve the same model name. |
+
+**BYOK is deliberately not here.** A key the reader brings needs real
+authentication and a per-user secret store; Thylas has a dev cookie stand-in
+and no database. It is its own stage, not a field on this one.
+
+**Not decided here:** a live model catalogue (the allowlist is a static env
+list), automatic failover between providers (a failed call stays failed — a
+retry elsewhere would silently change the bill and the answer), and any pricing
+or context-window display.
+
+Details: [`AI-PROVIDERS.md`](AI-PROVIDERS.md). Plan and its open questions:
+[`AI-PROVIDER-PLAN.md`](AI-PROVIDER-PLAN.md).
+
 ## 9. Boundaries for the next phase
 
 - `server/session/source.ts` — the only file to change when CHORD IdP arrives.

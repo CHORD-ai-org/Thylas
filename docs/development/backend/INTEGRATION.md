@@ -5,18 +5,30 @@ responsibilities that belong to other systems (AGENT.md §2).
 
 ## 1. External model API  **[I]**
 
-- One path to the model: `server/ai.ts` middleware → DeepSeek (OpenAI-compatible).
+- One path to the model: `server/ai.ts` middleware → the provider the request
+  resolved to.
   - `POST /api/ai` — completion, `stream:false`.
-  - `POST /api/ai/stream` — **byte-for-byte SSE passthrough** of the model's own stream
-    (D-051); the middleware adds no framing, so the client parses the provider's native
-    shape and no second contract can drift.
-  - `GET /api/ai/status` — `{configured, model}` probe.
-- Rules that hold for any future provider:
-  - the key stays in server env; the client asks a status endpoint, never holds secrets;
-  - failures are classified into the shared `AiErrorKind` set at the middleware edge;
-  - the streaming pipe stays a pipe — provider-specific parsing happens client-side.
-- Multi-provider routing is out of scope; the model selector renders the server-pinned
-  model and says why alternatives are disabled.
+  - `POST /api/ai/stream` — SSE. **Byte-for-byte passthrough** of the
+    provider's own stream for an OpenAI-compatible provider (D-051); Anthropic's
+    event stream is re-framed into OpenAI SSE on the server (D-062), so the
+    browser parses one shape whatever answered.
+  - `GET /api/ai/status` — `{configured, model, default, providers}` probe.
+- The provider is a whitelist, not a URL: the browser may name a provider and a
+  model, never an endpoint (`server/ai/providers/catalog.ts`, D-061).
+- Rules that hold for every provider:
+  - the key stays in server env; the client asks a status endpoint, never holds
+    secrets;
+  - failures are classified into the shared `AiErrorKind` set at the middleware
+    edge;
+  - the model is an allowlist the operator writes (`*_MODELS`), and a request
+    for anything else is a `contract` error;
+  - the streaming pipe stays a pipe for OpenAI-compatible providers; only
+    Anthropic is translated, and the translation lives in the server.
+- Full details — variables, catalogue, provider differences, how to add one:
+  [`AI-PROVIDERS.md`](AI-PROVIDERS.md).
+- Bring-your-own-key is **not** implemented: it needs real authentication and a
+  per-user secret store, which Thylas does not have yet (dev cookie stand-in,
+  no database).
 
 ## 2. Storage  **[P]**
 
