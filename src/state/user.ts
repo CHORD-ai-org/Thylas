@@ -18,6 +18,7 @@
 import { useSyncExternalStore } from 'react';
 import {
   DEFAULT_PREFS,
+  type Theme,
   readDisplayName,
   readPrefs,
   type Density,
@@ -27,7 +28,7 @@ import {
 import { createUserClient } from '../services/user/client';
 
 export { DEFAULT_PREFS };
-export type { Density, Landing, Prefs };
+export type { Density, Landing, Prefs, Theme };
 
 const KEY = 'thylas:user:v1';
 

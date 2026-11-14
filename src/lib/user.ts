@@ -8,10 +8,13 @@
  */
 export type Landing = 'overview' | 'recently' | 'notes';
 export type Density = 'comfortable' | 'compact';
+/** Palette: warm paper (default), neutral black, neutral white. */
+export type Theme = 'warm' | 'dark' | 'light';
 
 export type Prefs = {
   landing: Landing;
   density: Density;
+  theme: Theme;
   /** A workspace id, resolved against the live list by whoever renders it. */
   defaultWorkspace: string | null;
 };
@@ -19,11 +22,13 @@ export type Prefs = {
 export const DEFAULT_PREFS: Prefs = {
   landing: 'overview',
   density: 'comfortable',
+  theme: 'warm',
   defaultWorkspace: null,
 };
 
 const LANDINGS: Landing[] = ['overview', 'recently', 'notes'];
 const DENSITIES: Density[] = ['comfortable', 'compact'];
+const THEMES: Theme[] = ['warm', 'dark', 'light'];
 
 /**
  * Validated read of a persisted `prefs` object. Bad entries are dropped, never
@@ -38,6 +43,9 @@ export function readPrefs(value: unknown): Partial<Prefs> {
   }
   if (typeof raw.density === 'string' && DENSITIES.includes(raw.density as Density)) {
     prefs.density = raw.density as Density;
+  }
+  if (typeof raw.theme === 'string' && THEMES.includes(raw.theme as Theme)) {
+    prefs.theme = raw.theme as Theme;
   }
   if (typeof raw.defaultWorkspace === 'string') {
     prefs.defaultWorkspace = raw.defaultWorkspace;

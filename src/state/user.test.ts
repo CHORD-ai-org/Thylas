@@ -36,6 +36,7 @@ describe('first run', () => {
     expect(store.prefsOf(store.__readForTest())).toEqual({
       landing: 'overview',
       density: 'comfortable',
+      theme: 'warm',
       defaultWorkspace: null,
     });
   });
@@ -91,5 +92,18 @@ describe('preferences', () => {
     expect(store.landingPath(store.__readForTest())).toBe('/notes');
     store.setPref('landing', 'overview');
     expect(store.landingPath(store.__readForTest())).toBe('/overview');
+  });
+
+  it('theme defaults to warm, persists, and rejects unknown values', async () => {
+    const { store } = await fresh();
+    expect(store.prefsOf(store.__readForTest()).theme).toBe('warm');
+    store.setPref('theme', 'dark');
+    expect(store.__readForTest().prefs.theme).toBe('dark');
+    vi.resetModules();
+    const reloaded = await import('./user');
+    expect(reloaded.prefsOf(reloaded.__readForTest()).theme).toBe('dark');
+    storage.set('thylas:user:v1', JSON.stringify({ version: 1, prefs: { theme: 'neon' } }));
+    const bad = await fresh();
+    expect(bad.store.prefsOf(bad.store.__readForTest()).theme).toBe('warm');
   });
 });
