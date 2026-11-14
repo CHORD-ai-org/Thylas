@@ -161,6 +161,25 @@ async function main() {
       [200, 503].includes(chatWithSession.status),
       `HTTP ${chatWithSession.status} ${await chatWithSession.text()}`,
     );
+
+    const USER_COOKIE = 'thylas_session=dev:u-apicheck:ws-1';
+    const userAnon = await fetch(`${base}/api/user`);
+    check('user 401', userAnon.status === 401, `HTTP ${userAnon.status}`);
+    await userAnon.text();
+
+    const userWrite = await fetch(`${base}/api/user`, {
+      method: 'PATCH',
+      headers: { cookie: USER_COOKIE, 'content-type': 'application/json' },
+      body: JSON.stringify({ displayName: 'API check' }),
+    });
+    const writeBody = await userWrite.text();
+    const userRead = await fetch(`${base}/api/user`, { headers: { cookie: USER_COOKIE } });
+    const readBody = await userRead.text();
+    check(
+      'user write then read',
+      userWrite.status === 200 && userRead.status === 200 && /"displayName":"API check"/.test(readBody),
+      `HTTP ${userWrite.status}/${userRead.status} ${writeBody} ${readBody}`,
+    );
   });
 
   await withHost(STANDALONE, { PORT: String(overridePort) }, async (host) => {

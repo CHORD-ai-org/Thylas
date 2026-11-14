@@ -2905,6 +2905,17 @@ async function main() {
     };
   `), (v) => v.step && v.candidates === 0);
 
+  // ---- A1 user API: a name written over HTTP survives a later request ----
+  check('user: the display name survives a later request', await js(`
+    const written = await fetch('/api/user', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ displayName: 'C. Zhao' }),
+    });
+    const later = await fetch('/api/user');
+    return { written: written.status, later: later.status, body: await later.json() };
+  `), (v) => v.written === 200 && v.later === 200 && v.body?.user?.displayName === 'C. Zhao');
+
   await goto('/overview');
 
   } catch (err) {
