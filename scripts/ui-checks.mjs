@@ -312,6 +312,29 @@ async function main() {
   await js(`${helpers} click(document.querySelector('[data-theme-option="warm"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
   check('theme: switching back restores the default palette', await themeState(), (v) => v.attr === 'warm' && v.bg === '#F1EBDD');
 
+  // ---- Route change: a real enter transition, not a hard cut ----
+  await goto('/overview');
+  await js('await new Promise(r => setTimeout(r, 350)); return 1;');
+  check('motion: every route has the same enter transition', await js(`
+    const stage = document.querySelector('[data-route-stage]');
+    const cs = stage ? getComputedStyle(stage) : null;
+    return cs ? { name: cs.animationName, duration: cs.animationDuration } : null;
+  `), (v) => v !== null && v.name.includes('routeIn') && v.duration === '0.16s');
+
+  await js(`${helpers}
+    const a = [...document.querySelectorAll('[data-rail-item]')].find(x => x.textContent.trim() === 'Artifacts');
+    if (a) a.click();
+    await new Promise(r => setTimeout(r, 120));
+    return 1;`);
+  check('motion: switching pages replays the transition on a fresh stage', await js(`
+    const stage = document.querySelector('[data-route-stage]');
+    return {
+      path: location.pathname,
+      animating: stage ? stage.getAnimations().some(x => x.playState === 'running') : false,
+      name: stage ? getComputedStyle(stage).animationName : '',
+    };
+  `), (v) => v.path === '/artifacts' && v.animating && v.name.includes('routeIn'));
+
   await goto('/overview');
   check('overview: greeting renders', await js(`return document.querySelector('h1')?.textContent.trim();`), (v) => v?.startsWith('Welcome back'));
 

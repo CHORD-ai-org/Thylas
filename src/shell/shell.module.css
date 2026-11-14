@@ -110,6 +110,7 @@
   font: var(--t-ui);
   white-space: nowrap;
   flex: 0 0 auto;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 
 .railItem:hover {
@@ -739,4 +740,32 @@
 .collapseRow:active {
   background: var(--tint-sel);
   color: var(--ink);
+}
+
+
+/* ---- Route change: a short fade + rise, same rhythm as the rail (160ms).
+       Motion-gated globally by base.css's reduced-motion rule. */
+@keyframes routeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.routeStage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .routeStage {
+    animation: routeIn var(--dur-panel) var(--ease) both;
+  }
 }

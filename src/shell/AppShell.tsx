@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useApp } from '../state/app';
 import { useChat } from '../state/chat';
 import { Rail } from './Rail';
@@ -10,6 +10,7 @@ import s from './shell.module.css';
 export function AppShell() {
   const { railCollapsed, paletteOpen } = useApp();
   const { dock } = useChat();
+  const location = useLocation();
 
   return (
     <div
@@ -23,7 +24,11 @@ export function AppShell() {
       <div className={s.work}>
         <div className={s.dockRow}>
           <div className={s.dockMain}>
-            <Outlet />
+            {/* Keyed on the path: every route change replays the enter
+                transition. Search-only changes keep the mounted page. */}
+            <div className={s.routeStage} key={location.pathname} data-route-stage>
+              <Outlet />
+            </div>
           </div>
           <ChatDock />
         </div>
