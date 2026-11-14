@@ -529,6 +529,16 @@ Format: **status · context · decision · alternative · consequence**.
 
 ---
 
+## D-060 · Coworker Mind Framework: a declared configuration record, not an executable mind
+
+**Status:** accepted in force (Coworker config, 2026-11-14).
+**Context:** `docs/development/coworkers/DESIGN.md §9.2` proposed one safe, isolated implementation after the design spec: a versioned Mind Framework contract, one field on the Coworker record, a read-only display on the config page, and tests. The user said "开始执行" on 11-14. `DESIGN.md §10 Q-D` (what "operationalizable" means before a runtime exists) is still open, and `CONFIGURATION.md §7` forbids shipping controls that change nothing.
+**Decision:** implement only the **declared configuration record**. `src/lib/coworkers.ts` holds `MindFramework` (version + six dimensions), `isMindFramework()`, `defaultMindFramework()` and `mindFrameworkRows()`. `src/data/coworkers.ts` adds an optional field and three distinct prototype frameworks. `src/state/coworkers.ts` validates hand-edited envelopes, drops a bad framework without losing the Coworker, and gives created Coworkers the default. `CoworkerConfig.tsx` renders six read-only rows with the sentence "the runtime that would apply it is not connected … Nothing on this page changes how a Coworker reasons yet." There is no edit control: a visible, attributed record is not a dead dropdown.
+**Alternatives:** making the framework editable now (would imply it changes behaviour before Q-D is answered); waiting for WAM (blocks all Phase 2 progress); implementing method selection or execution inside Thylas (forbidden by D-054 #7 and `WAM-BOUNDARY.md §2`).
+**Consequence:** Q-D stays **Open**. No runtime, no A2A, no endpoint, no table, no migration; existing create / responsibility / membership flows are unchanged. `check` clean, 51 files / 433 tests green, targeted eslint clean. One browser assertion was added to `scripts/ui-checks.mjs`. An isolated headless render check (own Vite port 5199 / CDP 9341) passed all nine assertions on the new section; the full e2e run stayed blocked by a concurrent `ui-checks.mjs` instance holding ports 5180/8798.
+
+---
+
 ## Open questions (need a human, not a default)
 
 | # | Question | Blocks | Default until answered |
