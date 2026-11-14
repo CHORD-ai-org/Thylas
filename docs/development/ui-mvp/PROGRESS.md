@@ -42,6 +42,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | Coworker page | — | **Completed** 11-12 | 0.75 | D-054 | directory (views+search), working interface (real ChatCore conversation + honest side panels), creation, config (responsibilities/memberships/status); 9 store tests + 11 e2e. Docs: `docs/development/coworkers/` |
 | Notes sidebar | — | **Completed** 11-13 | 0.75 | NAV-PLAN | 56px 功能条（Files/Search/Bookmarks）+ 可收缩面板（持久化）+ 全屏无边框编辑区；bookmarks/notes-ui stores + 6 单测 + 8 e2e。Docs: `docs/development/notes/NAV-PLAN.md` |
 | Profile init | — | **Completed** 11-13 | 1.0 | AUDIT-PLAN | User 页入口 → 五步向导；真后端（SSRF 防护抓取 + DeepSeek 结构化抽取 + 候选审阅 + 幂等 commit + 历史）；10 后端单测 + 4 e2e。Docs: `docs/development/profile/` |
+| Themes | — | **Completed** 11-14 | 0.5 | themes-plan | 三套主题（warm 默认 / 黑 / 白）；themes.css 变量层 + 首屏防闪 + prefs 持久化 + Preferences/命令面板入口；e2e 5 条。Docs: `design/themes.md` |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
