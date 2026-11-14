@@ -27,6 +27,18 @@ export type ArtifactRelation = {
 
 export type ExternalSource = { system: 'notion' | 'obsidian' | 'github'; location: string };
 
+/** Cover hues (design/artifacts-gallery.md §2.2). Named, not free-form: the
+    palette owns six values per theme, the artifact only names one. */
+export const COVER_HUES = ['blue', 'green', 'clay', 'violet', 'teal', 'amber'] as const;
+export type CoverHue = (typeof COVER_HUES)[number];
+
+/** An artifact's cover selection. Both fields are optional — absent means
+    "derive": symbol from the kind, hue from the id hash. */
+export type ArtifactCover = {
+  symbol?: ArtifactKind;
+  hue?: CoverHue;
+};
+
 export type Artifact = {
   id: string;
   kind: ArtifactKind;
@@ -40,6 +52,7 @@ export type Artifact = {
   sections: ArtifactSection[];
   relations: ArtifactRelation[];
   versions: { v: number; at: number; by: string; note: string }[];
+  cover?: ArtifactCover;
 };
 
 export const KIND_LABEL: Record<ArtifactKind, string> = {
