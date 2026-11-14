@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { AI_MAX_PROMPT, type AiStatusBody } from '../../lib/ai';
-import { probe } from '../../services/ai/client';
+import { AI_MAX_PROMPT, selectionLabel, type AiStatusBody } from '../../lib/ai';
 import { boardsIn, filesIn } from '../../data/selectors';
 import { listNotes } from '../../state/notes';
 import { useWorkspaces } from '../../state/workspaces';
 import { integrationsView, useConnect } from '../../state/connect';
+import { chooseAiModel, useAiSelection, useAiStatus } from '../../state/ai';
 import {
   addContextSource,
   removeContextSource,
@@ -20,8 +20,6 @@ import s from './chat.module.css';
  * materials, and the model list comes from the server's own status answer.
  */
 
-const MODELS = ['deepseek-chat', 'deepseek-reasoner'];
-
 export function Composer({
   conversation,
   streaming,
@@ -36,24 +34,14 @@ export function Composer({
   useConnect();
 
   const [text, setText] = useState('');
-  const [status, setStatus] = useState<AiStatusBody | null>(null);
+  const status: AiStatusBody | null = useAiStatus();
+  const selection = useAiSelection();
   const [contextOpen, setContextOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const overLimit = text.trim().length > AI_MAX_PROMPT;
   const canSend = text.trim().length > 0 && !overLimit && !streaming;
 
-  useEffect(() => {
-    let alive = true;
-    void probe().then((body) => {
-      if (alive) setStatus(body);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  /* Auto-height, capped by CSS; reset when the conversation switches. */
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -74,7 +62,8 @@ export function Composer({
     }
   };
 
-  const model = status?.model ?? null;
+  const providers = status?.providers ?? [];
+  const model = selection ? selectionLabel(selection) : (status?.model ?? null);
 
   return (
     <div className={[s.composer, 'glass'].join(' ')}>
@@ -152,26 +141,47 @@ export function Composer({
               {modelOpen ? (
                 <div className={s.modelPopover} role="group" aria-label="Model" data-model-popover>
                   <p className={s.popoverTitle}>Model</p>
-                  {MODELS.map((name) => {
-                    const pinned = name === model;
-                    return (
-                      <button
-                        key={name}
-                        type="button"
-                        className={s.modelRow}
-                        disabled={!pinned}
-                        title={pinned ? undefined : 'The model is pinned by DEEPSEEK_MODEL on the server; switching needs a server change.'}
-                        onClick={() => setModelOpen(false)}
-                      >
-                        {name}
-                        {pinned ? <span className={s.modelCheck}><IconCheck size={12} /></span> : null}
-                      </button>
-                    );
-                  })}
+                  {providers.length === 0 ? (
+                    <p className={s.popoverNote}>
+                      The endpoint could not be reached to report its providers. Sending still works — a failure would say so.
+                    </p>
+                  ) : (
+                    providers.map((provider) => (
+                      <div key={provider.id}>
+                        <p className={s.modelGroup}>{provider.label}</p>
+                        {provider.models.map((name) => {
+                          const picked = selection?.provider === provider.id && selection.model === name;
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              className={s.modelRow}
+                              disabled={!provider.configured}
+                              title={
+                                provider.configured
+                                  ? undefined
+                                  : `${provider.label} has no key on this server.`
+                              }
+                              onClick={() => {
+                                chooseAiModel({ provider: provider.id, model: name });
+                                setModelOpen(false);
+                              }}
+                            >
+                              {name}
+                              {picked ? <span className={s.modelCheck}><IconCheck size={12} /></span> : null}
+                            </button>
+                          );
+                        })}
+                        {!provider.configured ? (
+                          <p className={s.modelNote}>Not configured on this server.</p>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
                   <p className={s.popoverNote}>
                     {status === null
                       ? 'The endpoint could not be reached to report its model. Sending still works — a failure would say so.'
-                      : 'One provider is wired (DeepSeek, server-side key). Other providers are not implemented.'}
+                      : 'Keys stay on the server. A provider without a key cannot be selected.'}
                   </p>
                 </div>
               ) : null}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
 import {
@@ -12,9 +12,10 @@ import {
 } from '../data/selectors';
 import type { Process, RecentItem, RecentKind } from '../data/types';
 import { USER } from '../data/mock';
-import { AI_MAX_PROMPT, type AiErr, type AiStatusBody } from '../lib/ai';
-import { ask, probe } from '../services/ai/client';
+import { AI_MAX_PROMPT, selectionLabel, type AiErr } from '../lib/ai';
+import { ask } from '../services/ai/client';
 import type { Answer } from '../services/ai/types';
+import { useAiSelection, useAiStatus } from '../state/ai';
 import { useApp } from '../state/app';
 import { useWorkspaces } from '../state/workspaces';
 import { WorkspaceGrid } from './workspaces/WorkspaceGrid';
@@ -108,7 +109,7 @@ function AiPanel({
   if (state.status === 'idle') {
     return (
       <div className={s.askIdle}>
-        <p className={s.askLede}>Answers one question with DeepSeek. It does not start a process.</p>
+        <p className={s.askLede}>Answers one question with the selected model. It does not start a process.</p>
       </div>
     );
   }
@@ -151,7 +152,10 @@ function AiPanel({
         <AnswerText text={state.answer.text} />
       </div>
       <p className={s.answerFoot}>
-        {state.answer.model} · dev endpoint · {state.answer.ms} ms
+        {state.answer.provider
+          ? `${state.answer.provider}/${state.answer.model}`
+          : state.answer.model}{' '}
+        · dev endpoint · {state.answer.ms} ms
       </p>
     </div>
   );
@@ -164,21 +168,10 @@ export function Overview() {
   const [params] = useSearchParams();
   const [intent, setIntent] = useState('');
   const [engaged, setEngaged] = useState(false);
-  const [ai, setAi] = useState<AiStatusBody | null>(null);
+  const ai = useAiStatus();
+  const selection = useAiSelection();
   const [answer, setAnswer] = useState<AskState>({ status: 'idle' });
   const abortRef = useRef<AbortController | null>(null);
-
-  /* One probe on mount, so the send control is disabled before the click rather
-     than after it. A failed probe leaves the control enabled — see `probe()`. */
-  useEffect(() => {
-    let alive = true;
-    void probe().then((status) => {
-      if (alive) setAi(status);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const pending = needsInput();
   const continuing = recent().slice(0, 3);
@@ -197,7 +190,7 @@ export function Overview() {
       setAnswer({ status: 'sending' });
       const controller = new AbortController();
       abortRef.current = controller;
-      const result = await ask(prompt, controller.signal);
+      const result = await ask(prompt, controller.signal, selection);
       /* An aborted request is not a failure: `stop()` already put the panel back
          to idle, and this late return must not overwrite that. */
       if (controller.signal.aborted) return;
@@ -208,7 +201,7 @@ export function Overview() {
           : { status: 'error', error: result.error },
       );
     },
-    [panelOpen, togglePanel],
+    [panelOpen, togglePanel, selection],
   );
 
   const stop = useCallback(() => {
@@ -235,7 +228,7 @@ export function Overview() {
   };
 
   const reason = unconfigured
-    ? 'No model key on the server. Put DEEPSEEK_API_KEY in .env.local and restart the dev server.'
+    ? 'No model key on the server. Put a provider key in .env.local and restart the dev server.'
     : overLimit
       ? `The question is ${text.length} characters; the limit is ${AI_MAX_PROMPT}.`
       : 'Answers one question. Nothing is started.';
@@ -248,7 +241,7 @@ export function Overview() {
     <PlainLayout
       wide
       panelTitle="Ask"
-      panelMeta={ai?.model}
+      panelMeta={selection ? selectionLabel(selection) : ai?.model}
       panel={
         showsPanel ? (
           <AiPanel state={answer} canRetry={canAsk} onStop={stop} onRetry={submit} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { historyFor, streamChat } from '../../services/ai/stream';
 import type { AiErr } from '../../lib/ai';
+import { useAiSelection } from '../../state/ai';
 import {
   activeConversation,
   addUserMessage,
@@ -53,6 +54,7 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
   const conversation = activeConversation(state);
   const streamRef = useRef<HTMLDivElement>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const selection = useAiSelection();
 
   const lastMessage = conversation?.messages.at(-1) ?? null;
   const streaming =
@@ -84,19 +86,26 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
       : [];
     void streamChat(prompt, history, controller.signal, (chunk) => {
       appendDelta(conversationId, assistant.id, chunk);
-    }).then((result) => {
+    }, selection).then((result) => {
       controllers.delete(conversationId);
       if (result.ok) {
         finishAssistantMessage(
           conversationId,
           assistant.id,
-          result.stopped ? { stopped: true } : { model: result.model || 'deepseek-chat', ms: result.ms },
+          result.stopped
+            ? { stopped: true }
+            : {
+                /* The label states which provider answered — two providers can
+                   serve the same model name. */
+                model: result.provider ? `${result.provider}/${result.model}` : result.model || 'model unknown',
+                ms: result.ms,
+              },
         );
       } else {
         finishAssistantMessage(conversationId, assistant.id, { error: result.error });
       }
     });
-  }, []);
+  }, [selection]);
 
   const stop = useCallback(() => {
     if (!conversation) return;
