@@ -260,6 +260,37 @@ async function main() {
   // A thrown assertion must not hide the ones that already ran: report what was
   // measured, then fail on the step that stopped the run.
   try {
+  // ---- Themes: warm default, black, white — persisted, no flash ----
+  await goto('/user/preferences');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  const themeState = () => js(`
+    return {
+      attr: document.documentElement.dataset.theme ?? null,
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--bg-app').trim(),
+      ink: getComputedStyle(document.documentElement).getPropertyValue('--ink').trim(),
+      meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
+    };
+  `);
+  check('theme: warm paper is the default', await themeState(), (v) => v.attr === 'warm' && v.bg === '#F1EBDD' && v.meta === '#F1EBDD');
+
+  await js(`${helpers} click(document.querySelector('[data-theme-option="dark"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('theme: black swaps the palette and the browser chrome', await themeState(), (v) => v.attr === 'dark' && v.bg === '#0A0A0A' && v.ink === '#F2F2F2' && v.meta === '#0A0A0A');
+
+  await goto('/user/preferences');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  check('theme: the choice survives a reload, painted before first frame', await js(`
+    return {
+      attr: document.documentElement.dataset.theme,
+      pressed: document.querySelector('[data-theme-option="dark"]')?.getAttribute('aria-pressed'),
+    };
+  `), (v) => v.attr === 'dark' && v.pressed === 'true');
+
+  await js(`${helpers} click(document.querySelector('[data-theme-option="light"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('theme: white is neutral, not the warm paper', await themeState(), (v) => v.attr === 'light' && v.bg === '#FFFFFF' && v.ink === '#111111' && v.meta === '#FFFFFF');
+
+  await js(`${helpers} click(document.querySelector('[data-theme-option="warm"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('theme: switching back restores the default palette', await themeState(), (v) => v.attr === 'warm' && v.bg === '#F1EBDD');
+
   await goto('/overview');
   check('overview: greeting renders', await js(`return document.querySelector('h1')?.textContent.trim();`), (v) => v?.startsWith('Welcome back'));
 

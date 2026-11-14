@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useParams } from 'react-router-dom';
 import { routes } from '../../lib/routes';
+import { THEME_LABEL } from '../../lib/theme';
 import { RECENT, USER } from '../../data/mock';
 import type { Workspace } from '../../data/types';
 import { useWorkspaces } from '../../state/workspaces';
@@ -234,16 +235,31 @@ export function UserPage() {
                 Preferences
               </h2>
               <p className={s.sectionSub}>
-                Four of these exist for real: density, landing page, default workspace, and the
-                name above. Dark mode, language packs and themes do not.
+                Density, theme, landing page, default workspace, and the name above are real and
+                apply immediately. Language packs are not shipped.
               </p>
 
-              <div className={s.prefRow}>
+              <div className={s.prefRow} data-pref-theme>
                 <div>
                   <p className={s.prefLabel}>Theme</p>
-                  <p className={s.prefHint}>Paper only. A second palette would double the tone problem.</p>
+                  <p className={s.prefHint}>Warm paper by default; black and white are the neutral palettes.</p>
                 </div>
-                <span className={s.prefValue}>Light</span>
+                <div className={s.prefControl}>
+                  <div className={s.segmented} role="group" aria-label="Theme">
+                    {(['warm', 'dark', 'light'] as const).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={[s.segment, prefs.theme === value ? s.segmentOn : ''].join(' ')}
+                        onClick={() => setPref('theme', value)}
+                        aria-pressed={prefs.theme === value}
+                        data-theme-option={value}
+                      >
+                        {THEME_LABEL[value]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className={s.prefRow}>

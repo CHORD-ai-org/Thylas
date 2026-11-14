@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { routes } from '../lib/routes';
+import { setPref } from '../state/user';
 import { recent } from '../data/selectors';
 import { useWorkspaces } from '../state/workspaces';
 import { useApp } from '../state/app';
@@ -27,6 +28,9 @@ export function CommandPalette() {
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [
       { id: 'go-overview', label: 'Overview', group: 'Go', run: () => navigate(routes.overview()) },
+      { id: 'theme-warm', label: 'Theme: warm paper', group: 'Go', run: () => setPref('theme', 'warm') },
+      { id: 'theme-dark', label: 'Theme: black', group: 'Go', run: () => setPref('theme', 'dark') },
+      { id: 'theme-light', label: 'Theme: white', group: 'Go', run: () => setPref('theme', 'light') },
       { id: 'go-recently', label: 'Recently', group: 'Go', run: () => navigate(routes.recently()) },
       { id: 'go-notes', label: 'Notes', group: 'Go', run: () => navigate(routes.notes()) },
       { id: 'go-artifacts', label: 'Artifacts', group: 'Go', run: () => navigate(routes.artifacts()) },
