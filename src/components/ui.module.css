@@ -43,14 +43,13 @@
 }
 
 .primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fdf8f1;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .primary:hover {
-  background: #a9613f;
-  border-color: #a9613f;
+  filter: brightness(1.06);
 }
 
 .ghost {
@@ -112,7 +111,7 @@
 }
 
 .tone_plain { color: var(--ink-2); }
-.tone_live { color: var(--live,#b56f50); border-color: rgba(181,111,80,.35); background: var(--tint-live); }
+.tone_live { color: var(--live, var(--accent)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: var(--tint-live); }
 .tone_warn { color: var(--warn); border-color: rgba(168,121,44,.32); }
 .tone_ok { color: var(--ok); border-color: rgba(94,107,80,.3); }
 .tone_error { color: var(--error); border-color: rgba(140,58,43,.3); }

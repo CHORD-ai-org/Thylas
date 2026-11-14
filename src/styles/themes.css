@@ -22,6 +22,9 @@
 
   --accent: #B56F50;
   --accent-weak: #F0E2D7;
+  /* Primary-button pair: accent ground + readable ink on it. */
+  --accent-strong: #A9613F;
+  --on-accent: #FDF8F1;
 
   --ok: #5E6B50;
   --warn: #A8792C;
@@ -51,6 +54,8 @@
 
   --accent: #FFFFFF;
   --accent-weak: #1F1F1F;
+  --accent-strong: #E8E8E8;
+  --on-accent: #0A0A0A;
 
   --ok: #8FBF8F;
   --warn: #D4A94E;
@@ -80,6 +85,8 @@
 
   --accent: #111111;
   --accent-weak: #EDEDED;
+  --accent-strong: #000000;
+  --on-accent: #FFFFFF;
 
   --ok: #3F6B3F;
   --warn: #8A6A1F;

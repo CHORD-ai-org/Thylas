@@ -21,6 +21,7 @@ describe('DEFAULT_PREFS', () => {
     expect(DEFAULT_PREFS).toEqual({
       landing: 'overview',
       density: 'comfortable',
+      theme: 'warm',
       defaultWorkspace: null,
     });
   });
