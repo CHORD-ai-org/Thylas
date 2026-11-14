@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routes } from '../../lib/routes';
-import { KIND_LABEL, type ArtifactKind } from '../../data/artifacts';
+import { COVER_HUES, KIND_LABEL, type ArtifactKind, type CoverHue } from '../../data/artifacts';
+import { ArtifactCover } from './ArtifactCover';
 import { createArtifact, createExternalReference, type ExternalSystem } from '../../state/artifacts';
 import { Button } from '../../components/ui';
 import { PlainLayout } from '../../shell/layouts';
@@ -95,6 +96,7 @@ function NativeForm({
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [firstBody, setFirstBody] = useState('');
+  const [hue, setHue] = useState<CoverHue | 'auto'>('auto');
   const ready = name.trim() !== '';
 
   return (
@@ -111,6 +113,7 @@ function NativeForm({
           firstTitle: KIND_SECTIONS_FIRST(kind),
           firstBody,
           author: 'Ceaser',
+          ...(hue === 'auto' ? {} : { cover: { hue } }),
         });
         onDone(created.id);
       }}
@@ -136,6 +139,41 @@ function NativeForm({
           placeholder="One line someone else can understand"
           onChange={(e) => setSummary(e.target.value)}
         />
+      </div>
+      <div className={s.formRow}>
+        <span className={s.formLabel}>
+          Cover<span className={s.optional}> · optional</span>
+        </span>
+        <div className={s.coverPick}>
+          <ArtifactCover
+            artifact={{ id: 'a-cover-preview', kind, cover: hue === 'auto' ? undefined : { hue } }}
+            size={34}
+            className={s.coverPreview}
+          />
+          <div className={s.coverSwatches} role="group" aria-label="Cover hue">
+            <button
+              type="button"
+              className={[s.coverSwatch, s.coverSwatchAuto, hue === 'auto' ? s.coverSwatchOn : ''].join(' ')}
+              aria-pressed={hue === 'auto'}
+              onClick={() => setHue('auto')}
+              data-cover-hue-option="auto"
+            >
+              Auto
+            </button>
+            {COVER_HUES.map((h) => (
+              <button
+                key={h}
+                type="button"
+                className={[s.coverSwatch, hue === h ? s.coverSwatchOn : ''].join(' ')}
+                style={{ '--cover': `var(--cover-${h})` } as CSSProperties}
+                aria-label={`Cover hue ${h}`}
+                aria-pressed={hue === h}
+                onClick={() => setHue(h)}
+                data-cover-hue-option={h}
+              />
+            ))}
+          </div>
+        </div>
       </div>
       <div className={s.formRow}>
         <span className={s.formLabel}>

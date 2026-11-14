@@ -6,6 +6,7 @@ import { artifactsView, useArtifacts } from '../../state/artifacts';
 import { PlainLayout } from '../../shell/layouts';
 import { Button, EmptyState } from '../../components/ui';
 import { IconPlus } from '../../components/icons';
+import { ArtifactCover } from './ArtifactCover';
 import s from './artifacts.module.css';
 
 /**
@@ -39,7 +40,7 @@ function when(at: number): string {
 export function ArtifactLibrary() {
   useArtifacts();
   const [view, setView] = useState<View>('all');
-  const [mode, setMode] = useState<'list' | 'grid'>('list');
+  const [mode, setMode] = useState<'list' | 'grid'>('grid');
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<ArtifactKind | 'all'>('all');
   const [status, setStatus] = useState<ArtifactStatus | 'all'>('all');
@@ -216,6 +217,38 @@ export function ArtifactLibrary() {
             }
           />
         )
+      ) : mode === 'grid' ? (
+        <ul className={s.gallery} data-artifact-gallery>
+          {visible.map((a) => {
+            const external = a.source !== 'native';
+            return (
+              <li key={a.id}>
+                <Link
+                  className={s.galleryCard}
+                  to={routes.artifact(a.id)}
+                  data-artifact-card={a.id}
+                  aria-label={`${a.name}, ${KIND_LABEL[a.kind]}, ${a.status}`}
+                >
+                  <ArtifactCover artifact={a} status={a.status} />
+                  <span className={s.cardBodyPad}>
+                    <span className={s.cardName}>
+                      {a.name}
+                      {external ? (
+                        <span className={s.externalChip}>{(a.source as { system: string }).system}</span>
+                      ) : null}
+                    </span>
+                    <span className={s.cardSummary}>{a.summary || 'No summary yet.'}</span>
+                    <span className={s.cardMeta}>
+                      <span className={s.kindChip}>{KIND_LABEL[a.kind]}</span>
+                      <span aria-hidden>·</span>
+                      <span>{when(a.updatedAt)}</span>
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <ul className={s.rows}>
           {visible.map((a) => {
