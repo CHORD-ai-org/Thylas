@@ -6,36 +6,44 @@
  * every other envelope (a hand-edited payload loses the entry, not the
  * library), and the landing page is read by the router's index redirect, which
  * makes it the one preference with a real effect on navigation.
+ *
+ * Phase 2 A0: types and validated reads live in `src/lib/user.ts` so a server
+ * route can share them. Re-exported here so no UI import path changes.
+ *
+ * A1 (D-059): `VITE_USER_SOURCE=local|api` selects the persistence backing.
+ * `local` is byte-for-byte the original behaviour. `api` hydrates once on
+ * startup and syncs name changes in the background; every action stays
+ * optimistic and synchronous, and the local envelope is never discarded.
  */
 import { useSyncExternalStore } from 'react';
+import {
+  DEFAULT_PREFS,
+  readDisplayName,
+  readPrefs,
+  type Density,
+  type Landing,
+  type Prefs,
+} from '../lib/user';
+import { createUserClient } from '../services/user/client';
+
+export { DEFAULT_PREFS };
+export type { Density, Landing, Prefs };
 
 const KEY = 'thylas:user:v1';
 
-export type Landing = 'overview' | 'recently' | 'notes';
-export type Density = 'comfortable' | 'compact';
-
-export type Prefs = {
-  landing: Landing;
-  density: Density;
-  /** A workspace id, resolved against the live list by whoever renders it. */
-  defaultWorkspace: string | null;
-};
+const MODE: 'local' | 'api' =
+  (import.meta.env.VITE_USER_SOURCE as string | undefined) === 'api' ? 'api' : 'local';
+const SYNC_DELAY_MS = 300;
+const userClient = createUserClient();
+let booting = false;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
 export type UserState = {
   displayName?: string;
   prefs: Partial<Prefs>;
 };
 
-const LANDINGS: Landing[] = ['overview', 'recently', 'notes'];
-const DENSITIES: Density[] = ['comfortable', 'compact'];
-
 const EMPTY: UserState = { prefs: {} };
-
-export const DEFAULT_PREFS: Prefs = {
-  landing: 'overview',
-  density: 'comfortable',
-  defaultWorkspace: null,
-};
 
 function read(): UserState {
   if (typeof localStorage === 'undefined') return EMPTY;
@@ -46,21 +54,9 @@ function read(): UserState {
     if (typeof parsed !== 'object' || parsed === null) return EMPTY;
     const p = parsed as Partial<UserState> & { version?: unknown };
     if (p.version !== 1) return EMPTY;
-    const prefs: Partial<Prefs> = {};
-    if (typeof p.prefs?.landing === 'string' && LANDINGS.includes(p.prefs.landing as Landing)) {
-      prefs.landing = p.prefs.landing as Landing;
-    }
-    if (typeof p.prefs?.density === 'string' && DENSITIES.includes(p.prefs.density as Density)) {
-      prefs.density = p.prefs.density as Density;
-    }
-    if (typeof p.prefs?.defaultWorkspace === 'string') {
-      prefs.defaultWorkspace = p.prefs.defaultWorkspace;
-    } else if (p.prefs?.defaultWorkspace === null) {
-      prefs.defaultWorkspace = null;
-    }
     return {
-      displayName: typeof p.displayName === 'string' && p.displayName.trim() ? p.displayName : undefined,
-      prefs,
+      displayName: readDisplayName(p.displayName),
+      prefs: readPrefs(p.prefs),
     };
   } catch {
     return EMPTY;
@@ -70,7 +66,58 @@ function read(): UserState {
 let snapshot: UserState = read();
 const listeners = new Set<() => void>();
 
-function commit(next: UserState): void {
+/** `null` means no override, matching the server's UserDto. */
+function remoteName(): string | null {
+  const name = snapshot.displayName;
+  return name?.trim() ? name : null;
+}
+
+function scheduleSync(): void {
+  if (MODE !== 'api' || booting) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    void flushSync();
+  }, SYNC_DELAY_MS);
+}
+
+async function flushSync(): Promise<void> {
+  if (MODE !== 'api' || booting) return;
+  const result = await userClient.patch({ displayName: remoteName() });
+  if (!result.ok) {
+    /* The local envelope is already written. Never lose it on a failed sync. */
+    console.warn('[user] remote sync failed — local envelope kept');
+  }
+}
+
+/** Hydrate once on startup: a remote name wins over a stale local one. */
+async function bootstrap(): Promise<void> {
+  if (MODE !== 'api') return;
+  booting = true;
+  try {
+    const remote = await userClient.get();
+    if (!remote.ok) {
+      console.warn('[user] could not load remote name — local envelope kept');
+      return;
+    }
+    const local = remoteName();
+    if (remote.user.displayName === null && local !== null) {
+      const put = await userClient.patch({ displayName: local });
+      if (!put.ok) console.warn('[user] local name import failed — local copy kept');
+      return;
+    }
+    if (remote.user.displayName !== local) {
+      commit(
+        { ...snapshot, displayName: remote.user.displayName ?? undefined },
+        { sync: false },
+      );
+    }
+  } finally {
+    booting = false;
+  }
+}
+
+function commit(next: UserState, options: { sync?: boolean } = {}): void {
   snapshot = next;
   if (typeof localStorage !== 'undefined') {
     try {
@@ -79,6 +126,7 @@ function commit(next: UserState): void {
       /* quota: the session keeps working, the next one starts from defaults */
     }
   }
+  if (MODE === 'api' && options.sync !== false) scheduleSync();
   for (const listener of listeners) listener();
 }
 
@@ -138,3 +186,5 @@ export function resetUser(): void {
 export function __readForTest(): UserState {
   return read();
 }
+
+if (MODE === 'api') void bootstrap();
