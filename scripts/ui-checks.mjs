@@ -2733,13 +2733,38 @@ async function main() {
     return {
       rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Artifacts'),
       h1: document.querySelector('h1')?.textContent.trim(),
-      rows: document.querySelectorAll('[data-artifact-row]').length,
+      cards: document.querySelectorAll('[data-artifact-card]').length,
+      gallery: !!document.querySelector('[data-artifact-gallery]'),
     };
-  `), (v) => v.rail && v.h1 === 'Artifacts' && v.rows === 7);
+  `), (v) => v.rail && v.h1 === 'Artifacts' && v.cards === 7 && v.gallery);
+
+  check('artifacts: every gallery card carries a cover from the six-hue whitelist', await js(`
+    const cards = [...document.querySelectorAll('[data-artifact-card]')];
+    const hues = cards.map(c => c.querySelector('[data-cover-hue]')?.getAttribute('data-cover-hue'));
+    const glyphs = cards.map(c => c.querySelectorAll('[data-cover-hue] svg path, [data-cover-hue] svg circle').length);
+    const symbols = cards.map(c => c.querySelector('[data-cover-symbol]')?.getAttribute('data-cover-symbol'));
+    return {
+      hues,
+      allWhitelisted: hues.every(h => ['blue','green','clay','violet','teal','amber'].includes(h)),
+      distinct: new Set(hues).size,
+      drawn: glyphs.every(n => n > 0),
+      symbols,
+    };
+  `), (v) => v.allWhitelisted && v.distinct >= 4 && v.drawn && v.symbols.filter(Boolean).length === 7);
+
+  check('artifacts: the glyph is a drawn SVG, one per kind, with no text fallback', await js(`
+    const card = document.querySelector('[data-artifact-card]');
+    const svg = card?.querySelector('[data-cover-hue] svg');
+    return {
+      viewBox: svg?.getAttribute('viewBox'),
+      stroke: svg?.getAttribute('stroke-width'),
+      text: card?.querySelector('[data-cover-hue]')?.textContent.trim() ?? '',
+    };
+  `), { viewBox: '0 0 24 24', stroke: '1.2', text: '' });
 
   await fillAria('Search artifacts', 'boundary');
   check('artifacts: search narrows to the boundary family', await js(`
-    return [...document.querySelectorAll('[data-artifact-row]')].map(r => r.textContent.includes('oundary'));
+    return [...document.querySelectorAll('[data-artifact-card]')].map(r => r.textContent.includes('oundary'));
   `), (v) => v.length === 4 && v.every(Boolean));
   await fillAria('Search artifacts', 'zzzznope');
   check('artifacts: a search with no match names itself and offers the way out', await js(`
@@ -2748,10 +2773,18 @@ async function main() {
   await fillAria('Search artifacts', '');
   await js(`${helpers} click(byText('button', 'External')); await new Promise(r => setTimeout(r, 150)); return 1;`);
   check('artifacts: the External view isolates referenced sources', await js(`
-    return [...document.querySelectorAll('[data-artifact-row]')].map(r => r.textContent.includes('Obsidian'));
+    return [...document.querySelectorAll('[data-artifact-card]')].map(r => r.textContent.includes('Obsidian'));
   `), [true]);
 
   await js(`${helpers} click(byText('button', 'All')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  await js(`${helpers} click(document.querySelector('[aria-label="List view"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('artifacts: the list view is still there for dense browsing', await js(`
+    return {
+      rows: document.querySelectorAll('[data-artifact-row]').length,
+      cards: document.querySelectorAll('[data-artifact-card]').length,
+    };
+  `), { rows: 7, cards: 0 });
+  await js(`${helpers} click(document.querySelector('[aria-label="Grid view"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
   await goto('/artifacts/a-boundary');
   await js(`return 1;`);
   check('artifacts: detail renders the kind’s own sections and version history', await js(`
@@ -2821,7 +2854,7 @@ async function main() {
 
   await goto('/artifacts');
   check('artifacts: the library reflects everything the session created', await js(`
-    return document.querySelectorAll('[data-artifact-row]').length;
+    return document.querySelectorAll('[data-artifact-card]').length;
   `), (v) => v >= 9);
   await js(`localStorage.removeItem('thylas:artifacts:v1'); return 1;`);
 
