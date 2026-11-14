@@ -23,6 +23,7 @@ describe('DEFAULT_PREFS', () => {
       density: 'comfortable',
       theme: 'warm',
       defaultWorkspace: null,
+      model: null,
     });
   });
 });

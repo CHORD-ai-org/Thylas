@@ -6,6 +6,10 @@
  * reads a store, a session, or the network. No API path is declared yet: where
  * the User state lives is still an open decision (PHASE-2-USER.md Q1).
  */
+/* The extension is written out: this module is loaded by the server too, and
+   a value import has to resolve under plain Node. */
+import { readSelection, type AiSelection } from './ai.ts';
+
 export type Landing = 'overview' | 'recently' | 'notes';
 export type Density = 'comfortable' | 'compact';
 /** Palette: warm paper (default), neutral black, neutral white. */
@@ -17,6 +21,12 @@ export type Prefs = {
   theme: Theme;
   /** A workspace id, resolved against the live list by whoever renders it. */
   defaultWorkspace: string | null;
+  /**
+   * The model this person picked, or null for the server default. Since D-061
+   * a model is a provider and a model id; a selection the server no longer
+   * serves is dropped on read and the default takes over.
+   */
+  model: AiSelection | null;
 };
 
 export const DEFAULT_PREFS: Prefs = {
@@ -24,6 +34,7 @@ export const DEFAULT_PREFS: Prefs = {
   density: 'comfortable',
   theme: 'warm',
   defaultWorkspace: null,
+  model: null,
 };
 
 const LANDINGS: Landing[] = ['overview', 'recently', 'notes'];
@@ -51,6 +62,11 @@ export function readPrefs(value: unknown): Partial<Prefs> {
     prefs.defaultWorkspace = raw.defaultWorkspace;
   } else if (raw.defaultWorkspace === null) {
     prefs.defaultWorkspace = null;
+  }
+  /* A model the server no longer serves is dropped, not carried: the picker
+     falls back to the server default instead of asking for a refusal. */
+  if ('model' in raw) {
+    prefs.model = readSelection(raw.model);
   }
   return prefs;
 }

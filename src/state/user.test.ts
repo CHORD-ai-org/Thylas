@@ -38,6 +38,7 @@ describe('first run', () => {
       density: 'comfortable',
       theme: 'warm',
       defaultWorkspace: null,
+      model: null,
     });
   });
 });
@@ -105,5 +106,32 @@ describe('preferences', () => {
     storage.set('thylas:user:v1', JSON.stringify({ version: 1, prefs: { theme: 'neon' } }));
     const bad = await fresh();
     expect(bad.store.prefsOf(bad.store.__readForTest()).theme).toBe('warm');
+  });
+});
+
+describe('the model preference', () => {
+  it('is null until a model is picked', async () => {
+    const { store } = await fresh();
+    expect(store.prefsOf(store.__readForTest()).model).toBeNull();
+  });
+
+  it('keeps a picked provider and model across a reload', async () => {
+    const { store } = await fresh();
+    store.setPref('model', { provider: 'openai', model: 'gpt-4o' });
+    vi.resetModules();
+    const reloaded = await import('./user');
+    expect(reloaded.prefsOf(reloaded.__readForTest()).model).toEqual({
+      provider: 'openai',
+      model: 'gpt-4o',
+    });
+  });
+
+  it('drops a stored model the server no longer serves', async () => {
+    storage.set(
+      'thylas:user:v1',
+      JSON.stringify({ version: 1, prefs: { model: { provider: 'openai' } } }),
+    );
+    const { store } = await fresh();
+    expect(store.prefsOf(store.__readForTest()).model).toBeNull();
   });
 });
