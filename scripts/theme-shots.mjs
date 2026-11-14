@@ -35,7 +35,7 @@ for (const [theme, path_, name] of [
   ['light', '/overview', 'overview-light'],
   ['dark', '/chat', 'chat-dark'],
 ]) {
-  await send('Page.navigate', { url: `http://localhost:5192${path_}` });
+  await send('Page.navigate', { url: `http://localhost:5193${path_}` });
   await sleep(1200);
   await evaluate(`localStorage.setItem('thylas:user:v1', JSON.stringify({version:1, prefs:{theme:'${theme}'}})); location.reload(); 'ok'`);
   await sleep(1600);

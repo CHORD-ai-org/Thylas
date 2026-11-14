@@ -274,7 +274,28 @@ async function main() {
   check('theme: warm paper is the default', await themeState(), (v) => v.attr === 'warm' && v.bg === '#F1EBDD' && v.meta === '#F1EBDD');
 
   await js(`${helpers} click(document.querySelector('[data-theme-option="dark"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
-  check('theme: black swaps the palette and the browser chrome', await themeState(), (v) => v.attr === 'dark' && v.bg === '#0A0A0A' && v.ink === '#F2F2F2' && v.meta === '#0A0A0A');
+  check('theme: black swaps the palette and the browser chrome', await themeState(), (v) => v.attr === 'dark' && v.bg === '#0A0A0A' && v.ink === '#EBEBEB' && v.meta === '#0A0A0A');
+
+  check('texture: dark uses translucent hairlines, dark-only shadows and a frosted composer', await js(`
+    const cs = getComputedStyle(document.documentElement);
+    const composer = document.querySelector('[class*="composer"]');
+    const style = composer ? getComputedStyle(composer) : null;
+    return {
+      line: cs.getPropertyValue('--line').trim(),
+      shadow: cs.getPropertyValue('--e2').trim(),
+      elevated: cs.getPropertyValue('--bg-elevated').trim(),
+      glass: style ? style.backdropFilter : null,
+    };
+  `), (v) => v.line.startsWith('rgba(255, 255, 255') && v.shadow.includes('rgba(0, 0, 0, 0.45)') && !v.shadow.includes('73, 54, 38') && v.elevated === '#1E1E1E' && (v.glass === null || v.glass.includes('blur')));
+
+  await goto('/chat');
+  await js('await new Promise(r => setTimeout(r, 600)); return 1;');
+  await js(`${helpers} const b = [...document.querySelectorAll('button')].find(x => x.textContent.includes('New conversation')); if (b) b.click(); await new Promise(r => setTimeout(r, 600)); return 1;`);
+  check('texture: a real composer is frosted in dark', await js(`
+    const el = document.querySelector('[class*="composer"]');
+    const cs = el ? getComputedStyle(el) : null;
+    return cs ? { filter: cs.backdropFilter, theme: document.documentElement.dataset.theme } : null;
+  `), (v) => v !== null && v.theme === 'dark' && v.filter.includes('blur'));
 
   await goto('/user/preferences');
   await js('await new Promise(r => setTimeout(r, 500)); return 1;');
@@ -2516,6 +2537,7 @@ async function main() {
 
   // ---- Chat: one conversation model, two surfaces, real streaming ----
   aiMode = 'ok';
+  await js(`localStorage.removeItem('thylas:chat:v1'); return 1;`);
   await goto('/chat');
   await js(`
     window.__errs = [];
@@ -2781,6 +2803,18 @@ async function main() {
 
   await goto('/coworkers/cw-reviewer/config');
   await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  check('coworkers: the mind framework is a declared, read-only record', await js(`
+    const s = document.querySelector('[data-mind-framework]');
+    if (!s) return { found: false };
+    const text = s.innerText;
+    return {
+      found: true,
+      rows: s.querySelectorAll('[class*="briefBlock"]').length,
+      definition: text.includes('declared configuration') && text.includes('not connected'),
+      controls: s.querySelectorAll('input, textarea, select, button').length,
+      principles: text.toLowerCase().includes('reasoning principles'),
+    };
+  `), (v) => v.found && v.rows === 6 && v.definition && v.controls === 0 && v.principles);
   await fillAria('Responsible for', 'Reviews protocols AND boundary tables for completeness.');
   await js(`${helpers} click(byText('button', 'Save changes')); await new Promise(r => setTimeout(r, 300)); return 1;`);
   check('coworkers: responsibility edits save into the store', await js(`
