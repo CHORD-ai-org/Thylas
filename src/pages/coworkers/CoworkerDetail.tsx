@@ -42,7 +42,7 @@ export function CoworkerDetail() {
       <PlainLayout size="console">
         <EmptyState
           title="No such coworker"
-          hint="It was deleted in this session, or the link is older than the directory."
+          hint="Deleted in this session."
           action={<Link to={routes.coworkers()} className={a.linkArrow}>Back to Coworkers</Link>}
         />
       </PlainLayout>
@@ -88,10 +88,7 @@ export function CoworkerDetail() {
       <div className={a.detailGrid}>
         <div className={a.detailMain}>
           <div className={c.convWrap} data-coworker-conversation>
-            <p className={c.convNote}>
-              Conversation — the Coworker is declared as context; replies come from the
-              model endpoint, nothing here is an agent runtime.
-            </p>
+            <p className={c.convNote}>Conversation — replies come from the model endpoint.</p>
             <ChatCore embedded />
           </div>
         </div>
@@ -99,17 +96,12 @@ export function CoworkerDetail() {
         <div className={a.detailSide}>
           <section className={a.sideSection}>
             <h2 className={a.sectionTitle}>Current work</h2>
-            <p className={a.quiet}>
-              No work items yet. Items appear here when a work objective is stated or a
-              method run starts — this page does not invent progress.
-            </p>
+            <p className={a.quiet}>No work items yet.</p>
           </section>
 
           <section className={a.sideSection}>
             <h2 className={a.sectionTitle}>Artifacts</h2>
-            <p className={a.quiet}>
-              Pinned into the working context — references, not copies:
-            </p>
+            <p className={a.quiet}>Pinned:</p>
             <ul className={a.relationList}>
               {pinned.map((artifact) => (
                 <li key={artifact!.id}>

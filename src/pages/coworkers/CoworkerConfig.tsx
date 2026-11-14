@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { routes } from '../../lib/routes';
+import { defaultMindFramework, mindFrameworkRows } from '../../lib/coworkers';
 import { getWorkspace, workspaces } from '../../data/selectors';
 import {
   addMembership,
@@ -38,7 +39,7 @@ export function CoworkerConfig() {
       <PlainLayout size="console">
         <EmptyState
           title="No such coworker"
-          hint="It was deleted in this session, or the link is older than the directory."
+          hint="Deleted in this session."
           action={<Link to={routes.coworkers()} className={a.linkArrow}>Back to Coworkers</Link>}
         />
       </PlainLayout>
@@ -188,36 +189,42 @@ export function CoworkerConfig() {
         <div className={a.sectionHead}>
           <h2 className={a.sectionTitle}>Context and artifacts</h2>
         </div>
-        <p className={a.quiet}>
-          Pinned artifacts are declared context — references, not copies. Managed from
-          each artifact's detail page; the list follows the pinning, not a separate
-          permission system.
-        </p>
         <p className={a.quiet} style={{ marginTop: 6 }}>
           {coworker.pinnedArtifactIds.length} pinned · access follows the workspace's
           grants — nothing is implied by config alone.
         </p>
       </section>
 
+      <section className={a.section} data-mind-framework>
+        <div className={a.sectionHead}>
+          <h2 className={a.sectionTitle}>Mind framework</h2>
+        </div>
+        <p className={a.quiet}>
+          Version {coworker.mindFramework?.version ?? 1} · declared configuration, shown
+          read-only. Thylas records and displays it; the runtime that would apply it is
+          not connected. Nothing on this page changes how a Coworker reasons yet.
+        </p>
+        <div style={{ marginTop: 10 }}>
+          {mindFrameworkRows(coworker.mindFramework ?? defaultMindFramework()).map((row) => (
+            <div className={c.briefBlock} key={row.label}>
+              <span className={c.briefLabel}>{row.label}</span>
+              <p className={c.briefBody}>{row.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className={a.section}>
         <div className={a.sectionHead}>
           <h2 className={a.sectionTitle}>Toolsets</h2>
         </div>
-        <p className={a.quiet}>
-          Toolset grants live with each workspace membership. The runtime that executes
-          tools is not connected in this build — grants are recorded, not enforced
-          anywhere else.
-        </p>
+        <p className={a.quiet}>Runtime not connected in this build.</p>
       </section>
 
       <section className={a.section}>
         <div className={a.sectionHead}>
           <h2 className={a.sectionTitle}>Behaviour and preferences</h2>
         </div>
-        <p className={a.quiet}>
-          Deferred until the runtime exposes them — a control that changes nothing is not
-          shipped.
-        </p>
       </section>
 
       <section className={a.section}>

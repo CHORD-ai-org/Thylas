@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '../../lib/routes';
 import { coworkersView, useCoworkers } from '../../state/coworkers';
-import { workspaces } from '../../data/selectors';
 import { PlainLayout } from '../../shell/layouts';
 import { Button, EmptyState } from '../../components/ui';
 import { IconPlus } from '../../components/icons';
@@ -54,8 +53,7 @@ export function CoworkerDirectory() {
           <p className={a.eyebrow}>LIBRARY</p>
           <h1 className={a.title}>Coworkers</h1>
           <p className={a.sub}>
-            Persistent AI work entities: created once, configured with a brief and access,
-            and reused across workspaces. Prototype data; edits persist in this browser.
+            Reused across workspaces. Prototype data; edits persist in this browser.
           </p>
         </div>
         <div className={a.headActions}>
@@ -112,7 +110,7 @@ export function CoworkerDirectory() {
         ) : (
           <EmptyState
             title="No coworkers yet"
-            hint="Create one — a name, a brief, and an optional workspace are enough to start."
+            hint="Create the first coworker."
             action={
               <Link to={routes.coworkerNew()} className={a.linkArrow}>
                 Create Coworker
@@ -149,9 +147,6 @@ export function CoworkerDirectory() {
         </ul>
       )}
 
-      <p className={a.resultNote} style={{ marginTop: 12 }}>
-        Workspaces these coworkers belong to: {workspaces().map((w) => w.name).join(', ') || 'none yet'}.
-      </p>
     </PlainLayout>
   );
 }

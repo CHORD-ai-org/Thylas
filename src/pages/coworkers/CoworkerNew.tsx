@@ -33,10 +33,7 @@ export function CoworkerNew() {
             {' / '}New
           </p>
           <h1 className={a.title}>Create a coworker</h1>
-          <p className={a.sub}>
-            A name and a brief are enough — responsibilities can be refined any time on
-            the configuration page, and workspace access is granted per membership.
-          </p>
+          <p className={a.sub}>Configure the rest later.</p>
         </div>
       </header>
 
@@ -86,7 +83,7 @@ export function CoworkerNew() {
             className={a.editorBody}
             aria-label="Responsible for"
             value={forWork}
-            placeholder="What this coworker is for — the working domain and the tasks to accept."
+            placeholder="Working domain and tasks."
             onChange={(e) => setForWork(e.target.value)}
             rows={3}
           />
