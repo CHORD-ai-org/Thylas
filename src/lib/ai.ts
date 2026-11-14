@@ -35,7 +35,24 @@ export const AI_MAX_HISTORY_ITEM = 4000;
  */
 export const AI_STATUS_PATH = '/api/ai/status';
 
-export type AiStatusBody = { configured: boolean; model: string };
+export type AiProviderSummary = {
+  id: string;
+  label: string;
+  /** The models this provider may serve — the allowlist, not the full catalogue. */
+  models: string[];
+  /** Whether the server holds a key for it. Never the key itself. */
+  configured: boolean;
+};
+
+/** A named pair: which provider, which model of it. */
+export type AiSelection = { provider: string; model: string };
+
+export type AiStatusBody = {
+  configured: boolean;
+  model: string;
+  default?: { provider: string; model: string };
+  providers?: AiProviderSummary[];
+};
 
 /** Characters, not bytes: this is the number the answer's message states. */
 export const AI_MAX_PROMPT = 8000;
@@ -59,7 +76,7 @@ export type AiErrorKind =
   /** The request or the reply did not match this contract. */
   | 'contract';
 
-export type AiOk = { ok: true; text: string; model: string; ms: number };
+export type AiOk = { ok: true; text: string; model: string; provider?: string; ms: number };
 
 export type AiErr = {
   ok: false;
@@ -125,12 +142,62 @@ export function isAiErrorKind(value: unknown): value is AiErrorKind {
 }
 
 export function isAiStatusBody(value: unknown): value is AiStatusBody {
-  return (
-    isRecord(value) &&
-    typeof value.configured === 'boolean' &&
-    typeof value.model === 'string' &&
-    value.model !== ''
-  );
+  if (!isRecord(value)) return false;
+  if (typeof value.configured !== 'boolean') return false;
+  if (typeof value.model !== 'string' || value.model === '') return false;
+  /* The two newer fields are optional: an older server answers `{configured,
+     model}` and must stay a valid answer. When they are present they have to
+     be complete — a half-read provider list would render a broken picker. */
+  if (value.default !== undefined) {
+    const fallback = value.default;
+    if (!isRecord(fallback)) return false;
+    if (typeof fallback.provider !== 'string' || fallback.provider === '') return false;
+    if (typeof fallback.model !== 'string' || fallback.model === '') return false;
+  }
+  if (value.providers !== undefined) {
+    if (!Array.isArray(value.providers)) return false;
+    if (!value.providers.every(isAiProviderSummary)) return false;
+  }
+  return true;
+}
+
+export function isAiProviderSummary(value: unknown): value is AiProviderSummary {
+  if (!isRecord(value)) return false;
+  if (typeof value.id !== 'string' || value.id === '') return false;
+  if (typeof value.label !== 'string') return false;
+  if (typeof value.configured !== 'boolean') return false;
+  return Array.isArray(value.models) && value.models.every((m) => typeof m === 'string');
+}
+
+/** A selection read off the wire or out of storage; anything odd is null. */
+export function readSelection(value: unknown): AiSelection | null {
+  if (!isRecord(value)) return null;
+  const provider = value.provider;
+  const model = value.model;
+  if (typeof provider !== 'string' || provider.trim() === '') return null;
+  if (typeof model !== 'string' || model.trim() === '') return null;
+  return { provider: provider.trim(), model: model.trim() };
+}
+
+/** `provider/model` — what the interface shows and what the chat log keeps. */
+export function selectionLabel(selection: AiSelection): string {
+  return `${selection.provider}/${selection.model}`;
+}
+
+/**
+ * Whether a stored selection still exists on this server. A provider that was
+ * removed from the configuration, or a model taken out of its allowlist, makes
+ * the stored choice unusable — the caller falls back to the server default
+ * rather than sending a request that will be refused.
+ */
+export function selectionInCatalog(
+  selection: AiSelection | null,
+  providers: AiProviderSummary[] | undefined,
+): boolean {
+  if (!selection || !providers) return false;
+  const provider = providers.find((p) => p.id === selection.provider);
+  if (!provider || !provider.configured) return false;
+  return provider.models.includes(selection.model);
 }
 
 /** Shape check, not a schema: enough that the client never renders a raw body. */
