@@ -7,7 +7,9 @@
  * reaches dev, preview and the deployable process at once.
  *
  * The browser cannot hold the key (D-006); it sees a typed body instead of an
- * upstream one. Nothing here is production-shaped on purpose: no retries, no
+ * upstream one. Since D-061 the handler resolves the request against the
+ * provider catalog first: the browser may name a provider and a model, never
+ * an endpoint. Nothing here is production-shaped on purpose: no retries, no
  * queue, no WAM.
  */
 import { request as httpRequest, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -23,12 +25,28 @@ import {
   type AiHistoryItem,
   type AiStatusBody,
 } from '../src/lib/ai.ts';
-import { CONFIG_ERROR_NOT_CONFIGURED, type ServerConfig } from './config.ts';
+import { type ProviderConfig, type ServerConfig } from './config.ts';
 import { MAX_BODY_BYTES, readBody, sendJson } from './http.ts';
+import { providerSummaries, resolveProvider } from './ai/providers/catalog.ts';
+import { buildOpenAiRequest } from './ai/providers/openai-compatible.ts';
+import {
+  buildAnthropicRequest,
+  createAnthropicNormalizer,
+  toOpenAiCompletion,
+} from './ai/providers/anthropic.ts';
+import type { ChatMessage, UpstreamRequest } from './ai/providers/types.ts';
 
 /** The key never enters a log line and never reaches the client. */
-function scrub(text: string, key: string): string {
-  return key ? text.split(key).join('***') : text;
+function scrub(text: string, keys: string[]): string {
+  let out = text;
+  for (const key of keys) {
+    if (key) out = out.split(key).join('***');
+  }
+  return out;
+}
+
+function secretKeys(config: ServerConfig): string[] {
+  return config.providers.map((p) => p.apiKey).filter((key) => key !== '');
 }
 
 async function safeText(res: Response): Promise<string> {
@@ -54,6 +72,16 @@ function promptFrom(parsed: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** The optional provider and model, read without trusting either. */
+function selectionFrom(parsed: unknown): { provider?: string; model?: string } {
+  if (typeof parsed !== 'object' || parsed === null) return {};
+  const raw = parsed as { provider?: unknown; model?: unknown };
+  return {
+    provider: typeof raw.provider === 'string' ? raw.provider : undefined,
+    model: typeof raw.model === 'string' ? raw.model : undefined,
+  };
+}
+
 /**
  * An upstream error body is JSON, and pasting `{"error":{"message":"…"}}` into a
  * banner is noise. Take the sentence if there is one, keep the rest as-is.
@@ -71,15 +99,32 @@ function readableDetail(text: string): string {
   return trimmed;
 }
 
-function upstreamMessage(kind: AiErrorKind, status: number, detail: string): string {
+function upstreamMessage(kind: AiErrorKind, status: number, detail: string, provider: ProviderConfig): string {
   const tail = detail ? ` — ${detail.slice(0, 200)}` : '';
   if (kind === 'unauthorized') {
-    return `The model rejected the key (${status}). Check DEEPSEEK_API_KEY.${tail}`;
+    return `The model rejected the ${provider.label} key (${status}). Check ${provider.keyEnv}.${tail}`;
   }
   if (kind === 'rate_limited') {
-    return `The model is rate limiting this key (${status}). Wait, then retry.${tail}`;
+    return `The model is rate limiting this ${provider.label} key (${status}). Wait, then retry.${tail}`;
   }
   return `The model answered ${status}.${tail}`;
+}
+
+/** One call shape per provider family; the adapter owns the difference. */
+function buildRequest(
+  provider: ProviderConfig,
+  model: string,
+  messages: ChatMessage[],
+  stream: boolean,
+): UpstreamRequest {
+  return provider.id === 'anthropic'
+    ? buildAnthropicRequest(provider, model, messages, stream)
+    : buildOpenAiRequest(provider, model, messages, stream);
+}
+
+/** Anthropic's reply is re-shaped before the shared reader sees it. */
+function completionPayload(provider: ProviderConfig, payload: unknown): unknown {
+  return provider.id === 'anthropic' ? toOpenAiCompletion(payload) : payload;
 }
 
 export async function handleAiRequest(
@@ -90,14 +135,6 @@ export async function handleAiRequest(
   if ((req.method ?? 'GET').toUpperCase() !== 'POST') {
     res.setHeader('allow', 'POST');
     sendJson(res, 405, failure('contract', 'POST only.'));
-    return;
-  }
-
-  const { apiKey: key, baseUrl, model, timeoutMs } = config;
-  if (!key) {
-    /* A missing key is configuration, not a broken network. Say which variable
-       is missing, and do not reach upstream at all. */
-    sendJson(res, statusFor('not_configured'), failure('not_configured', CONFIG_ERROR_NOT_CONFIGURED));
     return;
   }
 
@@ -128,8 +165,16 @@ export async function handleAiRequest(
     return;
   }
 
-  const prompt = promptFrom(parsed);
+  /* The provider is resolved before the prompt is judged: a server with no key
+     for the requested provider says so, whatever the prompt looks like. */
+  const resolved = resolveProvider(config, selectionFrom(parsed));
+  if (!resolved.ok) {
+    sendJson(res, statusFor(resolved.kind), failure(resolved.kind, resolved.message));
+    return;
+  }
+  const { provider, model } = resolved.choice;
 
+  const prompt = promptFrom(parsed);
   if (!prompt) {
     sendJson(res, statusFor('contract'), failure('contract', 'The request needs a non-empty "prompt" string.'));
     return;
@@ -146,16 +191,16 @@ export async function handleAiRequest(
     return;
   }
 
-  const base = baseUrl;
+  const upstreamRequest = buildRequest(provider, model, [{ role: 'user', content: prompt }], false);
   const started = Date.now();
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${base}/chat/completions`, {
+    upstream = await fetch(upstreamRequest.url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], stream: false }),
-      signal: AbortSignal.timeout(timeoutMs),
+      headers: upstreamRequest.headers,
+      body: upstreamRequest.body,
+      signal: AbortSignal.timeout(provider.timeoutMs),
     });
   } catch (err) {
     const name = err instanceof Error ? err.name : '';
@@ -164,10 +209,10 @@ export async function handleAiRequest(
       res,
       statusFor(timedOut ? 'timeout' : 'network'),
       timedOut
-        ? failure('timeout', `No answer within ${Math.round(timeoutMs / 1000)} s.`, true)
+        ? failure('timeout', `No answer within ${Math.round(provider.timeoutMs / 1000)} s.`, true)
         : failure(
             'network',
-            `Could not reach ${base}. The machine may be offline or the host unreachable.`,
+            `Could not reach ${provider.baseUrl}. The machine may be offline or the host unreachable.`,
             true,
           ),
     );
@@ -175,7 +220,7 @@ export async function handleAiRequest(
   }
 
   if (!upstream.ok) {
-    const detail = scrub(readableDetail(await safeText(upstream)), key);
+    const detail = scrub(readableDetail(await safeText(upstream)), secretKeys(config));
     const kind: AiErrorKind =
       upstream.status === 401 || upstream.status === 403
         ? 'unauthorized'
@@ -186,12 +231,12 @@ export async function handleAiRequest(
     sendJson(
       res,
       statusFor(kind),
-      failure(kind, upstreamMessage(kind, upstream.status, detail), retryable),
+      failure(kind, upstreamMessage(kind, upstream.status, detail, provider), retryable),
     );
     return;
   }
 
-  const completion = readCompletion(await safeJson(upstream));
+  const completion = readCompletion(completionPayload(provider, await safeJson(upstream)));
   if (!completion) {
     sendJson(
       res,
@@ -204,17 +249,21 @@ export async function handleAiRequest(
   sendJson(res, 200, {
     ok: true,
     text: completion.text,
-    model: completion.model ?? model,
+    /* The model that was asked for, not the one the provider echoed back: the
+       label the interface shows must be the one in the picker. The provider
+       is named beside it. */
+    model,
+    provider: provider.id,
     ms: Date.now() - started,
   });
 }
 
 /**
- * The streaming sibling (D-051). Same checks as `handleAiRequest` — key, body,
- * prompt cap — then `stream: true` upstream, piped through byte-for-byte. The
- * client reads the model's own OpenAI SSE (`data: {choices:[…]}` …
- * `data: [DONE]`); nothing is re-framed between the two. An error before
- * upstream headers is a JSON failure with the same kinds.
+ * The streaming sibling (D-051). Same checks as `handleAiRequest` — provider,
+ * body, prompt cap — then `stream: true` upstream. For an OpenAI-compatible
+ * provider the upstream bytes are piped through unchanged; Anthropic's own
+ * event stream is re-framed into OpenAI SSE on the way out (D-062), so the
+ * client keeps parsing one shape whatever provider answered.
  *
  * History arrives as prior turns, capped by the contract; the caller's prompt
  * is the last user message. The key never reaches the client.
@@ -231,12 +280,6 @@ export async function handleAiStreamRequest(
   if ((req.method ?? 'GET').toUpperCase() !== 'POST') {
     res.setHeader('allow', 'POST');
     failJson('contract', 'POST only.');
-    return;
-  }
-
-  const { apiKey: key, baseUrl: base, model, timeoutMs } = config;
-  if (!key) {
-    failJson('not_configured', CONFIG_ERROR_NOT_CONFIGURED);
     return;
   }
 
@@ -260,6 +303,13 @@ export async function handleAiStreamRequest(
     return;
   }
 
+  const resolved = resolveProvider(config, selectionFrom(parsed));
+  if (!resolved.ok) {
+    failJson(resolved.kind, resolved.message);
+    return;
+  }
+  const { provider, model } = resolved.choice;
+
   const record = (parsed ?? {}) as { prompt?: unknown; history?: unknown };
   const prompt = typeof record.prompt === 'string' ? record.prompt.trim() : '';
   if (!prompt) {
@@ -278,10 +328,12 @@ export async function handleAiStreamRequest(
     content: h.content.slice(0, AI_MAX_HISTORY_ITEM),
   }));
 
-  const messages: { role: 'user' | 'assistant'; content: string }[] = [
+  const messages: ChatMessage[] = [
     ...history.map((h) => ({ role: h.role, content: h.content })),
     { role: 'user' as const, content: prompt },
   ];
+
+  const upstreamRequest = buildRequest(provider, model, messages, true);
 
   const upstreamController = new AbortController();
   /* A client that walks away takes the upstream request with it. `req`'s own
@@ -297,14 +349,10 @@ export async function handleAiStreamRequest(
      is a JSON failure with the shared kinds; after that, the upstream stream
      is exactly what the client reads (OpenAI-format chunks, then [DONE]). */
   const up = httpRequest(
-    `${base}/chat/completions`,
+    upstreamRequest.url,
     {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${key}`,
-        accept: 'text/event-stream',
-      },
+      headers: upstreamRequest.headers,
     },
     (upRes) => {
       const status = upRes.statusCode ?? 0;
@@ -320,15 +368,39 @@ export async function handleAiStreamRequest(
                 ? 'rate_limited'
                 : 'upstream';
           const retryable = kind === 'rate_limited' || status === 408 || status >= 500;
-          failJson(kind, upstreamMessage(kind, status, scrub(readableDetail(body.trim()), key)), retryable);
+          failJson(
+            kind,
+            upstreamMessage(kind, status, scrub(readableDetail(body.trim()), secretKeys(config)), provider),
+            retryable,
+          );
         });
         return;
       }
       res.writeHead(200, {
         'content-type': 'text/event-stream; charset=utf-8',
         'cache-control': 'no-store',
+        /* The effective selection travels in headers, so the interface can
+           label the answer without the stream bytes carrying anything extra. */
+        'x-thylas-provider': provider.id,
+        'x-thylas-model': model,
       });
       res.flushHeaders?.();
+      if (provider.id === 'anthropic') {
+        /* Anthropic speaks its own event stream; the normalizer re-frames it
+           into the OpenAI SSE the client already parses. */
+        const normalizer = createAnthropicNormalizer(model);
+        upRes.setEncoding('utf8');
+        upRes.on('data', (chunk) => {
+          const out = normalizer.push(String(chunk));
+          if (out) res.write(out);
+        });
+        upRes.on('end', () => {
+          const out = normalizer.flush();
+          if (out) res.write(out);
+          res.end();
+        });
+        return;
+      }
       upRes.pipe(res);
       upRes.on('end', () => res.end());
     },
@@ -336,21 +408,21 @@ export async function handleAiStreamRequest(
   upstreamController.signal.addEventListener('abort', () => up.destroy());
   const upstreamTimer = setTimeout(() => {
     up.destroy(new Error('timeout'));
-  }, timeoutMs);
+  }, provider.timeoutMs);
   up.on('close', () => clearTimeout(upstreamTimer));
   up.on('error', (err) => {
     if (upstreamController.signal.aborted) return;
     if (err.message === 'timeout') {
-      failJson('timeout', `No answer within ${Math.round(timeoutMs / 1000)} s.`, true);
+      failJson('timeout', `No answer within ${Math.round(provider.timeoutMs / 1000)} s.`, true);
       return;
     }
     failJson(
       'network',
-      `Could not reach ${base}. The machine may be offline or the host unreachable.`,
+      `Could not reach ${provider.baseUrl}. The machine may be offline or the host unreachable.`,
       true,
     );
   });
-  up.end(JSON.stringify({ model, messages, stream: true }));
+  up.end(upstreamRequest.body);
 }
 
 export type AiHandlers = {
@@ -370,8 +442,10 @@ export function createAiHandlers(config: ServerConfig): AiHandlers {
       return;
     }
     const body: AiStatusBody = {
-      configured: config.apiKey !== '',
-      model: config.model,
+      configured: config.providers.some((p) => p.apiKey !== ''),
+      model: config.defaultModel,
+      default: { provider: config.defaultProvider, model: config.defaultModel },
+      providers: providerSummaries(config),
     };
     const payload = JSON.stringify(body);
     res.statusCode = 200;
