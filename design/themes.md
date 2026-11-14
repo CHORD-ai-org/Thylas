@@ -45,3 +45,8 @@
 2. 白板节点内容色（粘纸绿/黄/粉）不随主题——它们是内容，不是 UI。
 3. 打印样式未做。
 4. 主题只影响颜色：圆角/间距/字号/动效三套一致。
+
+
+## 质感层（2026-11-14 追加）
+
+按 [`dark-texture-analysis.md`](dark-texture-analysis.md) 的 P0–P2 实施：阴影/边框/hover/对比度主题化、第三档 `--bg-elevated`、dark 专用 `.glass` 材质（半透明 + blur）、primary 改 12–14% 白底、dark 正文收字距。warm 截图逐像素零回归；e2e 322/322。

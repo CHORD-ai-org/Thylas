@@ -77,7 +77,7 @@ export function Composer({
   const model = status?.model ?? null;
 
   return (
-    <div className={s.composer}>
+    <div className={[s.composer, 'glass'].join(' ')}>
       <div className={s.composerInner}>
         <ContextBar
           conversation={conversation}
@@ -240,7 +240,7 @@ function ContextBar({
       </button>
 
       {open ? (
-        <div className={s.popover} ref={popoverRef} data-context-popover>
+        <div className={[s.popover, 'glass'].join(' ')} ref={popoverRef} data-context-popover>
           <p className={s.popoverTitle}>Workspace</p>
           {workspaces.map((ws) => (
             <button
@@ -330,8 +330,7 @@ function ContextBar({
             ))
           )}
           <p className={s.popoverNote}>
-            Context is declared, not read: the assistant receives these names, and no workspace
-            file is accessed automatically.
+            No workspace file is accessed automatically.
           </p>
         </div>
       ) : null}

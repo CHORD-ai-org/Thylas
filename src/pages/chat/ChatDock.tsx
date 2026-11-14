@@ -29,7 +29,7 @@ export function ChatDock() {
   };
 
   return (
-    <aside className={d.dock} style={{ width: dock.width }} aria-label="Chat panel" data-chat-dock>
+    <aside className={[d.dock, 'glass'].join(' ')} style={{ width: dock.width }} aria-label="Chat panel" data-chat-dock>
       <div
         className={d.dockGrip}
         role="separator"

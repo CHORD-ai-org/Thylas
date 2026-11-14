@@ -136,7 +136,7 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
 
   return (
     <div className={[s.chat, landing ? s.chatLanding : ''].join(' ')} data-chat-embedded={embedded || undefined}>
-      <header className={s.header}>
+      <header className={[s.header, 'glass'].join(' ')}>
         <span className={s.headerTitle} title={conversation.title}>
           {conversation.title}
         </span>
@@ -178,9 +178,7 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
             <div className={s.streamEmpty}>
               <p className={s.streamEmptyTitle}>Ask about this workspace.</p>
               <p className={s.streamEmptyHint}>
-                Attach notes, files or whiteboards as context — the assistant receives what you
-                declare, and nothing is read automatically. Code in answers can be saved as a real
-                note.
+                Nothing is read automatically.
               </p>
             </div>
           ) : (
