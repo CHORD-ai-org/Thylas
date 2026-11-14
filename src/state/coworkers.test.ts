@@ -128,6 +128,56 @@ describe('memberships', () => {
   });
 });
 
+describe('mind framework (D-060)', () => {
+  it('a created coworker gets a valid default framework', async () => {
+    const { store } = await fresh();
+    const created = store.createCoworker({
+      name: 'Fresh',
+      description: '',
+      forWork: '',
+      notFor: '',
+      output: '',
+    });
+    expect(store.coworkerById(created.id)!.mindFramework?.version).toBe(1);
+    expect(store.coworkerById(created.id)!.mindFramework!.principles.length).toBeGreaterThan(0);
+    expect(store.__readForTest().added[0]!.mindFramework?.version).toBe(1);
+  });
+
+  it('a hand-edited framework is dropped but the coworker survives', async () => {
+    storage.set(
+      'thylas:coworkers:v1',
+      JSON.stringify({
+        version: 1,
+        added: [
+          {
+            id: 'cw-hand',
+            name: 'Hand edited',
+            description: '',
+            status: 'active',
+            createdAt: 1,
+            responsibilities: { forWork: 'a', notFor: 'b', output: 'c' },
+            memberships: [],
+            pinnedArtifactIds: [],
+            mindFramework: { version: 999, principles: [7] },
+          },
+        ],
+      }),
+    );
+    const { store } = await fresh();
+    expect(store.__readForTest().added).toHaveLength(1);
+    expect(store.__readForTest().added[0]!.mindFramework).toBeUndefined();
+    expect(store.coworkerById('cw-hand')!.mindFramework?.version).toBe(1);
+  });
+
+  it('seeds carry distinct declared frameworks', async () => {
+    const { store } = await fresh();
+    const reviewer = store.coworkerById('cw-reviewer')!.mindFramework!;
+    const scribe = store.coworkerById('cw-scribe')!.mindFramework!;
+    expect(reviewer.version).toBe(1);
+    expect(reviewer.principles[0]).not.toBe(scribe.principles[0]);
+  });
+});
+
 describe('tombstones', () => {
   it('removing a seed is a tombstone; removing a created one drops it', async () => {
     const { store } = await fresh();

@@ -3,6 +3,7 @@
  * a single-workspace reviewer, a multi-workspace producer, and a paused one.
  * Content is prototype data, presented as such in the UI.
  */
+import type { MindFramework } from '../lib/coworkers';
 
 export type CoworkerStatus = 'active' | 'paused' | 'archived';
 
@@ -27,6 +28,9 @@ export type Coworker = {
   memberships: Membership[];
   /** Artifacts pinned into its working context (references, not copies). */
   pinnedArtifactIds: string[];
+  /** Declared configuration record, not an executable mind (D-060). Optional:
+      older envelopes and hand-written records may not have one. */
+  mindFramework?: MindFramework;
 };
 
 const DAY = 86_400_000;
@@ -46,6 +50,15 @@ export const COWORKERS: Coworker[] = [
     },
     memberships: [{ wsId: 'ws-research', role: 'reviews protocols' }],
     pinnedArtifactIds: ['a-method'],
+    mindFramework: {
+      version: 1,
+      principles: ['Read the protocol section by section.', 'Every finding cites the section it concerns.'],
+      contextPolicy: 'Only the pinned method and the protocol under review.',
+      uncertaintyPolicy: 'Mark a section unverifiable rather than inferring its content.',
+      decisionRules: ['Escalate when a precondition has no witness.', 'Never accept an incomplete run as complete.'],
+      reflection: 'Re-read the verdict against each section; name what was not checked.',
+      methodSelection: 'Apply the pinned completeness review method at its current version.',
+    },
   },
   {
     id: 'cw-scribe',
@@ -63,6 +76,15 @@ export const COWORKERS: Coworker[] = [
       { wsId: 'ws-onda', role: 'drafts tables for Onda Lab reviews' },
     ],
     pinnedArtifactIds: ['a-method', 'a-boundary', 'a-bench'],
+    mindFramework: {
+      version: 1,
+      principles: ['A table is only as good as its witnesses.', 'Keep edges and crossing rules aligned with the model.'],
+      contextPolicy: 'Probe records plus the pinned boundary model and method.',
+      uncertaintyPolicy: 'Leave a cell blank and record why instead of estimating it.',
+      decisionRules: ['Ask before marking a notional edge as real.'],
+      reflection: 'Check every row against a named probe before reporting the table.',
+      methodSelection: 'Use the boundary mapping method pinned at its declared version.',
+    },
   },
   {
     id: 'cw-archivist',
@@ -77,5 +99,14 @@ export const COWORKERS: Coworker[] = [
     },
     memberships: [{ wsId: 'ws-research', role: 'files run records' }],
     pinnedArtifactIds: ['a-bench'],
+    mindFramework: {
+      version: 1,
+      principles: ['Provenance is part of the record.', 'A missing field is a finding, not a gap to fill.'],
+      contextPolicy: 'Method-run records in the granted workspace only.',
+      uncertaintyPolicy: 'File the run for follow-up when the executor is unknown.',
+      decisionRules: ['Never evaluate a run while filing its completeness.'],
+      reflection: 'Re-check the checklist against the run after filing.',
+      methodSelection: 'No method is applied while the run format is unsettled.',
+    },
   },
 ];

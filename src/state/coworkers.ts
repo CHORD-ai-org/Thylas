@@ -8,6 +8,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { COWORKERS, type Coworker, type CoworkerStatus, type Membership, type Responsibilities } from '../data/coworkers';
+import { defaultMindFramework, isMindFramework, mindFrameworkOf } from '../lib/coworkers';
 
 const KEY = 'thylas:coworkers:v1';
 const MAX_COWORKERS = 60;
@@ -89,7 +90,13 @@ function read(): State {
       statusOverrides,
       membershipsAdded: Array.isArray(p.membershipsAdded) ? p.membershipsAdded.filter(isMembership) : [],
       membershipsRemoved: Array.isArray(p.membershipsRemoved) ? p.membershipsRemoved.filter(isMembership) : [],
-      added: Array.isArray(p.added) ? p.added.filter(isCoworker) : [],
+      added: Array.isArray(p.added)
+        ? p.added.filter(isCoworker).map((c) => ({
+            ...c,
+            /* A hand-edited framework is dropped, never the Coworker record. */
+            mindFramework: isMindFramework(c.mindFramework) ? c.mindFramework : undefined,
+          }))
+        : [],
       removed: Array.isArray(p.removed)
         ? p.removed.filter((x): x is string => typeof x === 'string' && COWORKERS.some((c) => c.id === x))
         : [],
@@ -147,6 +154,7 @@ export function coworkersView(): Coworker[] {
         responsibilities: snapshot.responsibilityOverrides[c.id] ?? c.responsibilities,
         status: snapshot.statusOverrides[c.id] ?? c.status,
         memberships,
+        mindFramework: mindFrameworkOf(c.mindFramework) ?? defaultMindFramework(),
       };
     });
   return [...list].sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active')).slice(0, MAX_COWORKERS);
@@ -194,6 +202,7 @@ export function createCoworker(input: {
     },
     memberships: input.membership ? [input.membership] : [],
     pinnedArtifactIds: [],
+    mindFramework: defaultMindFramework(),
   };
   commit({
     ...snapshot,
