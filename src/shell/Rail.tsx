@@ -10,7 +10,6 @@ import type { Workspace } from '../data/types';
 import { useApp } from '../state/app';
 import { IconButton } from '../components/ui';
 import {
-  IconAccount,
   IconBoards,
   IconChat,
   IconChevron,
@@ -73,6 +72,7 @@ export function Rail() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState<string[]>([]);
+  const [sectionOpen, setSectionOpen] = useState(true);
 
   const activeWs = workspaces.find((w) => pathname.startsWith(`/w/${w.id}`))?.id ?? null;
 
@@ -106,10 +106,19 @@ export function Rail() {
   return (
     <aside className={s.rail} data-collapsed={railCollapsed || undefined} onKeyDown={onKeyDown}>
       <div className={s.brand}>
-        <span className={s.brandMark} aria-hidden>
-          τ
-        </span>
-        {railCollapsed ? null : <span className={s.brandName}>Thylas</span>}
+        <button
+          type="button"
+          className={s.brandToggle}
+          onClick={toggleRail}
+          aria-label="Toggle sidebar"
+          data-rail-brand
+          title={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <span className={s.brandMark} aria-hidden>
+            τ
+          </span>
+          {railCollapsed ? null : <span className={s.brandName}>Thylas</span>}
+        </button>
         {railCollapsed ? null : (
           <span className={s.brandActions}>
             <IconButton label="Search or jump to (Ctrl K)" onClick={openPalette}>
@@ -150,13 +159,6 @@ export function Rail() {
           active={pathname.startsWith('/connect')}
           collapsed={railCollapsed}
         />
-        <RailItem
-          label="Chat"
-          path={routes.chat()}
-          icon={<IconChat />}
-          active={pathname.startsWith('/chat')}
-          collapsed={railCollapsed}
-        />
       </nav>
 
       <div className={s.railSection}>
@@ -164,7 +166,16 @@ export function Rail() {
           <div className={s.railRule} />
         ) : (
           <div className={s.railLabelLine}>
-            <span>Workspace</span>
+            <button
+              type="button"
+              className={s.sectionToggle}
+              aria-expanded={sectionOpen}
+              onClick={() => setSectionOpen((v) => !v)}
+              data-ws-section
+            >
+              <IconChevron dir={sectionOpen ? 'down' : 'right'} size={11} />
+              <span>Workspace</span>
+            </button>
             {/* Creation is a two-word form on Overview, not a dialog here: the
                 button goes where the form is, so the new card is in view when
                 it opens. */}
@@ -183,7 +194,7 @@ export function Rail() {
           </div>
         )}
 
-        {workspaces.map((ws) => {
+        {sectionOpen ? workspaces.map((ws) => {
           const expanded = isOpen(ws.id);
           const pending = needsYou(ws);
           return (
@@ -250,7 +261,7 @@ export function Rail() {
               ) : null}
             </div>
           );
-        })}
+        }) : null}
 
       </div>
 
@@ -276,27 +287,27 @@ export function Rail() {
           active={pathname.startsWith('/notes')}
           collapsed={railCollapsed}
         />
+      </nav>
+
+      <nav className={s.railNav} aria-label="Conversations">
         <RailItem
-          label="User"
-          path={routes.user()}
-          icon={<IconAccount />}
-          active={pathname.startsWith('/user')}
+          label="Chat"
+          path={routes.chat()}
+          icon={<IconChat />}
+          active={pathname.startsWith('/chat')}
           collapsed={railCollapsed}
         />
       </nav>
 
       <div className={s.railFoot}>
-        {railCollapsed ? (
-          <IconButton label="Expand sidebar" onClick={toggleRail}>
-            <IconChevron dir="right" />
-          </IconButton>
-        ) : (
-          <button type="button" className={s.collapseRow} onClick={toggleRail}>
-            <IconChevron dir="left" size={12} />
-            Collapse sidebar
-          </button>
-        )}
-        <div className={s.profile} title={`${displayNameOf(user, USER.name)} · ${USER.plan} plan`}>
+        <button
+          type="button"
+          className={s.profile}
+          onClick={() => navigate(routes.user())}
+          aria-label="User profile"
+          data-rail-user
+          title={`${displayNameOf(user, USER.name)} · ${USER.plan} plan`}
+        >
           <span className={s.avatar}>{USER.initials.slice(0, 1)}</span>
           {railCollapsed ? null : (
             <span className={s.profileText}>
@@ -304,7 +315,7 @@ export function Rail() {
               <span className={s.profileMeta}>Personal · {USER.plan}</span>
             </span>
           )}
-        </div>
+        </button>
       </div>
     </aside>
   );

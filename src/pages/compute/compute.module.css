@@ -1506,3 +1506,104 @@ a.tr:focus-visible {
     white-space: nowrap;
   }
 }
+
+
+/* ---- Compute home: wide status card, destination select, option tiles ---- */
+.sectionActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.runningCard {
+  padding: 10px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--ink-2);
+  font: var(--t-ui);
+  min-height: 64px;
+}
+
+.destinationSelect {
+  min-width: 260px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  color: var(--ink);
+  font: var(--t-ui);
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--s4);
+  margin-top: var(--s3);
+}
+
+.tile {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 210px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  color: var(--ink);
+}
+
+a.tile:hover {
+  border-color: var(--ink-3);
+}
+
+.tileMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 34px;
+  margin-bottom: 8px;
+  color: var(--ink-2);
+}
+
+.tileName {
+  font: var(--t-ui-strong);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.tileBlurb {
+  font: var(--t-ui);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.tileMeta {
+  margin-top: auto;
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+.tileFoot {
+  font: var(--t-caption);
+  color: var(--ink);
+}
+
+.tileAction {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+.tileAction:hover { color: var(--ink); }
+
+.tileActionMuted {
+  margin-top: 6px;
+  font: var(--t-ui);
+  color: var(--ink-3);
+}

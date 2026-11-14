@@ -79,6 +79,22 @@
   flex: 0 0 auto;
 }
 
+.brandToggle {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.brandToggle:hover .brandName {
+  color: var(--ink-2);
+}
+
 .brandName {
   font: var(--t-ui-strong);
   letter-spacing: 0.01em;
@@ -161,6 +177,24 @@
   height: 1px;
   margin: 0 4px var(--s2);
   background: var(--line);
+}
+
+.sectionToggle {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.sectionToggle:hover {
+  color: var(--ink);
 }
 
 .railLabelLine {
@@ -307,11 +341,21 @@
 }
 
 .profile {
+  composes: focusInside from '../styles/grammar.module.css';
   display: flex;
   align-items: center;
   gap: var(--s2);
+  width: 100%;
   padding: 6px 4px 0;
+  border: 0;
   border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.profile:hover .profileName {
+  color: var(--ink-2);
 }
 
 .avatar {
