@@ -43,6 +43,15 @@
   --bg-elevated: #FBF9F4;
   --line-glass: rgba(255, 255, 255, 0);
 
+  /* Artifact cover hues (design/artifacts-gallery.md §2.2). Six named hues,
+     one set per palette; covers derive their ground and glyph from these. */
+  --cover-blue: #5B7794;
+  --cover-green: #5F7A5A;
+  --cover-clay: #9A6B52;
+  --cover-violet: #6E6488;
+  --cover-teal: #4F7A78;
+  --cover-amber: #96783F;
+
   color-scheme: light;
 }
 
@@ -82,6 +91,13 @@
   --e1: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --e2: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 10px 30px rgba(0, 0, 0, 0.45);
 
+  --cover-blue: #7E9BC4;
+  --cover-green: #86A886;
+  --cover-clay: #C08A6E;
+  --cover-violet: #9C92C4;
+  --cover-teal: #79ABA8;
+  --cover-amber: #C6A55E;
+
   color-scheme: dark;
 }
 
@@ -117,6 +133,13 @@
 
   --e1: 0 1px 0 rgba(0, 0, 0, 0.05);
   --e2: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
+
+  --cover-blue: #4C6E93;
+  --cover-green: #4F6E4A;
+  --cover-clay: #8A5B44;
+  --cover-violet: #605580;
+  --cover-teal: #416966;
+  --cover-amber: #82672F;
 
   color-scheme: light;
 }
