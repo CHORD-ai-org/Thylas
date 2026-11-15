@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { hashSeed, mulberry32, sketchHLine, sketchPath, sketchRect } from './sketch';
+import {
+  hashSeed,
+  mulberry32,
+  paperShape,
+  polygonPath,
+  sketchHLine,
+  sketchPath,
+  sketchPolygon,
+  sketchRect,
+} from './sketch';
 
 const numbers = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
 
@@ -58,6 +67,30 @@ describe('rect', () => {
     const d = sketchRect(4, 4, 'tiny');
     expect(d.includes('NaN')).toBe(false);
     expect(d.startsWith('M ')).toBe(true);
+  });
+});
+
+describe('paper silhouette', () => {
+  it('is not a rectangle: seven corners, and the top edge is not level', () => {
+    const points = paperShape(424, 470);
+    expect(points).toHaveLength(7);
+    const ys = new Set(points.map((p) => p[1]));
+    expect(ys.size).toBeGreaterThan(4);
+  });
+
+  it('stays inside the box it was given', () => {
+    for (const [x, y] of paperShape(424, 470)) {
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(424);
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(470);
+    }
+  });
+
+  it('closes the fill path and draws one subpath per edge', () => {
+    const points = paperShape(424, 470);
+    expect(polygonPath(points).endsWith(' Z')).toBe(true);
+    expect((sketchPolygon(points, 'paper').match(/M /g) ?? []).length).toBe(points.length);
   });
 });
 
