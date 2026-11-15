@@ -45,6 +45,7 @@ Do NOT silently convert proposals into finalized architecture.
 - No Coworker code exists yet; only artifact-detail → chat dock interaction is shipped.
 - Reusable: Artifact page trio, ChatCore, `useWorkspaces`, artifacts store.
 - WAM not connected; no runtime status; conversation is the only live surface.
+- `docs/product/gsc/MANIFESTO.md` (2026-11-15): GSC (Global Shared Context) manifesto — the persistent/shared-context infrastructure charter. Directly relevant to Phase 3 (Functional Collaboration Model → shared context) and to coworker ↔ artifact context exchange. GSC is declared independent of WAM/Thylas/Coworkers; Thylas+Coworkers are consumers, not owners.
 
 ---
 # Task Brief (verbatim)
