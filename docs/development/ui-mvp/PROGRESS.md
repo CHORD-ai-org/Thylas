@@ -49,6 +49,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | User page | — | **Completed** 11-15 | 0.4 | user-page | 档案卡（banner + 压边头像 + 名字为 h1）+ 单一设置面（Account/App 分组导航 + 内容区，行高 56px）；删除重复的 Identity 卡片；≤860 转横向导航。e2e 333/333 |
 | Sign in | — | **Completed** 11-15 | 0.8 | LOGIN-PLAN | `/login` 独立路由；手绘纸片可拖（持久化/键盘/复位）+ 黑板电报体语录；诚实说明 + dev 出口。9 单测 + 9 e2e |
 | Sign-in warp | — | **Completed** 11-15 | 0.5 | LOGIN-PLAN §13 | 文案化身星点 → 黑场长满全页 → 纸片收成彗星 → 镜头贴近 → 白场 → 引导；纯函数时间轴 + canvas；reduced-motion 直接跳 |
+| File previews | — | **Completed** 11-15 | 0.7 | PREVIEW-PLAN | PDF（原生 viewer）/ CSV（表 + 截断说明）/ MD（复用 renderer）；样例文件随包；markdown 软换行修正。14 单测 + 4 e2e |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |

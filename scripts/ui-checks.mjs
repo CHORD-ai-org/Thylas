@@ -1298,6 +1298,60 @@ async function main() {
   await js(`document.querySelector('button[title*="Files service" i]').click(); await new Promise(r => setTimeout(r, 200));`);
   check('files: clicking a disabled action adds no banner', await js(`return document.querySelectorAll('[class*="banner"]').length;`), 0);
 
+  // ---- File preview: csv, markdown, pdf, and the kinds that have none ----
+  await goto('/w/ws-research/files/f-eval-log');
+  await js('await new Promise(r => setTimeout(r, 800)); return 1;');
+  check('files: the CSV preview is a real table with a sticky header', await js(`
+    const table = document.querySelector('[data-csv-table]');
+    const head = table?.querySelector('thead th');
+    return {
+      table: !!table,
+      rows: table ? table.querySelectorAll('tbody tr').length : 0,
+      sticky: head ? getComputedStyle(head).position : null,
+      quoted: [...document.querySelectorAll('[data-csv-table] tbody td')].some(td => td.textContent === 'bnd-east, inner'),
+      foot: document.querySelector('[data-csv-preview]')?.innerText.includes('20 rows') ?? false,
+    };
+  `), (v) => v.table === true && v.rows >= 15 && v.sticky === 'sticky' && v.quoted === true && v.foot === true);
+
+  await goto('/w/ws-research/files/f-baseline-md');
+  await js('await new Promise(r => setTimeout(r, 800)); return 1;');
+  check('files: the markdown preview renders the document, not its source', await js(`
+    const doc = document.querySelector('[data-markdown-preview]');
+    return {
+      doc: !!doc,
+      h1: doc?.querySelector('h1')?.textContent.trim() ?? null,
+      list: doc ? doc.querySelectorAll('ul li').length : 0,
+      table: !!doc?.querySelector('table'),
+      source: doc?.textContent.includes('# Notes on the baseline run') ?? true,
+    };
+  `), (v) => v.doc === true && v.h1 === 'Notes on the baseline run' && v.list >= 3 && v.table === true && v.source === false);
+
+  await goto('/w/ws-research/files/f-protocol');
+  await js('await new Promise(r => setTimeout(r, 900)); return 1;');
+  check('files: the PDF preview hands the file to the browser viewer', await js(`
+    const frame = document.querySelector('[data-pdf-preview]');
+    return {
+      frame: !!frame,
+      title: frame?.getAttribute('title') ?? null,
+      src: frame?.getAttribute('src') ?? '',
+      sample: document.body.innerText.includes('sample file'),
+    };
+  `), (v) => v.frame === true && v.title === 'protocol-v3.pdf preview' && v.src.startsWith('/samples/protocol-v3.pdf') && v.sample === true);
+
+  await goto('/w/ws-research/files/f-raw-runs');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  check('files: a kind without a preview keeps the facts sheet', await js(`
+    return {
+      sheet: document.body.innerText.includes('No file bytes are stored in this build.'),
+      preview: !!document.querySelector('[data-preview-kind]'),
+    };
+  `), { sheet: true, preview: false });
+
+  /* Back to the list: the disclosure checks below live on it, and a detail
+     route left open turns them into "button not found". */
+  await goto('/w/ws-research/files');
+  await js('await new Promise(r => setTimeout(r, 600)); return 1;');
+
   check('files: folder disclosure is a real button with aria-expanded', await js(`
     const b = document.querySelector('button[aria-label^="Collapse datasets"]');
     return !!b && b.getAttribute('aria-expanded') === 'true';
@@ -2756,20 +2810,32 @@ async function main() {
     window.addEventListener('unhandledrejection', e => window.__errs.push('rej:' + String(e.reason?.message ?? e.reason)));
     return 1;
   `);
-  check('chat: the rail opens the page, and a conversation starts on demand', await js(`
+  check('chat: an empty page still has a header and a composer, and one add control only', await js(`
     return {
       rail: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'Chat'),
-      empty: document.body.innerText.includes('No conversation yet.'),
-      created: (await new Promise((resolve) => {
-        [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'New conversation')?.click();
-        setTimeout(() => resolve(!!document.querySelector('textarea[aria-label="Message"]')), 300);
-      })),
+      composer: !!document.querySelector('textarea[aria-label="Message"]'),
+      header: document.querySelector('h1')?.textContent.trim() ?? document.body.innerText.includes('New conversation'),
+      empty: document.body.innerText.includes('Ask about this workspace.'),
+      rows: document.querySelectorAll('[data-conversation-row]').length,
+      adds: document.querySelectorAll('[data-context-add]').length,
       model: document.querySelector('[data-model-btn]')?.textContent.trim(),
     };
-  `), (v) => v.rail && v.empty && v.created && v.model === 'deepseek/deepseek-chat');
+  `), (v) => v.rail === true && v.composer === true && v.empty === true && v.rows === 0
+    && v.adds === 0 && v.model === 'deepseek/deepseek-chat');
 
   await fillAria('Message', 'What is a boundary? Show an example.');
   await js(`${helpers} click(document.querySelector('button[aria-label="Send"]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('chat: once a conversation exists, the add control sits inside the pill — exactly one', await js(`
+    const adds = [...document.querySelectorAll('[data-context-add]')];
+    const pill = document.querySelector('[class*="inputWrap"]');
+    const add = adds[0];
+    return {
+      count: adds.length,
+      inside: !!(add && pill && pill.contains(add)),
+      bar: !!document.querySelector('[data-context-bar]'),
+    };
+  `), { count: 1, inside: true, bar: true });
+
   check('chat: sending places the turn and the composer enters its stop state', await js(`
     const text = document.querySelector('[data-chat-stream]')?.innerText ?? '';
     return {
@@ -3020,6 +3086,27 @@ async function main() {
       rows: document.querySelectorAll('[data-coworker-row]').length,
     };
   `), (v) => v.rail && v.h1 === 'Coworkers' && v.rows === 3);
+
+  await js(`${helpers} click(document.querySelector('[aria-label="Grid view"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('coworkers: the grid shows the same three as cards with an identity plate', await js(`
+    const cards = [...document.querySelectorAll('[data-coworker-card]')];
+    return {
+      cards: cards.length,
+      plates: cards.map(c => c.querySelector('[data-hue]')?.getAttribute('data-hue')),
+      initials: cards.map(c => c.textContent.trim().slice(0, 2)),
+      distinctHues: new Set(cards.map(c => c.querySelector('[data-hue]')?.getAttribute('data-hue'))).size,
+      rows: document.querySelectorAll('[data-coworker-row]').length,
+    };
+  `), (v) => v.cards === 3 && v.rows === 0 && v.distinctHues === 3 && v.initials.every((i) => /^[A-Z]{1,2}$/.test(i)));
+
+  await js(`${helpers} click(document.querySelector('[aria-label="List view"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('coworkers: the list view is still the default and comes back', await js(`
+    return {
+      rows: document.querySelectorAll('[data-coworker-row]').length,
+      cards: document.querySelectorAll('[data-coworker-card]').length,
+      on: document.querySelector('[aria-label="List view"]')?.getAttribute('aria-pressed'),
+    };
+  `), { rows: 3, cards: 0, on: 'true' });
 
   await fillAria('Search coworkers', 'protocol');
   check('coworkers: search narrows to the reviewer', await js(`
