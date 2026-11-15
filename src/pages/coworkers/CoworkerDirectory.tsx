@@ -5,6 +5,7 @@ import { coworkersView, useCoworkers } from '../../state/coworkers';
 import { PlainLayout } from '../../shell/layouts';
 import { Button, EmptyState } from '../../components/ui';
 import { IconPlus } from '../../components/icons';
+import { hashId } from '../../lib/cover';
 import a from '../artifacts/artifacts.module.css';
 import c from './coworker.module.css';
 
@@ -16,10 +17,10 @@ import c from './coworker.module.css';
 
 const DAY = 86_400_000;
 
+/** Same hash as the artifact covers: a character sum put two of the three
+    seeds on the same hue, which made the grid look like one colour. */
 function hue(id: string): string {
-  let n = 0;
-  for (const ch of id) n += ch.charCodeAt(0);
-  return String(n % 4);
+  return String(hashId(id) % 4);
 }
 
 function initials(name: string): string {
@@ -34,6 +35,7 @@ function initials(name: string): string {
 export function CoworkerDirectory() {
   useCoworkers();
   const [view, setView] = useState<'all' | 'active' | 'archived'>('all');
+  const [mode, setMode] = useState<'list' | 'grid'>('list');
   const [query, setQuery] = useState('');
 
   const visible = useMemo(() => {
@@ -57,6 +59,33 @@ export function CoworkerDirectory() {
           </p>
         </div>
         <div className={a.headActions}>
+          <div className={a.modeRow} role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={[a.modeBtn, mode === 'list' ? a.modeBtnOn : ''].join(' ')}
+              aria-label="List view"
+              aria-pressed={mode === 'list'}
+              onClick={() => setMode('list')}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={[a.modeBtn, mode === 'grid' ? a.modeBtnOn : ''].join(' ')}
+              aria-label="Grid view"
+              aria-pressed={mode === 'grid'}
+              onClick={() => setMode('grid')}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                <rect x="2.5" y="2.5" width="4.6" height="4.6" />
+                <rect x="8.9" y="2.5" width="4.6" height="4.6" />
+                <rect x="2.5" y="8.9" width="4.6" height="4.6" />
+                <rect x="8.9" y="8.9" width="4.6" height="4.6" />
+              </svg>
+            </button>
+          </div>
           <input
             className={a.search}
             type="search"
@@ -118,6 +147,36 @@ export function CoworkerDirectory() {
             }
           />
         )
+      ) : mode === 'grid' ? (
+        <ul className={a.gallery} data-coworker-grid>
+          {visible.map((cw) => (
+            <li key={cw.id}>
+              <Link
+                className={a.galleryCard}
+                to={routes.coworker(cw.id)}
+                data-coworker-card={cw.id}
+                aria-label={`${cw.name}, ${cw.status}`}
+              >
+                <span className={c.cardCover} data-hue={hue(cw.id)} aria-hidden>
+                  <span className={c.cardInitials}>{initials(cw.name)}</span>
+                </span>
+                <span className={a.cardBodyPad}>
+                  <span className={a.cardName}>{cw.name}</span>
+                  <span className={a.cardSummary}>{cw.responsibilities.forWork || cw.description}</span>
+                  <span className={a.cardMeta}>
+                    <span className={c.statusChip} data-status={cw.status}>
+                      {cw.status}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {cw.memberships.length} workspace{cw.memberships.length === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : (
         <ul className={a.rows}>
           {visible.map((cw) => (

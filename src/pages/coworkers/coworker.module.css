@@ -14,10 +14,34 @@
   color: var(--bg-app);
 }
 
-.mark[data-hue='0'] { background: #4b6b8f; }
-.mark[data-hue='1'] { background: #6b8f4b; }
-.mark[data-hue='2'] { background: #8f6b4b; }
-.mark[data-hue='3'] { background: #6b4b8f; }
+/* Hues come from the artifact cover palette: one colour system, not two.
+   The old values were hard-coded per palette; these follow the theme. */
+.mark[data-hue='0'] { background: var(--cover-blue); }
+.mark[data-hue='1'] { background: var(--cover-green); }
+.mark[data-hue='2'] { background: var(--cover-clay); }
+.mark[data-hue='3'] { background: var(--cover-violet); }
+
+/* ---- grid cards: same card grammar as artifacts, initials for a cover ---- */
+
+.cardCover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 108px;
+  background: color-mix(in srgb, var(--coworker-hue) 13%, var(--bg-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.cardCover[data-hue='0'] { --coworker-hue: var(--cover-blue); }
+.cardCover[data-hue='1'] { --coworker-hue: var(--cover-green); }
+.cardCover[data-hue='2'] { --coworker-hue: var(--cover-clay); }
+.cardCover[data-hue='3'] { --coworker-hue: var(--cover-violet); }
+
+.cardInitials {
+  font: 500 22px/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--coworker-hue) 88%, var(--ink));
+}
 
 .statusChip {
   font: var(--t-caption);

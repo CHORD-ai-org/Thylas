@@ -43,3 +43,21 @@ directory reflection). Screenshots: `.workbuddy/shots/coworkers-*.png`.
 - Object assertions fail on extra keys; `textarea.value` is not in `innerText`.
 - Each e2e block must reset its own localStorage key at block start — runs share
   profile state (the pause check failed on a leftover override from the prior run).
+
+## Grid view (2026-11-15)
+
+The directory gained a second view; the list stays the default (the original brief asked
+for list-first, and a row answers "who / what for / where / state" in one line).
+
+- Toggle sits in the header actions (`List view` / `Grid view`), same icon pair and
+  styling as the Artifacts library (`artifacts.module.css` `modeRow/modeBtn`).
+- Cards reuse the artifact card grammar (`gallery`, `galleryCard`, `cardBodyPad`,
+  `cardName`, `cardSummary`, `cardMeta`) — one card language across the product.
+- The cover is the coworker's own identity block: initials on a tinted plate
+  (`cardCover`, 108px). Hues come from the shared cover tokens (`--cover-blue/green/
+  clay/violet`), which also replaced the four hard-coded hex values in `.mark`.
+- Hue derivation is now `hashId(id) % 4`. The previous character-sum put two of the
+  three seeds on the same hue, so the grid read as one colour.
+- Markup: `[data-coworker-grid]` / `[data-coworker-card]`, with `[data-coworker-row]`
+  still used by the list. e2e covers: grid = 3 cards, 3 distinct hues, initials only,
+  then back to the list (3 rows, `aria-pressed` on the list button).
