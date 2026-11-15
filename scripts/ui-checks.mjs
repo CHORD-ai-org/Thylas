@@ -2647,14 +2647,18 @@ async function main() {
 
   await fillAria('Email', 'ceaser@oasis.dev');
   await fillAria('Password', 'not-a-real-password');
-  await js(`${helpers} click(document.querySelector('[data-login-submit]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
-  check('login: a valid form states that nothing is verified, and stays put', await js(`
-    return {
-      notice: document.querySelector('[role="status"]')?.textContent.includes('CHORD sign-in is not connected') ?? false,
-      path: location.pathname,
-      cookie: document.cookie.includes('thylas_session='),
-    };
-  `), (v) => v.notice === true && v.path === '/login' && v.cookie === false);
+  await js(`${helpers} click(document.querySelector('[data-login-submit]')); await new Promise(r => setTimeout(r, 120)); return 1;`);
+  check('login: a valid form turns the page into the warp, then hands over to onboarding', await js(`
+    const veil = document.querySelector('[data-signin-warp]');
+    const canvas = document.querySelector('[data-warp-canvas]');
+    const seen = !!veil && !!canvas && getComputedStyle(veil).position === 'fixed';
+    const busy = document.querySelector('[class*="page"]')?.getAttribute('aria-busy');
+    await new Promise(r => setTimeout(r, 3600));
+    return { seen, busy, path: location.pathname, rail: !!document.querySelector('[data-rail]') };
+  `), (v) => v.seen === true && v.busy === 'true' && v.path === '/user/profile' && v.rail === true);
+
+  await goto('/login');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
 
   await js(`${helpers} click(byText('button', 'Create an account')); await new Promise(r => setTimeout(r, 150)); return 1;`);
   check('login: creating an account is the same sheet, one field more', await js(`
