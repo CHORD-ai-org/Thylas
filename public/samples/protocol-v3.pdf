@@ -1,0 +1,56 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 1635 >>
+stream
+BT /F1 19 Tf 64 776 Td (Protocol v3 - boundary studies) Tj ET
+BT /F2 9 Tf 64 754 Td (Research / datasets  version 3  12 pages in the source document) Tj ET
+0.55 w 64 742 m 531 742 l S
+BT /F1 12 Tf 64 712 Td (1. Purpose) Tj ET
+BT /F2 10.5 Tf 64 690 Td (This protocol fixes how a boundary study is run so that two runs can be) Tj ET
+BT /F2 10.5 Tf 64 674 Td (compared without arguing about method afterwards. It is a sample file: the) Tj ET
+BT /F2 10.5 Tf 64 658 Td (prototype ships one page, not the twelve the metadata claims.) Tj ET
+BT /F1 12 Tf 64 632 Td (2. Preconditions) Tj ET
+BT /F2 10.5 Tf 64 610 Td (A boundary must be stated before measurement. Where the boundary sits is a) Tj ET
+BT /F2 10.5 Tf 64 594 Td (decision, not a finding; record who decided and when.) Tj ET
+BT /F1 12 Tf 64 568 Td (3. Procedure) Tj ET
+BT /F2 10.5 Tf 64 546 Td (1. Declare the boundary and the excluded region.) Tj ET
+BT /F2 10.5 Tf 64 530 Td (2. Draw the sample from the declared region only.) Tj ET
+BT /F2 10.5 Tf 64 514 Td (3. Record every crossing event with its timestamp.) Tj ET
+BT /F2 10.5 Tf 64 498 Td (4. Compare against the previous run on the same boundary.) Tj ET
+BT /F1 12 Tf 64 472 Td (4. Decision rules) Tj ET
+BT /F2 10.5 Tf 64 450 Td (A crossing that cannot be located to within one tick is logged as unknown,) Tj ET
+BT /F2 10.5 Tf 64 434 Td (never guessed into the nearest bin.) Tj ET
+BT /F1 12 Tf 64 408 Td (5. Expected output) Tj ET
+BT /F2 10.5 Tf 64 386 Td (One table: boundary id, sample size, crossings, unknowns, run label.) Tj ET
+BT /F2 8 Tf 64 60 Td (Thylas sample document  bundled with the prototype, not user data.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000353 00000 n 
+0000000450 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2137
+%%EOF

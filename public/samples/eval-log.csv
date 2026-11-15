@@ -1,0 +1,21 @@
+run_id,boundary_id,sample_size,crossings,unknowns,mean_ms,p95_ms,policy,recorded_at
+run-12,bnd-north,2400,318,6,42.8,118,full,2026-11-14 09:12
+run-12,bnd-south,2400,296,11,43.1,121,full,2026-11-14 09:14
+run-12,bnd-east,1200,151,3,44.0,126,full,2026-11-14 09:19
+run-12,bnd-west,1200,168,2,41.9,119,full,2026-11-14 09:22
+run-11,bnd-north,2400,311,4,43.4,120,endpoints,2026-11-13 16:02
+run-11,bnd-south,2400,301,9,43.2,122,endpoints,2026-11-13 16:05
+run-11,bnd-east,1200,149,1,44.4,128,endpoints,2026-11-13 16:09
+run-11,bnd-west,1200,171,0,42.0,117,endpoints,2026-11-13 16:12
+run-10,bnd-north,1800,232,18,45.2,131,endpoints,2026-11-12 11:40
+run-10,bnd-south,1800,228,22,45.6,134,endpoints,2026-11-12 11:43
+run-10,"bnd-east, inner",900,118,7,46.1,139,endpoints,2026-11-12 11:47
+run-10,bnd-west,900,121,5,44.8,133,endpoints,2026-11-12 11:51
+run-09,bnd-north,2400,305,2,43.0,119,full,2026-11-11 09:05
+run-09,bnd-south,2400,299,3,43.3,120,full,2026-11-11 09:08
+run-09,bnd-east,1200,152,0,44.2,127,full,2026-11-11 09:12
+run-09,bnd-west,1200,165,1,41.8,118,full,2026-11-11 09:15
+run-08,"bnd-north ""outer""",2400,288,31,47.9,145,sparse,2026-11-10 14:20
+run-08,bnd-south,2400,274,44,48.6,151,sparse,2026-11-10 14:24
+run-08,bnd-east,1200,139,26,49.2,158,sparse,2026-11-10 14:29
+run-08,bnd-west,1200,142,29,48.9,156,sparse,2026-11-10 14:33

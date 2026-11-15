@@ -1,0 +1,7 @@
+source_field,target_field,type,required,note
+boundary_id,boundaryId,string,yes,stable across runs
+sample_size,sampleSize,integer,yes,
+crossings,crossings,integer,yes,count of located crossings
+unknowns,unknowns,integer,no,absent means zero
+mean_ms,meanMs,number,no,rounded to one decimal
+recorded_at,recordedAt,datetime,yes,ISO 8601 in UTC

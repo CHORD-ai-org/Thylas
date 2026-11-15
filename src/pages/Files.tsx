@@ -10,6 +10,7 @@ import { IconBoards, IconChevron, IconDisclosure, IconFolder, IconNote, IconUplo
 import { WorkspaceLayout } from '../shell/layouts';
 import g from '../styles/grammar.module.css';
 import s from './files.module.css';
+import { PreviewPane } from './files/PreviewPane';
 
 type RowItem =
   | { key: string; kind: 'file'; file: FileItem }
@@ -387,19 +388,23 @@ export function FileDetailPage() {
         </p>
       </div>
 
-      <div className={s.sheetWrap}>
-        <div className={s.sheet}>
-          <p className={s.sheetLine}>No file bytes are stored in this build.</p>
-          <p className={s.sheetHint}>No preview in this build.</p>
-          <div className={s.sheetRule} />
-          <div className={s.sheetFields}>
-            <Field label="Kind">{file.kind.toUpperCase()}</Field>
-            <Field label="Size">{file.size}</Field>
-            <Field label="Produced by">{file.source.kind === 'produced' ? file.source.runLabel : '—'}</Field>
-            <Field label="References">{file.usedBy.length}</Field>
+      {file.preview ? (
+        <PreviewPane file={file} preview={file.preview} />
+      ) : (
+        <div className={s.sheetWrap}>
+          <div className={s.sheet}>
+            <p className={s.sheetLine}>No file bytes are stored in this build.</p>
+            <p className={s.sheetHint}>No preview in this build.</p>
+            <div className={s.sheetRule} />
+            <div className={s.sheetFields}>
+              <Field label="Kind">{file.kind.toUpperCase()}</Field>
+              <Field label="Size">{file.size}</Field>
+              <Field label="Produced by">{file.source.kind === 'produced' ? file.source.runLabel : '—'}</Field>
+              <Field label="References">{file.usedBy.length}</Field>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </WorkspaceLayout>
   );
 }

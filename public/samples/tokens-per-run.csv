@@ -1,0 +1,9 @@
+run_id,model,prompt_tokens,completion_tokens,total_tokens,cost_usd,started_at
+run-12,deepseek/deepseek-chat,18240,3120,21360,0.0042,2026-11-14 09:10
+run-12,deepseek/deepseek-chat,9880,1740,11620,0.0023,2026-11-14 09:13
+run-11,deepseek/deepseek-chat,17650,2980,20630,0.0040,2026-11-13 16:00
+run-11,deepseek/deepseek-chat,9640,1620,11260,0.0022,2026-11-13 16:04
+run-10,deepseek/deepseek-chat,15120,2640,17760,0.0035,2026-11-12 11:38
+run-10,deepseek/deepseek-chat,8120,1380,9500,0.0019,2026-11-12 11:42
+run-09,deepseek/deepseek-chat,17980,3050,21030,0.0041,2026-11-11 09:03
+run-09,deepseek/deepseek-chat,9710,1690,11400,0.0022,2026-11-11 09:07
