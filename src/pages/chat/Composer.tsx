@@ -25,11 +25,15 @@ export function Composer({
   streaming,
   onSend,
   onStop,
+  draft = false,
 }: {
   conversation: Conversation;
   streaming: boolean;
   onSend: (text: string) => void;
   onStop: () => void;
+  /** No conversation exists yet: the first send creates one. Context cannot be
+      attached to a conversation that does not exist, so the picker is absent. */
+  draft?: boolean;
 }) {
   useConnect();
 
@@ -68,23 +72,24 @@ export function Composer({
   return (
     <div className={[s.composer, 'glass'].join(' ')}>
       <div className={s.composerInner}>
-        <ContextBar
-          conversation={conversation}
-          open={contextOpen}
-          setOpen={setContextOpen}
-        />
+        {draft ? null : (
+          <ContextBar conversation={conversation} open={contextOpen} setOpen={setContextOpen} />
+        )}
 
         <div className={s.inputWrap}>
-          <button
-            type="button"
-            className={s.composerAdd}
-            aria-label="Add context"
-            title="Add context"
-            onClick={() => setContextOpen(!contextOpen)}
-            data-composer-add
-          >
-            <IconPlus size={13} />
-          </button>
+          {draft ? null : (
+            <button
+              type="button"
+              className={s.composerAdd}
+              aria-label="Add context"
+              title="Add context"
+              onClick={() => setContextOpen(!contextOpen)}
+              data-composer-add
+              data-context-add
+            >
+              <IconPlus size={13} />
+            </button>
+          )}
           <textarea
             ref={inputRef}
             className={s.input}
@@ -224,8 +229,13 @@ function ContextBar({
 
   const currentWs = workspaces.find((w) => w.name === workspaceSource?.name) ?? workspaces[0];
 
+  /* The bar exists only to hold chips (and to anchor the picker). With no
+     context it collapses to zero height: the pill's own "+" is the one add
+     control — two of them sat one above the other and looked like a bug. */
+  const bare = conversation.context.length === 0;
+
   return (
-    <div className={s.contextBar}>
+    <div className={[s.contextBar, bare ? s.contextBarBare : ''].join(' ')} data-context-bar>
       {conversation.context.map((source) => (
         <span key={source.id} className={s.chip} data-kind={source.kind} title={source.detail}>
           {source.name}
@@ -239,16 +249,6 @@ function ContextBar({
           </button>
         </span>
       ))}
-      <button
-        type="button"
-        className={s.contextAdd}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        data-context-add
-      >
-        <IconPlus size={11} />
-      </button>
-
       {open ? (
         <div className={[s.popover, 'glass'].join(' ')} ref={popoverRef} data-context-popover>
           <p className={s.popoverTitle}>Workspace</p>

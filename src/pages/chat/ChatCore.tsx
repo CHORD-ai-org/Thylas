@@ -30,6 +30,16 @@ import s from './chat.module.css';
  */
 const controllers = new Map<string, AbortController>();
 
+/** Stand-in for the empty state: the composer needs an id and a context list,
+    and the first send is what actually creates the conversation. */
+const DRAFT: Conversation = {
+  id: 'draft',
+  title: 'New conversation',
+  createdAt: 0,
+  messages: [],
+  context: [],
+};
+
 /** What the reader can do about each failure kind. The server says what
     happened; this says what to do next (same table as the Ask panel). */
 const NEXT_STEP: Record<AiErr['kind'], string> = {
@@ -123,20 +133,35 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
     send(prompt, conversation.id);
   }, [conversation, send]);
 
+  /* No conversation yet: the same shell as every other state — header, a
+     centred question, and a working composer. The old version dropped the
+     header and the composer entirely, so the page looked broken and there was
+     nowhere to type. */
   if (!conversation) {
     return (
-      <div className={s.chat}>
-        <div className={s.stream} style={{ display: 'flex' }}>
-          <div className={s.streamEmpty}>
-            <p className={s.streamEmptyTitle}>No conversation yet.</p>
-            <p className={s.streamEmptyHint}>Start one — it opens here and in the dock, wherever you are.</p>
-            <div style={{ marginTop: 16 }}>
-              <Button size="sm" variant="primary" onClick={() => openConversation(newConversation().id)}>
-                New conversation
-              </Button>
+      <div className={[s.chat, s.chatLanding].join(' ')} data-chat-empty>
+        <header className={[s.header, 'glass'].join(' ')}>
+          <span className={s.headerTitle}>New conversation</span>
+          <span className={s.headerMeta}>no context</span>
+        </header>
+        <div className={s.stream}>
+          <div className={s.thread}>
+            <div className={s.streamEmpty}>
+              <p className={s.streamEmptyTitle}>Ask about this workspace.</p>
+              <p className={s.streamEmptyHint}>Nothing is read automatically.</p>
             </div>
           </div>
         </div>
+        <Composer
+          draft
+          conversation={DRAFT}
+          streaming={false}
+          onSend={(text) => {
+            const created = newConversation();
+            send(text, created.id);
+          }}
+          onStop={() => {}}
+        />
       </div>
     );
   }

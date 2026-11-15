@@ -121,11 +121,29 @@ export function parseMarkdown(source: string): Block[] {
       paragraph.push(lines[i] ?? '');
       i += 1;
     }
-    if (paragraph.length > 0) blocks.push({ type: 'p', text: paragraph.join('\n') });
+    if (paragraph.length > 0) blocks.push({ type: 'p', text: joinSoftLines(paragraph) });
     else i += 1;
   }
 
   return blocks;
+}
+
+/**
+ * Markdown soft breaks: a single newline inside a paragraph is a space, not a
+ * line break. Two trailing spaces (or a trailing backslash) force the break.
+ *
+ * This matters most for files: a hand-wrapped README is one paragraph, and
+ * rendering it as 60-character lines made every imported note look broken.
+ */
+function joinSoftLines(lines: string[]): string {
+  let out = '';
+  lines.forEach((raw, index) => {
+    const hard = / {2,}$/.test(raw) || raw.endsWith('\\');
+    const text = raw.replace(/ {2,}$/, '').replace(/\\$/, '').trim();
+    out += text;
+    if (index < lines.length - 1) out += hard ? '\n' : ' ';
+  });
+  return out;
 }
 
 const INLINE_RE = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[[^\]\n]+\]\((?:https?:\/\/[^\s)]+|\/[^\s)]*)\))/g;
