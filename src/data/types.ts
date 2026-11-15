@@ -42,6 +42,13 @@ export type Reference = {
   meta?: string;
 };
 
+/** A preview needs bytes. These point at the sample files bundled with the
+    prototype (public/samples); uploaded files will carry their own URL later. */
+export type FilePreview =
+  | { kind: 'pdf'; url: string }
+  | { kind: 'csv'; url: string }
+  | { kind: 'md'; url: string };
+
 export type FileItem = {
   id: Id;
   wsId: Id;
@@ -52,6 +59,8 @@ export type FileItem = {
   updated: string;
   source: Source;
   usedBy: Reference[];
+  /** Absent = no preview exists for this kind; the page keeps its facts sheet. */
+  preview?: FilePreview;
 };
 
 export type Folder = {
