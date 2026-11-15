@@ -12,10 +12,16 @@ import { PlainLayout } from '../../shell/layouts';
 import s from './user.module.css';
 
 const SECTIONS = [
-  { id: 'identity', label: 'Identity' },
-  { id: 'preferences', label: 'Preferences' },
-  { id: 'environment', label: 'My environment' },
-  { id: 'security', label: 'Security & sessions' },
+  { id: 'identity', label: 'Identity', group: 'account' },
+  { id: 'security', label: 'Security & sessions', group: 'account' },
+  { id: 'preferences', label: 'Preferences', group: 'app' },
+  { id: 'environment', label: 'My environment', group: 'app' },
+] as const;
+
+/** Discord groups settings into Account and App; the same split holds here. */
+const NAV_GROUPS = [
+  { id: 'account', label: 'Account' },
+  { id: 'app', label: 'App' },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]['id'];
@@ -76,25 +82,41 @@ export function UserPage() {
 
   return (
     <PlainLayout wide>
-      <header className={s.head}>
-        <h1 className={s.title}>User</h1>
-        <div style={{ marginTop: 10 }}>
-          <Link className={s.linkArrow} to={routes.profileInit()} data-profile-init>
+      {/* Profile header, Discord anatomy: a banner band, an avatar that overlaps
+          its lower edge, then name and the one line of standing detail. */}
+      <header className={s.profile}>
+        <div className={s.banner} aria-hidden />
+        <div className={s.profileRow}>
+          <span className={s.bannerAvatar} aria-hidden>
+            {name.slice(0, 1).toUpperCase()}
+          </span>
+          <div className={s.profileText}>
+            <h1 className={s.profileTitle}>{name}</h1>
+            <p className={s.profileMeta}>
+              {USER.role} · member since {USER.memberSince}
+            </p>
+          </div>
+          <Link className={s.primaryLink} to={routes.profileInit()} data-profile-init>
             Initialize profile from public sources
           </Link>
         </div>
       </header>
 
-      <div className={s.layout}>
+      <div className={s.sheet}>
         <nav className={s.nav} aria-label="User sections">
-          {SECTIONS.map((item) => (
-            <NavLink
-              key={item.id}
-              to={routes.user(item.id)}
-              className={({ isActive }) => [s.navItem, isActive ? s.navOn : ''].join(' ')}
-            >
-              {item.label}
-            </NavLink>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.id} className={s.navGroup}>
+              <p className={s.navGroupLabel}>{group.label}</p>
+              {SECTIONS.filter((item) => item.group === group.id).map((item) => (
+                <NavLink
+                  key={item.id}
+                  to={routes.user(item.id)}
+                  className={({ isActive }) => [s.navItem, isActive ? s.navOn : ''].join(' ')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -111,22 +133,16 @@ export function UserPage() {
                 Identity
               </h2>
               <p className={s.sectionSub}>Name shown in this app only.</p>
-              <div className={s.identity}>
-                <span className={s.avatarBig} aria-hidden>
-                  {USER.initials.slice(0, 1)}
-                </span>
-                <div className={s.identityText}>
-                  <span className={s.identityName}>{name}</span>
-                  <span className={s.identityMeta}>
-                    {USER.role} · member since {USER.memberSince}
-                  </span>
+              {/* The header already shows avatar, name and standing detail; the
+                  section keeps only what can be acted on. */}
+              <div className={s.prefRow}>
+                <div>
+                  <p className={s.prefLabel}>Avatar</p>
+                  <p className={s.prefHint}>Avatars would live with the identity provider.</p>
                 </div>
-                <div className={s.identityActions}>
-                  <Button size="sm" disabled title="No avatar service is connected in this build.">
-                    Change avatar
-                  </Button>
-                  <span className={s.reason}>Avatars would live with the identity provider.</span>
-                </div>
+                <Button size="sm" disabled title="No avatar service is connected in this build.">
+                  Change avatar
+                </Button>
               </div>
 
               {editingName ? (

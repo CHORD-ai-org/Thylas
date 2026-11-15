@@ -1,50 +1,121 @@
-/* User — the person's own surface. The layout is the Account layout that
-   preceded it (176px sticky nav, prose-width content): a settings page that
-   turned into a dashboard would stop being one. */
+/* User — a profile sheet in the Discord sense: a banner-and-avatar header, then
+   one bounded surface with its own grouped sidebar and a settings pane.
+   Colour stays neutral; the banner is a tone of the page, not a new palette. */
 
-.head {
-  max-width: 620px;
+.profile {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  overflow: hidden;
 }
 
-.title {
-  font: var(--t-page);
-  letter-spacing: var(--track-display);
+.banner {
+  height: 88px;
+  background: color-mix(in srgb, var(--ink) 7%, var(--bg-app));
+  border-bottom: 1px solid var(--line);
 }
 
-.sub {
-  margin-top: 6px;
-  font: var(--t-ui);
+.profileRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s4);
+  padding: 0 20px 16px;
+}
+
+/* The avatar sits half on the banner, half on the card — the Discord move. */
+.bannerAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  margin-top: -38px;
+  flex: 0 0 auto;
+  border: 3px solid var(--bg-surface);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink) 8%, var(--bg-surface));
+  font: 500 24px/1 var(--mono);
+  letter-spacing: 0.02em;
   color: var(--ink-2);
-  max-width: 60ch;
 }
 
-.layout {
+.profileText {
+  min-width: 0;
+  padding-bottom: 2px;
+}
+
+.profileTitle {
+  font: 500 20px/26px var(--ui);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.profileMeta {
+  margin-top: 2px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.primaryLink {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font: var(--t-ui);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.primaryLink:hover {
+  background: var(--tint-hover);
+}
+
+.sheet {
   display: grid;
-  grid-template-columns: 176px minmax(0, 1fr);
-  gap: var(--s12);
-  margin-top: var(--s8);
-  padding-top: var(--s6);
-  border-top: 1px solid var(--line);
+  grid-template-columns: 208px minmax(0, 1fr);
+  margin-top: var(--s6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--bg-surface);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
+  gap: var(--s6);
+  padding: 14px 10px 18px;
+  background: color-mix(in srgb, var(--ink) 3%, var(--bg-app));
+  border-right: 1px solid var(--line);
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
   gap: 1px;
-  align-self: start;
-  position: sticky;
-  top: 0;
+}
+
+.navGroupLabel {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  font: var(--t-caption);
+  font-weight: 500;
+  color: var(--ink-3);
 }
 
 .navItem {
   composes: focusInside from '../../styles/grammar.module.css';
-  height: 28px;
-  padding: 0 8px;
-  border-radius: var(--r-chip);
-  font: var(--t-ui);
-  color: var(--ink-2);
   display: flex;
   align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font: var(--t-ui);
+  color: var(--ink-2);
 }
 
 .navItem:hover {
@@ -52,20 +123,65 @@
   color: var(--ink);
 }
 
-.navItem:active {
-  background: var(--tint-sel);
-  color: var(--ink);
-}
-
 .navOn {
   background: var(--bg-surface);
-  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
   font: var(--t-ui-strong);
 }
 
 .content {
   min-width: 0;
+  padding: 22px 26px 30px;
+}
+
+@media (max-width: 860px) {
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nav {
+    flex-direction: row;
+    gap: var(--s4);
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+
+  .navGroup {
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .navGroupLabel {
+    margin: 0 4px 0 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .navItem {
+    white-space: nowrap;
+  }
+
+  /* In a single row the pane behind is the same surface, so the fill needs a
+     stronger tone to read as "you are here". */
+  .navOn {
+    background: var(--tint-sel);
+  }
+
+  .content {
+    padding: 18px 16px 24px;
+  }
+
+  .profileRow {
+    flex-wrap: wrap;
+    padding: 0 14px 14px;
+  }
+
+  .primaryLink {
+    margin-left: 0;
+  }
 }
 
 .section {
@@ -93,62 +209,7 @@
   color: var(--ink-2);
 }
 
-/* ---- identity ----------------------------------------------------------- */
-
-.identity {
-  display: flex;
-  align-items: center;
-  gap: var(--s4);
-  padding: var(--s2) 0 var(--s3);
-}
-
-.avatarBig {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 auto;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-pill);
-  background: var(--bg-surface);
-  font: 500 17px/1 var(--mono);
-  letter-spacing: 0.02em;
-  color: var(--ink-2);
-}
-
-.identityText {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.identityName {
-  font: var(--t-section);
-  font-size: 16px;
-  color: var(--ink);
-}
-
-.identityMeta {
-  font: var(--t-caption);
-  color: var(--ink-3);
-}
-
-.identityActions {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.reason {
-  font: var(--t-caption);
-  color: var(--ink-3);
-  max-width: 34ch;
-  text-align: right;
-}
+/* ---- fields, plan, meters ------------------------------------------------ */
 
 .nameForm {
   display: flex;
@@ -181,7 +242,7 @@
 .fields {
   display: flex;
   flex-direction: column;
-  max-width: 440px;
+  max-width: 460px;
   margin-top: var(--s2);
   border-top: 1px solid var(--line);
 }
@@ -191,11 +252,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s6);
-  padding: 14px 16px;
-  border: 0;
-  border-radius: var(--r-surface);
-  background: var(--bg-surface);
   margin-top: var(--s2);
+  padding: 14px 16px;
+  border-radius: var(--r-surface);
+  background: color-mix(in srgb, var(--ink) 3%, var(--bg-surface));
 }
 
 .planName {
@@ -214,7 +274,7 @@
   flex-direction: column;
   gap: var(--s4);
   margin-top: var(--s2);
-  max-width: 440px;
+  max-width: 460px;
 }
 
 .meter {
@@ -227,6 +287,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: var(--s4);
   font: var(--t-ui);
   color: var(--ink);
 }
@@ -261,9 +322,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s6);
-  padding: var(--s3) 0;
+  min-height: 56px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--line);
-  max-width: var(--w-sheet);
 }
 
 .prefLabel {
@@ -423,9 +484,9 @@ a.envRow:active {
   align-items: center;
   justify-content: space-between;
   gap: var(--s6);
-  padding: var(--s3) 0;
+  min-height: 56px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--line);
-  max-width: var(--w-sheet);
 }
 
 .sessionText {
@@ -443,20 +504,7 @@ a.envRow:active {
   color: var(--ink-3);
 }
 
-@media (max-width: 1000px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--s6);
-  }
-
-  .nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    position: static;
-  }
-}
-
-/* Entry into the Profile Initialization flow (User page head). */
+/* Secondary action used outside the profile header. */
 .linkArrow {
   font: var(--t-ui);
   color: var(--ink);
