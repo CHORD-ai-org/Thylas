@@ -2,6 +2,7 @@ import type { Id } from './types';
 
 export const routes = {
   root: () => '/',
+  login: () => '/login',
   overview: () => '/overview',
   recently: () => '/recently',
   workspace: (wsId: Id) => `/w/${wsId}`,

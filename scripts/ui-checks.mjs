@@ -2552,6 +2552,127 @@ async function main() {
     return { disabled: btn?.disabled ?? null, why: btn?.title ?? null };
   `), (v) => v.disabled === true && typeof v.why === 'string' && v.why.includes('No auth service'));
 
+  // ---- Sign in: a page outside the shell, a sheet you can move, no fake auth ----
+  await js(`localStorage.removeItem('thylas:login-sheet:v1'); return 1;`);
+  await goto('/login');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  check('login: the page sits outside the shell, paper left and wire right', await js(`
+    const panel = document.querySelector('[class*="panel"]');
+    const sheet = document.querySelector('[data-login-sheet]');
+    return {
+      rail: !!document.querySelector('[data-rail]'),
+      sheet: !!sheet,
+      panel: panel ? getComputedStyle(panel).backgroundColor : null,
+      quotes: document.querySelectorAll('[data-quote]').length,
+      count: document.querySelector('[data-quote-rotator]')?.getAttribute('data-quote-count') ?? null,
+      logo: document.querySelector('[data-login-logo]')?.textContent.trim() ?? null,
+      columns: getComputedStyle(document.querySelector('[class*="page"]')).gridTemplateColumns,
+    };
+  `), (v) => v.rail === false && v.sheet === true && v.panel === 'rgb(10, 10, 10)'
+    && v.quotes === 1 && v.count === '6' && v.logo === 'τThylas'
+    && v.columns.split(' ').length === 2 && v.columns.split(' ')[0] === v.columns.split(' ')[1]);
+
+  check('login: three providers are offered and none of them pretends to work', await js(`
+    const buttons = [...document.querySelectorAll('[data-oauth]')].map(b => b.textContent.trim());
+    const google = document.querySelector('[data-oauth="google"]');
+    google.click();
+    await new Promise(r => setTimeout(r, 120));
+    return { buttons, notice: document.querySelector('[role="status"]')?.textContent.trim() ?? null };
+  `), (v) => v.buttons.join('|') === 'Continue with Google|Continue with GitHub|Continue with X'
+    && v.notice === 'Google sign-in is not connected in this build.');
+
+  check('login: the sheet is drawn, not bordered', await js(`
+    const sheet = document.querySelector('[data-login-sheet]');
+    const paths = sheet?.querySelectorAll('svg path') ?? [];
+    const grip = document.querySelector('[data-sheet-grip]');
+    const cs = sheet ? getComputedStyle(sheet) : null;
+    return {
+      passes: paths.length,
+      dashed: cs ? cs.borderStyle : null,
+      rotate: cs ? cs.transform.startsWith('matrix') : false,
+      grip: grip?.getAttribute('aria-label') ?? null,
+    };
+  `), (v) => v.passes >= 2 && v.dashed === 'none' && v.rotate === true && v.grip === 'Move the sheet');
+
+  check('login: dragging the grip moves the sheet and survives a reload', await js(`
+    const grip = document.querySelector('[data-sheet-grip]');
+    const sheet = document.querySelector('[data-login-sheet]');
+    const before = parseFloat(sheet.style.left);
+    const rect = grip.getBoundingClientRect();
+    grip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: rect.x + 20, clientY: rect.y + 20, button: 0, pointerId: 1 }));
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: rect.x + 120, clientY: rect.y + 90, pointerId: 1 }));
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    await new Promise(r => setTimeout(r, 120));
+    return { before, after: parseFloat(document.querySelector('[data-login-sheet]').style.left), stored: localStorage.getItem('thylas:login-sheet:v1') };
+  `), (v) => Number.isFinite(v.after) && v.after > v.before && typeof v.stored === 'string');
+
+  await goto('/login');
+  await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  check('login: the sheet comes back where it was left', await js(`
+    const stored = JSON.parse(localStorage.getItem('thylas:login-sheet:v1') || 'null');
+    const sheet = document.querySelector('[data-login-sheet]');
+    return {
+      left: parseFloat(sheet.style.left),
+      storedX: stored ? stored.x : null,
+      opacity: getComputedStyle(sheet).opacity,
+    };
+  `), (v) => v.storedX !== null && v.left === v.storedX && v.opacity === '1');
+
+  check('login: arrow keys nudge the sheet, a double-click puts it back', await js(`
+    const grip = document.querySelector('[data-sheet-grip]');
+    const sheet = document.querySelector('[data-login-sheet]');
+    const start = parseFloat(sheet.style.left);
+    grip.focus();
+    grip.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowLeft' }));
+    await new Promise(r => setTimeout(r, 60));
+    const nudged = parseFloat(document.querySelector('[data-login-sheet]').style.left);
+    document.querySelector('[data-sheet-grip]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 60));
+    const settled = document.querySelector('[data-login-sheet]');
+    const stage = document.querySelector('[data-sheet-stage]');
+    return {
+      nudged,
+      start,
+      reset: parseFloat(settled.style.left),
+      center: Math.round((stage.clientWidth - settled.offsetWidth) / 2),
+      stored: localStorage.getItem('thylas:login-sheet:v1'),
+    };
+  `), (v) => v.nudged === v.start - 8 && v.reset === v.center && v.stored === null);
+
+  await js(`${helpers} click(document.querySelector('[data-login-submit]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('login: an empty form names what is missing instead of submitting', await js(`
+    const alert = document.querySelector('[role="alert"]');
+    return { alert: alert?.textContent.trim() ?? null, notice: !!document.querySelector('[role="status"]') };
+  `), (v) => v.alert === 'Enter an email address.' && v.notice === false);
+
+  await fillAria('Email', 'ceaser@oasis.dev');
+  await fillAria('Password', 'not-a-real-password');
+  await js(`${helpers} click(document.querySelector('[data-login-submit]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('login: a valid form states that nothing is verified, and stays put', await js(`
+    return {
+      notice: document.querySelector('[role="status"]')?.textContent.includes('CHORD sign-in is not connected') ?? false,
+      path: location.pathname,
+      cookie: document.cookie.includes('thylas_session='),
+    };
+  `), (v) => v.notice === true && v.path === '/login' && v.cookie === false);
+
+  await js(`${helpers} click(byText('button', 'Create an account')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('login: creating an account is the same sheet, one field more', await js(`
+    const sheet = document.querySelector('[data-login-sheet]');
+    return {
+      title: document.querySelector('[data-sheet-grip]')?.textContent.trim() ?? '',
+      name: !!document.querySelector('input[aria-label="Name"]'),
+      cards: document.querySelectorAll('[data-login-sheet]').length,
+      submit: document.querySelector('[data-login-submit]')?.textContent.trim() ?? '',
+    };
+  `), (v) => v.title === 'Create an account' && v.name === true && v.cards === 1 && v.submit === 'Create account');
+
+  await js(`${helpers} click(document.querySelector('[data-dev-enter]')); await new Promise(r => setTimeout(r, 500)); return 1;`);
+  check('login: the labelled dev stand-in opens the app', await js(`
+    return { path: location.pathname, cookie: document.cookie.includes('dev:u-local:ws-1'), rail: !!document.querySelector('[data-rail]') };
+  `), { path: '/overview', cookie: true, rail: true });
+  await js(`localStorage.removeItem('thylas:login-sheet:v1'); return 1;`);
+
   // ---- Connect: three views, two details, and no fake authorization ----
   await goto('/connect');
   check('connect: the rail opens the section with four sample connections', await js(`
