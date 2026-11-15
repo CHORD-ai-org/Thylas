@@ -202,9 +202,12 @@
   align-items: baseline;
   justify-content: space-between;
   padding: 0 8px 6px;
-  font: var(--t-mono-s);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  /* Sentence case, UI face: an uppercase mono label reads as a system tag,
+     not as a section a person named. */
+  font: var(--t-caption);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--ink-3);
 }
 
