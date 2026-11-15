@@ -1,0 +1,458 @@
+/* Sign in — a sheet of paper on a warm ground, next to a printed wire.
+   Two surfaces only: the page (theme-aware) and the panel (fixed ink, below).
+   Contract: docs/development/auth/LOGIN-PLAN.md */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--ink);
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  /* A desk tone, not the page tone: the sheet has to read as an object on a
+     surface, and in the white palette both would otherwise be #FFFFFF. */
+  background: color-mix(in srgb, var(--ink) 4%, var(--bg-app));
+}
+
+/* ---- the sheet ---------------------------------------------------------- */
+
+.sheet {
+  position: absolute;
+  width: 424px;
+  /* No background: the paper's own silhouette is filled by SketchFrame. */
+  transform: rotate(-1.1deg);
+  transition:
+    transform 160ms var(--ease),
+    opacity 120ms linear;
+}
+
+.sheet:focus-within {
+  transform: rotate(0deg);
+}
+
+.sheet[data-dragging='true'] {
+  transform: rotate(0deg);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  /* Positioned, so it would otherwise paint above the static text inside the
+     sheet. Keep it at 0 and lift the content above it. */
+  z-index: 0;
+  display: block;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.frame svg {
+  display: block;
+}
+
+.logo {
+  composes: focusInside from '../../styles/grammar.module.css';
+  position: absolute;
+  top: 22px;
+  left: 26px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  color: var(--ink);
+}
+
+.logoMark {
+  font-family: var(--ui);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.logoName {
+  margin-left: 6px;
+  font: 500 13px/1 var(--ui);
+  letter-spacing: -0.01em;
+}
+
+.logo:hover {
+  opacity: 0.65;
+}
+
+.grip {
+  composes: focusInside from '../../styles/grammar.module.css';
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 46px;
+  padding: 0 30px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+.gripMarks {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 16px;
+  flex: 0 0 auto;
+}
+
+.gripMarks span {
+  height: 1px;
+  background: var(--ink-3);
+}
+
+.gripMarks span:nth-child(3) {
+  width: 10px;
+}
+
+.gripTitle {
+  font: 500 18px/24px var(--ui);
+  letter-spacing: -0.01em;
+}
+
+/* ---- the form ----------------------------------------------------------- */
+
+.form {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 30px 36px;
+}
+
+.error,
+.notice {
+  margin: 0 0 14px;
+  font: var(--t-caption);
+}
+
+.error {
+  color: var(--error);
+}
+
+.notice {
+  padding-left: 9px;
+  border-left: 2px solid var(--ink-3);
+  color: var(--ink-2);
+}
+
+.field {
+  margin-top: 18px;
+}
+
+.fieldLabel {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+/* No box: the only mark is the drawn underline under the text. */
+.input {
+  width: 100%;
+  height: 30px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  font: 400 14px/20px var(--ui);
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.underline {
+  display: block;
+  width: 100%;
+  height: 4px;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  transition: color 120ms var(--ease);
+}
+
+.field:focus-within .underline {
+  color: var(--ink);
+}
+
+.oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.oauthBtn {
+  composes: focusInside from '../../styles/grammar.module.css';
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--t-ui);
+  cursor: pointer;
+}
+
+.oauthBtn:hover .frame {
+  color: var(--ink-2);
+}
+
+.oauthLabel {
+  position: relative;
+}
+
+.divider {
+  height: 1px;
+  margin: 20px 0 2px;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.submit {
+  composes: focusInside from '../../styles/grammar.module.css';
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  margin-top: 26px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: var(--t-ui-strong);
+  cursor: pointer;
+}
+
+.submitLabel {
+  position: relative;
+}
+
+.submit:hover .frame {
+  color: var(--ink-2);
+}
+
+.actions {
+  margin-top: 12px;
+}
+
+.switchMode {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.devBlock {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.devNote {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.devLink {
+  margin-top: 7px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: var(--t-caption);
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.devLink:hover {
+  color: var(--ink);
+}
+
+/* ---- the panel: the one surface that ignores the theme ------------------ */
+
+.panel {
+  /* Fixed ink on purpose: a printed wire next to paper. Asserted in e2e. */
+  background: #0a0a0a;
+  color: #f2f2f2;
+  overflow: auto;
+  /* In the dark palette the page is #0A0A0A too, so the edge needs its own
+     line — otherwise the panel and the desk merge. */
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 40px 44px 48px;
+}
+
+.panelHead {
+  font: 400 12px/18px var(--mono);
+  letter-spacing: 0.01em;
+  color: rgba(242, 242, 242, 0.85);
+}
+
+.rule {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin: 10px 0 24px;
+  color: rgba(242, 242, 242, 0.35);
+}
+
+.quoteStage {
+  /* The quote sits in the middle of the wire, not glued under the head. */
+  margin: auto 0;
+}
+
+.quote {
+  margin: 0;
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+
+.quoteOn {
+  opacity: 1;
+}
+
+.quoteText {
+  margin: 0;
+  max-width: 36ch;
+  font: 400 13.5px/1.85 var(--mono);
+  letter-spacing: 0.01em;
+  color: #f2f2f2;
+}
+
+.quoteBy {
+  margin: 8px 0 0;
+  font: 400 10.5px/1.6 var(--mono);
+  color: rgba(242, 242, 242, 0.55);
+}
+
+.quoteSource {
+  opacity: 0.75;
+}
+
+/* ---- narrow: the panel becomes a band, the sheet joins the flow --------- */
+
+@media (max-width: 959px) {
+  .srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 152px minmax(0, 1fr);
+  }
+
+  .panel {
+    order: -1;
+  }
+
+  .panelInner {
+    padding: 18px 20px;
+  }
+
+  .rule {
+    margin: 8px 0 14px;
+  }
+
+  .quoteStage {
+    min-height: 0;
+  }
+
+  .quoteText {
+    max-width: none;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .stage {
+    overflow: auto;
+    padding: 24px 16px 32px;
+  }
+
+  /* The inline left/top/opacity come from the drag state; in the flow they
+     are meaningless, so they are overridden rather than removed. */
+  .sheet {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    opacity: 1 !important;
+    transform: none;
+  }
+
+  .logo {
+  composes: focusInside from '../../styles/grammar.module.css';
+  position: absolute;
+  top: 22px;
+  left: 26px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  color: var(--ink);
+}
+
+.logoMark {
+  font-family: var(--ui);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.logoName {
+  margin-left: 6px;
+  font: 500 13px/1 var(--ui);
+  letter-spacing: -0.01em;
+}
+
+.logo:hover {
+  opacity: 0.65;
+}
+
+.grip {
+    cursor: default;
+    touch-action: auto;
+  }
+}
