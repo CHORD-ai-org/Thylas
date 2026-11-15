@@ -180,7 +180,7 @@ type Quote = { id: string; text: string; author: string; year?: string; source: 
 | --- | --- | --- |
 | D1 | 表单字段：email + password（像登录）vs 只要 email + 验证码（贴合 CHORD 无密码假设） | **email + password**（你要的是登录页的形态），但配 §7 的诚实说明；若嫌矛盾就换 email-only |
 | D2 | 注册：同一张纸切换 vs 独立 `/signup` | **同一张纸**（一个视觉，两种模式） |
-| D3 | 语录：静态列表 vs 12s 自动轮播 | **静态**（自动轮播像营销页，且 reduced-motion 要单独处理） |
+| D3 | 语录：静态列表 vs 自动轮播 | ~~静态~~ → **已改：单条 + 9s 淡入淡出**（用户第二轮要求） |
 | D4 | 手绘：自写 jitter vs 引入 rough.js | **自写**（约 30 行，确定性可测，不加依赖） |
 | D5 | 纸片初始位置：居中 vs 偏左上 | **居中偏上**（`y = -6vh`），更像一张随手放的纸 |
 
@@ -244,3 +244,65 @@ type Quote = { id: string; text: string; author: string; year?: string; source: 
 
 - 登录页没有门禁：直接访问 `/overview` 仍然进得去（现有 dev cookie 语义未变）。
 - 没有"忘记密码"：没有后端，也就不给假入口。
+
+---
+
+## 12. 第二轮修订（用户反馈，2026-11-15）
+
+| 反馈 | 落地 |
+| --- | --- |
+| 左右应该一半一半 | `.page` 改为 `1fr 1fr`（原 62/38） |
+| 左上角放 logo | `.logo` 绝对定位 26/22，`τ Thylas`，可点回 `/`（`data-login-logo`） |
+| 表单形状要不规则 | 新增 `paperShape()`：7 个角，**顶边向右上斜、右上角切一刀、底边左侧略高**；`SketchFrame variant="paper"` 用干净多边形填充 + 抖动描边（抖动只在下笔上，填充保持干净） |
+| 加 Google / GitHub / X OAuth | 三个 `Continue with …`，各自手绘框；点击只报 `X sign-in is not connected in this build.`，不发请求 |
+| 右边每次只显示一句 + 渐变动画 | `QuotePanel` 单条渲染，9s 一换，320ms 透明度过渡；`prefers-reduced-motion` 下直接切换不淡入 |
+
+### 这一轮踩到的坑
+
+1. **绝对定位的 SVG 盖住了纸上的文字**：`.frame` 是 `position: absolute`，在同一个层叠上下文里画在静态内容之上 → 只有 `position: relative` 的按钮文字活下来。修法：`.frame { z-index: 0 }`，`.grip` / `.form` 各自 `position: relative; z-index: 1`。
+2. **不规则边会咬字**：左下角原来收到 `0.062w`，正好落在 26px 内边距上，`Create an account` 贴边。修法：形状左下角回到 `0.03w`，内边距加到 30，底部 36。
+3. 50/50 之后面板变宽，语录原本顶到上边；改成头在上、**语录在剩余空间垂直居中**。
+
+**验证**：tsc 干净 · vitest **528/528**（+3 多边形断言）· build ✓ · e2e **343/343**（登录 10 条，含三 provider 与面板单条）。
+
+---
+
+## 13. 提交后的转场（第三轮，2026-11-15）
+
+用户要求：填完表单点登录 / 注册后，右边黑板的文字散成星星 → 黑色铺满整页 → 表单收成彗星 → 在太空飞驰 → 镜头越贴越近 → 一片白 → 进入用户引导。
+
+### 分镜（毫秒）
+
+| 时间 | 发生什么 | 实现 |
+| --- | --- | --- |
+| 0–520 | 引文碎成星点，从文字区飞向全屏 | canvas：150 颗星，出生点取自面板文字矩形，`starProgress` 控制 0→1 |
+| 0–620 | 纸片缩小、旋转、飞向屏幕中心，淡出 | `.page[data-warp] .sheet` 的 `sheetCollapse` 关键帧，位移用 `--warp-x/y` |
+| 700–1460 | 黑色从右半屏长成整页 | `.veil` 的 `inkGrow`：`clip-path: inset()` 从面板矩形插值到 `inset(0)` |
+| 880–1760 | 彗星从中心点射出，向右飞 | `cometState()` 第一段：中心 → `0.84W`，半径 5→9，尾巴 0.3→1 |
+| 1760–2460 | 镜头追上：彗星被拉回画面中心并放大，背景星拉成径向线 | `cometState()` 第二段：`0.84W` → 中心，半径 9→74；110 条 streak 随进度拉长 |
+| 2430–2890 | 白场 | canvas 全屏白，`flashOpacity()` |
+| 3000 | 交给用户引导 | 写 dev cookie → `/user/profile`（Profile Initialization 向导） |
+
+### 关键实现
+
+- **时间轴是纯函数**：`src/lib/signin-warp.ts` 导出 `cometState / starProgress / flashOpacity / easeOutCubic`，canvas 循环只问"第 t 毫秒彗星在哪"。7 条单测覆盖起止点与单调性。
+- **彗尾从自己的历史采样**：每 5ms 采一个点、共 42 段，所以尾巴会跟着曲线弯，而不是一条直线。
+- **光晕用 canvas 径向渐变**：CSS 的"不要渐变"是给静态界面的，光源没有衰减就会像一个靶心（第一版就是三个硬边圆环，难看）。
+- **星点被裁在黑色区域内**：`wipeLeft(t)` 跟着 `inkGrow` 同一条 760ms 曲线算黑边的位置，星点只在已经变黑的地方出现，否则米色那一半会像落了灰。
+- **纸片在转场时被提升为 `position: fixed`**：留在 stage 里会被 `overflow: hidden` 从中间切掉。
+
+### 撞到的三个坑
+
+1. **`animation-fill-mode: forwards` 在延迟期间不生效**——`inkGrow` 延迟 700ms，延迟期间元素按 base 样式（无 clip-path）渲染，于是整页立刻变黑，"从右半屏长出来"这一拍直接消失。改成 `both`。
+2. **`requestAnimationFrame` 改状态会抢在首帧前**：原本用 state + `transition: clip-path`，rAF 里 `setExpanded(true)` 常常在浏览器绘制初始 clip 之前执行，过渡没有起点，直接跳到终态。改成把几何塞进 CSS 变量、用 `@keyframes` 读变量，无竞态。
+3. **彗星从屏幕左边缘进场与"纸片收成彗星"打架**：纸片在正中心消失，彗星却从外面飞进来。改成彗星从中心点出发，纸片的消失即彗星的诞生。
+
+### 边界与降级
+
+- **仍然不认证任何人**：提交只做本地校验；转场结束写入的是全站一致的 dev stand-in cookie（`dev:u-local`），落地页是 Profile Initialization 向导。
+- **`prefers-reduced-motion: reduce`**：整段转场跳过，直接进引导（不做剪辑版动画）。
+- 转场期间页面 `aria-busy="true"`，canvas 与 veil 都是 `pointer-events: none`。
+
+**文件**：`src/lib/signin-warp.ts`(+test) · `src/pages/auth/SignInTransition.tsx` · `login.module.css`（`inkGrow` / `sheetCollapse` / `.veil` / `.warpCanvas`）· `LoginPage.tsx`。
+
+**验证**：tsc 干净 · vitest **535/535** · build ✓ · e2e **343/343**（"valid form turns the page into the warp, then hands over to onboarding" 会真的等 3.6 秒看落地路由）。截图：`design/reference/login/warp-*.png`。
