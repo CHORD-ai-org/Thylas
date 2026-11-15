@@ -2483,8 +2483,35 @@ async function main() {
   await goto('/account');
   check('user: the old account path redirects, and the rail names User', await js(`
     const rail = !!document.querySelector('[data-rail-user]');
-    return { path: location.pathname, rail, h1: document.querySelector('h1')?.textContent.trim() };
-  `), (v) => v.path.startsWith('/user') && v.rail === true && v.h1 === 'User');
+    const h1 = document.querySelector('h1')?.textContent.trim();
+    const meta = document.querySelector('[class*="profileRow"] [class*="profileMeta"]');
+    return { path: location.pathname, rail, h1, named: h1 === meta?.previousElementSibling?.textContent.trim() };
+  `), (v) => v.path.startsWith('/user') && v.rail === true && typeof v.h1 === 'string' && v.h1.length > 0 && v.named);
+
+  check('user: the header is a profile card — banner, overlapping avatar, one standing line', await js(`
+    const avatar = document.querySelector('[class*="bannerAvatar"]');
+    const banner = document.querySelector('[class*="banner"]');
+    const card = document.querySelector('[class*="profile"]');
+    const cs = avatar ? getComputedStyle(avatar) : null;
+    return {
+      banner: !!banner,
+      avatar: !!avatar,
+      overlap: cs ? cs.marginTop : null,
+      card: !!card,
+      meta: document.querySelector('[class*="profileRow"] [class*="profileMeta"]')?.textContent.trim() ?? '',
+    };
+  `), (v) => v.banner && v.avatar && v.card && v.overlap === '-38px' && v.meta.includes('member since'));
+
+  check('user: settings sit in one sheet with a grouped sidebar', await js(`
+    const groups = [...document.querySelectorAll('[class*="navGroupLabel"]')].map(g => g.textContent.trim());
+    const sheet = document.querySelector('[class*="sheet"]');
+    const css = sheet ? getComputedStyle(sheet) : null;
+    return {
+      groups,
+      columns: css ? css.gridTemplateColumns.split(' ').length : 0,
+      active: document.querySelector('[class*="navOn"]')?.textContent.trim() ?? null,
+    };
+  `), (v) => v.groups.join(',') === 'Account,App' && v.columns === 2 && v.active === 'Identity');
 
   await goto('/user/identity');
   await js(`${helpers} click(byText('button', 'Edit display name')); await new Promise(r => setTimeout(r, 150)); return 1;`);
@@ -2492,7 +2519,7 @@ async function main() {
   await js(`${helpers} click(byText('button', 'Save')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   check('user: a new display name follows the person into the rail', await js(`
     return {
-      identity: document.querySelector('[class*="identityName"]')?.textContent.trim(),
+      identity: document.querySelector('h1')?.textContent.trim(),
       rail: document.querySelector('[class*="profileName"]')?.textContent.trim(),
       status: document.querySelector('[role="status"]')?.textContent.includes('identity provider'),
     };

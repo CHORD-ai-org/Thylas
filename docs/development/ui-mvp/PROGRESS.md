@@ -46,6 +46,7 @@ Units are the unit of execution: one branch, one commit, ≤ 1.5 days. The canon
 | Dark texture | — | **Completed** 11-14 | 0.35 | dark-texture-analysis | P0–P2：阴影/边框/hover/对比度主题化、elevated 档、.glass 材质、primary 反转；warm 逐像素零回归（cmp）。e2e 322/322 |
 | Route motion | — | **Completed** 11-14 | 0.2 | — | AppShell 按 pathname keyed stage + 160ms fade/rise，与 rail 收展同节奏；rail hover 过渡；reduced-motion 复用全局规则；e2e 325/325 |
 | Artifact gallery | — | **Completed** 11-14 | 0.6 | artifacts-gallery | Gallery 默认视图 + 封面系统（7 个自绘 SVG × 6 命名色相，kind 锚点派生）；新建页可选封面；10 cover 单测 + 2 e2e。Docs: `design/artifacts-gallery.md` |
+| User page | — | **Completed** 11-15 | 0.4 | user-page | 档案卡（banner + 压边头像 + 名字为 h1）+ 单一设置面（Account/App 分组导航 + 内容区，行高 56px）；删除重复的 Identity 卡片；≤860 转横向导航。e2e 333/333 |
 | SP-10 Visual quality | — | **In progress** — 10a 11-08; 10b/c 11-09; 10d states + 10e a11y 11-09; 10f.1 partial | 6.75 | SP-07 | radius, Inter ramp, glyphs→paths, Boards grid, four states, inset focus, palette focus trap + restore, one control per action; 10d density/loading, 10f.1 remainder, 10f.2–4 remain |
 | SP-09a Gates + e2e | SP-09 | Not Started | 1.0 | SP-02…SP-08 | 10 rules, ≥ 30 assertions |
 | SP-09b Visual audit | SP-09 | Not Started | 1.0 | SP-09a | screenshots, a11y, identity test |
