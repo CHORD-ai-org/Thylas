@@ -13,6 +13,7 @@
 | 1 | [`product/definition.md`](product/definition.md) | 20 min | What Thylas is, what it is not, who owns what, what v1 must close |
 | 1.5 | [`product/artifacts/`](product/artifacts/README.md) | 25 min | **The Artifact product foundation in force**: definition, taxonomy, user-defined objects, lifecycle, governance, cross-workspace reuse, methodology, external integrations |
 | 1.6 | [`product/coworkers/`](product/coworkers/README.md) | 20 min | **The Coworker product model in force**: definition, identity & responsibilities, workspace & artifact relationships, configuration, working experience, WAM boundary, lifecycle, MVP scope |
+| 1.7 | [`product/gsc/MANIFESTO.md`](product/gsc/MANIFESTO.md) | 12 min | **Global Shared Context (GSC)**: the persistent shared-context infrastructure charter — context that outlives interaction, stays structured/governed, is discoverable rather than injected, and evolves through use; independent of Thylas, WAM, and any agent runtime |
 | 2 | [`../design/thylas-ui-design-plan.md`](../design/thylas-ui-design-plan.md) §1, §4, §7 | 15 min | The screens and the three structural decisions (notes, tabs, rooms) |
 | 3 | [`architecture/tech-stack.md`](architecture/tech-stack.md) | 25 min | **The stack in force**: requirements, candidate evaluation, architecture, WAM boundary, ADRs |
 | 3.5 | [`architecture/application.md`](architecture/application.md) | 20 min | The pre-implementation proposal; superseded where it disagrees (see its §0 delta) |
@@ -43,6 +44,7 @@ If you read only one: `product/definition.md` §8 (responsibility matrix). If yo
 | Document | Owns | Does not own |
 | --- | --- | --- |
 | `product/definition.md` | Identity, positioning, responsibility matrix, capability model, v1 exit criteria, product open questions | Screens, components, code |
+| `product/gsc/MANIFESTO.md` | The shared-context infrastructure charter: why context must outlive interaction, stay structured/governed, be discoverable not injected, and evolve through use; the human–agent relationship; independence from WAM/Thylas | Any Thylas feature, agent runtime, implementation detail |
 | `architecture/application.md` | Stack and its costs, layering rules, state ownership, routes, WAM interface, failure handling, test strategy, technical unknowns | Visual design, milestone timing |
 | `planning/file-plan.md` | Repository tree, per-file responsibilities, dependency graph, build order, files not to create | What each screen looks like |
 | `planning/roadmap.md` | Milestones, scope in and out, acceptance tests, risks, what invalidates the plan | File-level detail |
@@ -153,3 +155,4 @@ and a database. Those two rows are updated in place rather than deleted.
 | Date | Change |
 | --- | --- |
 | 2026-11-07 | Created. Four documents: product definition, application architecture, source file plan, roadmap. Audit of the existing repository in §3. Decision register in §4 |
+| 2026-11-15 | Added `product/gsc/MANIFESTO.md` (Global Shared Context charter) and indexed it in §1 / §2 |
