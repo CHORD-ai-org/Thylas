@@ -456,3 +456,76 @@
     touch-action: auto;
   }
 }
+
+
+/* ---- the warp after a valid sign-in -------------------------------------- */
+
+/* Starts as the panel's exact rectangle (set inline) and grows to the viewport.
+   The delay is deliberate: the words have to leave before the page goes black. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #0a0a0a;
+  pointer-events: none;
+  animation: inkGrow 760ms cubic-bezier(0.4, 0, 0.2, 1) 700ms both;
+}
+
+@keyframes inkGrow {
+  from {
+    clip-path: inset(var(--ink-top) var(--ink-right) var(--ink-bottom) var(--ink-left));
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.warpCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  pointer-events: none;
+}
+
+.page[data-warp='true'] .panelInner {
+  animation: warpFade 280ms ease-in forwards;
+}
+
+.page[data-warp='true'] .logo {
+  animation: warpFade 200ms ease-in forwards;
+}
+
+.page[data-warp='true'] .sheet {
+  /* Promoted out of the stage for the collapse: the stage clips, and a sheet
+     half-hidden behind the panel edge reads as a bug, not as motion. */
+  position: fixed;
+  left: var(--sheet-left) !important;
+  top: var(--sheet-top) !important;
+  width: var(--sheet-width);
+  z-index: 45;
+  animation: sheetCollapse 620ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  pointer-events: none;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@keyframes warpFade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheetCollapse {
+  0% {
+    transform: rotate(-1.1deg) scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(var(--warp-x), var(--warp-y)) rotate(-7deg) scale(0.34);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--warp-x), var(--warp-y)) rotate(-16deg) scale(0.05);
+    opacity: 0;
+  }
+}

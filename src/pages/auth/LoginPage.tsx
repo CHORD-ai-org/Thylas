@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type CSSProperties, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routes } from '../../lib/routes';
 import { LoginSheet } from './LoginSheet';
 import { QuotePanel } from './QuotePanel';
+import { SignInTransition } from './SignInTransition';
 import { SketchFrame, SketchUnderline } from './SketchFrame';
 import s from './login.module.css';
 
@@ -29,6 +30,21 @@ export function LoginPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Set once the form is valid: the whole page becomes the transition. */
+  const [warp, setWarp] = useState<{
+    sheet: DOMRect;
+    panel: DOMRect;
+    dx: number;
+    dy: number;
+  } | null>(null);
+
+  /* Entering the product means entering the only onboarding this build has:
+     the profile initialization flow. The session is the same labelled dev
+     stand-in the rest of the prototype uses. */
+  const finish = useCallback(() => {
+    document.cookie = 'thylas_session=dev:u-local:ws-1; path=/';
+    navigate(routes.profileInit(), { replace: true });
+  }, [navigate]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -40,11 +56,26 @@ export function LoginPage() {
     if (password === '') return setError('Enter a password.');
 
     setError(null);
-    setNotice(
-      mode === 'create'
-        ? 'Accounts are created by CHORD — this build creates none.'
-        : 'CHORD sign-in is not connected in this build. No credentials were checked.',
-    );
+    setNotice(null);
+
+    const reduced =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sheetEl = document.querySelector<HTMLElement>('[data-login-sheet]');
+    const panelEl = document.querySelector<HTMLElement>('[data-login-panel]');
+
+    if (reduced || !sheetEl || !panelEl) {
+      finish();
+      return;
+    }
+
+    const sheetRect = sheetEl.getBoundingClientRect();
+    const panelRect = panelEl.getBoundingClientRect();
+    setWarp({
+      sheet: sheetRect,
+      panel: panelRect,
+      dx: window.innerWidth / 2 - (sheetRect.left + sheetRect.width / 2),
+      dy: window.innerHeight / 2 - (sheetRect.top + sheetRect.height / 2),
+    });
   };
 
   const switchMode = () => {
@@ -63,7 +94,22 @@ export function LoginPage() {
   const creating = mode === 'create';
 
   return (
-    <div className={s.page}>
+    <div
+      className={s.page}
+      data-warp={warp ? 'true' : 'false'}
+      aria-busy={warp ? true : undefined}
+      style={
+        warp
+          ? ({
+              '--warp-x': `${warp.dx}px`,
+              '--warp-y': `${warp.dy}px`,
+              '--sheet-left': `${warp.sheet.left}px`,
+              '--sheet-top': `${warp.sheet.top}px`,
+              '--sheet-width': `${warp.sheet.width}px`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {/* The visible title lives inside the drag grip; the page still needs a
           heading of its own. */}
       <h1 className={s.srOnly}>{creating ? 'Create an account' : 'Sign in'}</h1>
@@ -171,6 +217,8 @@ export function LoginPage() {
       </LoginSheet>
 
       <QuotePanel />
+
+      {warp ? <SignInTransition panel={warp.panel} onDone={finish} /> : null}
     </div>
   );
 }

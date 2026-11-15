@@ -44,7 +44,7 @@ export function QuotePanel() {
   const quote = MOONSHOT_QUOTES[index]!;
 
   return (
-    <aside className={s.panel} aria-label="Moonshot thinking">
+    <aside className={s.panel} aria-label="Moonshot thinking" data-login-panel>
       <div className={s.panelInner}>
         <p className={s.panelHead}>moonshot thinking</p>
         <SketchRule seed="panel-rule" />
