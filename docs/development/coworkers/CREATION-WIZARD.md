@@ -118,7 +118,7 @@
 | --- | --- | --- | --- |
 | W1 | 5 步 vs `DESIGN.md §4.1` 的 6 阶段 | 5 步；First Encounter 延后 | 决定步骤条与 e2e 数量 |
 | W2 | Intention 要不要自然语言生成 Blueprint | 不做（当前创建零网络，也无服务端能力） | 若要做，需先定模型调用与可编辑展示，属另一个特性 |
-| W3 | 头像是否进向导 | 不进；保留首字母色块 | Q-B 未决，`AVATAR-VISUAL-SYSTEM.md` 的生成管线无代码 |
+| W3 | 头像是否进向导 | 不进；向导 Identity 步仍不用头像控件 | Q-B 已于 11-16 解决（见 `AVATAR-VISUAL-SYSTEM.md` v2.0）：目录已用自绘 SVG 头像，但生成管线仍不存在，也不进向导 |
 | W4 | Mind Framework 在向导里是否可编辑 | 不；只读摘要 | Q-D 仍 Open，`CONFIGURATION.md §7` 禁止改不了行为的控件 |
 | W5 | config 页六段是否也改 tab | 不动 | 超出「创建改向导」的范围 |
 

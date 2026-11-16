@@ -8,7 +8,7 @@ product model.
 | --- | --- | --- | --- |
 | 1 | [`PLAN.md`](PLAN.md) | 11-12, pre-code snapshot | Original audit and the four-route IA. Its "No Coworker code exists" line is historical. |
 | 2 | [`IMPLEMENTATION.md`](IMPLEMENTATION.md) | 11-12, shipped | The four pages, the v1 store, honesty rules, verification numbers (309 unit / 302 e2e at the time). |
-| 3 | [`AVATAR-VISUAL-SYSTEM.md`](AVATAR-VISUAL-SYSTEM.md) | 11-14, v1.0 style guide | Fixed vs customizable avatar elements, prompt anchors, negative prompt, `thylas-coworker-avatar` skill workflow, validation checklist. **No avatar code exists.** |
+| 3 | [`AVATAR-VISUAL-SYSTEM.md`](AVATAR-VISUAL-SYSTEM.md) | 11-16, v2.0 style guide | Binary black/white ground follows the palette; any colour on the stroke only. Replaces v1.0's generated gold portrait and retires its skill. Drawn SVG shipped. |
 | 4 | [`DESIGN.md`](DESIGN.md) | 11-14, design specification + one isolated implementation | The 8 task-brief deliverables: Vision, Domain Model, Creation UX (incl. avatar), Mind Framework & Methodology, Collaboration Model, Minimal Scenario, Local/Cloud Notes, Roadmap. Every decision labelled. §9.2 implemented under D-060. |
 | 5 | [`CREATION-WIZARD.md`](CREATION-WIZARD.md) | 11-14, **plan only, not started** | Turn `/coworkers/new` from one form into a 5-step wizard: current-state audit, reusable `ProfileInit` pattern, stage design, file list, e2e acceptance, 5 open decisions, W-1…W-6 units, risks. |
 
@@ -17,7 +17,8 @@ product model.
 - Coworker records, config, memberships and activity log are **client-side**
   (`src/state/coworkers.ts`, key `thylas:coworkers:v1`); three seeds are prototype data.
 - The real conversation surface is the shipped `ChatCore`; there is no agent runtime,
-  no A2A, no tool execution, no Coworker table, no avatar asset.
+  no A2A, no tool execution, no Coworker table. Avatars are drawn SVG plates
+  (`src/components/CoworkerAvatar.tsx`), not stored image assets.
 - Server-side reuse candidates: shared contracts in `src/lib/*`, the session source,
   the per-user file store (D-059), the validated envelope + activity log.
 - `src/lib/coworkers.ts` (11-14, D-060) is a **declared** Mind Framework contract:

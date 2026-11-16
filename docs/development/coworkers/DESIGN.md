@@ -215,34 +215,26 @@ Stages are conceptual, not mandatory separate pages (brief Phase 2).
 [`CREATION-WIZARD.md`](CREATION-WIZARD.md). The table above stays the product-level
 stage list; today's shipped flow is still the single form in `CoworkerNew.tsx`.
 
-### 4.3 Visual identity — avatar generation (read `AVATAR-VISUAL-SYSTEM.md`)
+### 4.3 Visual identity — drawn avatar (read `AVATAR-VISUAL-SYSTEM.md`)
 
-**Confirmed** — today's mark is initials + id-derived hue; product docs say optional
-visual identity, "a mark (colour + two letters) suffices for MVP; uploaded avatars
-deferred" (`IDENTITY-RESPONSIBILITIES.md:9`, `SCOPE.md §2 #6`).
+**Confirmed (2026-11-16, resolves Q-B)** — the avatar is drawn, not generated.
+The ground can only be black or white and follows the active palette
+(`--avatar-ground`); only the stroke may take an arbitrary colour. This replaces
+the v1.0 gold-on-black generated portrait and the earlier "uploaded avatars
+deferred" ambiguity with one testable rule set. No model, prompt, network or
+image asset is involved.
 
-**Confirmed** — `docs/development/coworkers/AVATAR-VISUAL-SYSTEM.md` (v1.0, 11-14) is
-a newer, more specific direction. Its contents:
+**Shipped** — `src/components/CoworkerAvatar.tsx` draws a square SVG plate:
+ground from the theme, stroke from a derived six-colour cover hue (or any
+caller-supplied CSS colour), one of three hair shapes and one of three
+accessories derived from the Coworker id. It replaces the initials mark in the
+directory list (28px) and grid (108px). `src/lib/coworker-avatar.ts` holds the
+deterministic derivation and colour validation.
 
-| Part | Content | Lines |
-| --- | --- | --- |
-| Fixed, non-negotiable | solid black background; flat silhouette + thin line features; flowing wind-swept hair; face as solid/negative space; centered head-and-shoulders; vector-clean edges; no realistic lighting | `:36-49` |
-| Customizable | primary color (`#D4A017` default), face shape, accessories, hair length, expression, gender presentation, optional secondary color | `:52-62` |
-| Prompt enforcement | fixed positive anchor + aggressive negative prompt in every generation | `:70-82`, `:147-157` |
-| System controls | lock background, style-adherent model / LoRA / IP-Adapter, reject failed contrast or photorealism | `:84-89` |
-| Skill workflow | `thylas-coworker-avatar`: collect params → build prompt → generate → validate (retry ≤2) → square PNG 1024²/512² | `:104-145` |
-| Validation checklist | black background, dominant hair, silhouette face, no photorealism, clean edges, correct primary color | `:168-175` |
-
-**Open** — the 11-14 avatar system conflicts with the 11-12 `[P]` "uploaded avatars
-deferred" and shifts visual identity from a generated mark to a generated portrait.
-It is **not registered as a `[C]` decision** (`SCOPE.md §1` has no such ruling), and no
-avatar code or skill file exists. Needs a dated decision before implementation: does
-the avatar system replace `[P] #6`, or sit behind an explicit opt-in after MVP?
-
-**Proposed** — if adopted, place it at the Identity stage as an optional step:
-default = existing initials mark; "Generate portrait" runs the §6 workflow; the
-validation checklist is a UI-visible gate, not a silent retry; the result is stored as
-an asset reference on the Coworker record. No generation pipeline in this task.
+**Deferred** — generated portraits, uploaded images, face-shape / expression /
+gender controls, and the retired `thylas-coworker-avatar` generation skill.
+No avatar editor is exposed in the creation wizard; the face is derived, so
+there is no configuration that changes nothing.
 
 ### 4.4 Interaction and visual principles
 
@@ -517,7 +509,7 @@ vector memory, backend/frontend rewrite, new endpoints presented as existing.
 | # | Conflict | Sides | Needs |
 | --- | --- | --- | --- |
 | **Q-A** | Functional A2A vs D-054 #7 | Brief Part I §3 wants "multi-agent must be functional" with A2A work coordination. D-054 #7 / `WAM-BOUNDARY.md §3` say A2A is WAM's protocol, Thylas stores handles and renders delivered transcripts, no Thylas-side orchestration. | Decide: (a) keep [C], Thylas designs only the trace/rendering contract and the local scenario is a **fixture**, not live collaboration; or (b) amend [C] with a dated decision allowing a local deterministic coordinator. Option (b) changes the product boundary. |
-| **Q-B** | Generated avatars vs `[P]` mark-only MVP | `AVATAR-VISUAL-SYSTEM.md` (11-14) requires a constrained generation pipeline. `IDENTITY-RESPONSIBILITIES.md:9` / `SCOPE.md §2 #6` say two-letter mark, uploaded avatars deferred. | Decide whether the 11-14 document supersedes `[P] #6`, and register it as `[C]` or keep it opt-in after MVP. |
+| **Q-B** | Generated avatars vs `[P]` mark-only MVP | **Resolved 2026-11-16.** Drawn avatar replaces both: binary black/white ground follows the palette, stroke may be any colour, no generation pipeline. See `AVATAR-VISUAL-SYSTEM.md` v2.0 and §4.3. | Closed by user decision. Generated portraits and uploads stay **Deferred**. |
 | **Q-C** | Commissioning journey vs one-screen config | Brief Phase 2 wants 6 conceptual stages with natural-language blueprint generation. `CONFIGURATION.md §8` fixes one page, six sections, no tabs; the shipped `CoworkerNew.tsx` is a single form. | Decide whether the 6 stages are a **narrative** over the existing one screen, or a replacement IA. |
 | **Q-D** | "Executable" Mind Framework / Methodology | Brief says a Methodology should be executable, not descriptive. Existing `[C]` gives reasoning/execution to WAM and keeps Thylas as record + declared config. | Decide what "operationalizable" means in Thylas before adding any field. A field that changes nothing must not ship. |
 | **Q-E** | Coworker persistence | `SCOPE.md Q4` still open; D-059 chose per-user server files for **User** state only. | Choose table vs file for Coworker records when #2 starts. |
