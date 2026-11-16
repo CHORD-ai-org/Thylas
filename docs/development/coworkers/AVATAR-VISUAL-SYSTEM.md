@@ -1,188 +1,81 @@
 # Thylas Coworker Avatar Visual System
 
-**Version:** 1.0  
-**Date:** 2026-11-14  
-**Purpose:** Unify visual identity for Thylas Coworker avatars. Used by local agents and generation systems to enforce consistent, brand-aligned avatar creation.
+**Version:** 2.0  
+**Date:** 2026-11-16  
+**Supersedes:** v1.0 (2026-11-14, gold-on-black generated portrait)  
+**Purpose:** One drawn portrait system for Coworkers. The ground follows the
+user's display setting; only the stroke may carry colour.
 
 ---
 
-## Overview
+## 0. Decision (2026-11-16)
 
-This document combines the visual style guide, generation skill, and usage instructions for Thylas Coworker avatars.
+The user resolved the v1.0 colour conflict:
 
-**Style Summary**  
-**Fixed:** Minimalist elegant gold-on-black (or user color) silhouette with flowing dynamic hair.  
-**Customizable:** Color, face shape, accessories (挂件), hair length, expression.
-
-Reference: original golden silhouette profile image.
-
----
-
-## 1. Core Style Overview
-
-Coworker avatars follow a **minimalist elegant silhouette** style inspired by high-contrast gold-on-black profile portraits with dynamic flowing hair.
-
-**Key Characteristics:**
-- Solid dark (default black) background
-- Subject rendered primarily in a single accent color (default warm gold/amber)
-- Face as solid silhouette or negative space with thin elegant outlines for features
-- Hair as the dominant, dynamic, wind-swept element
-- Clean vector-like edges, flat design, no photorealism, no complex textures or gradients on the face
-- Side profile or slight three-quarter view preferred for consistency
-- Elegant, sophisticated, slightly mysterious mood
+- **Confirmed:** the background can only be black or white, chosen by the
+  active palette (`--avatar-ground`: black in `dark`, white in `warm`/`light`).
+- **Confirmed:** the border / stroke may be any colour.
+- **Confirmed:** avatars are drawn, not generated. No model, no prompt, no
+  network, no stored image asset. This supersedes v1.0's generation skill and
+  resolves `DESIGN.md §10 Q-B` in favour of a mark-only system with a richer
+  drawn face.
+- **Deferred:** generated portraits, uploaded images, LoRA / IP-Adapter,
+  per-face custom shapes, expression controls.
 
 ---
 
-## 2. Fixed Elements (Strong Constraints — Non-Negotiable)
+## 1. Fixed elements (non-negotiable)
 
-These must be enforced by the generation system regardless of user customizations:
-
-| Element              | Requirement                                      | Rationale                          |
-|----------------------|--------------------------------------------------|------------------------------------|
-| Background           | Solid black (#000000) or very dark solid color   | High contrast, brand consistency   |
-| Rendering Style      | Flat silhouette + thin line features             | Avoid photorealism / cartoon chaos |
-| Hair Treatment       | Flowing, dynamic, wind-swept volume              | Signature visual of the style      |
-| Face Treatment       | Solid fill or negative space + minimal outlines  | Elegant, not busy                  |
-| Composition          | Centered portrait, head & shoulders or head only | Consistent framing                 |
-| Edge Quality         | Clean, sharp, vector-like                        | Professional, scalable             |
-| Lighting             | No realistic lighting; flat or simple rim        | Maintain minimalist aesthetic      |
+| Element | Requirement | Why |
+| --- | --- | --- |
+| Ground | `var(--avatar-ground)` — `#000000` in dark, `#FFFFFF` in warm/light | Follows the person's display setting; never a tinted fill |
+| Colour placement | Stroke only. The ground is never tinted and the face is never colour-filled | The old gold-on-black fill was the defect |
+| Rendering | Drawn SVG, flat 1.1px lines, vector-clean edges | Deterministic, scales from 28px to 108px |
+| Face | Minimal outline; eyes / nose / lips as thin lines at 0.62 opacity | Silhouette register without photorealism |
+| Hair | Flowing, wind-swept strokes; one of three derived shapes | Signature of the original style, kept |
+| Composition | Centred head and shoulders inside a square plate | Consistent in rows, grids and detail views |
+| Lighting | None. No gradient, no rim light, no shadow | Quiet computationalism |
 
 ---
 
-## 3. Customizable Elements
+## 2. Customizable elements (shipped)
 
-Users may customize the following while the system preserves the core style:
+- **Stroke colour** — any CSS colour string (name or `#hex`). Omitted: a hue
+  from the shared six-colour cover palette, derived from the Coworker id.
+- **Hair shape** — three variants derived from the id.
+- **Accessory** — none, earring, or glasses; derived from the id.
 
-- **Primary Color**: Default `#D4A017` (gold). Any color allowed. Applied to hair and any accent outlines.
-- **Face Shape**: Oval, round, square, heart, long, etc. Still rendered as silhouette/outline style.
-- **Accessories (挂件)**: Earrings, glasses, hats, hair ornaments, necklaces, collars, etc. Must be rendered in the same flat elegant style and primary color (or subtle complementary).
-- **Hair Length / Volume**: Short, medium, long, bob, etc., but must retain flowing dynamic quality.
-- **Expression**: Neutral, slight smile, serene, confident. Avoid exaggerated cartoon expressions.
-- **Gender Presentation / Age**: Adult range; masculine, feminine, androgynous all acceptable within style.
-- **Secondary Color** (optional): For accessories if needed, limited use.
+Not exposed: face shape, expression, gender presentation, secondary colour.
+They are not implemented, so no control for them ships.
 
 ---
 
-## 4. Generation System Constraints & Enforcement
+## 3. Determinism and safety
 
-To ensure strong style adherence during avatar generation:
+`src/lib/coworker-avatar.ts` derives `hair`, `accessory` and `hue` from a
+stable FNV-1a hash of the Coworker id. The same id always draws the same face;
+the three seed Coworkers get three distinct stroke colours.
 
-### 4.1 Prompt Engineering Rules
-- Always include a fixed style prefix/suffix in every generation prompt.
-- Use negative prompts aggressively.
+`avatarStroke()` validates a caller-supplied colour: plain names and `#hex`
+pass, everything else falls back to the derived hue. This keeps a hand-edited
+store payload from injecting markup into SVG attributes.
 
-**Recommended Positive Style Anchor:**
-```
-minimalist elegant silhouette portrait, solid black background, [PRIMARY_COLOR] flowing dynamic wind-swept hair, face as solid black silhouette with thin elegant [PRIMARY_COLOR] outlines for eyes nose lips, clean vector style, high contrast, sophisticated, no photorealism, no texture, flat design
-```
-
-**Recommended Negative Prompt:**
-```
-photorealistic, realistic skin, detailed face, 3d render, cartoon, anime, chibi, low quality, blurry, gradient background, complex background, multiple colors on face, messy lines, noise, text, watermark
-```
-
-### 4.2 System-Level Controls
-- Lock background to solid black via post-processing or model conditioning.
-- Prefer image generation models with strong style adherence (or fine-tuned LoRA / ControlNet for silhouette).
-- Optional: Use reference image as style seed or IP-Adapter.
-- Validation step: reject generations that fail contrast, have complex backgrounds, or look photorealistic.
-
-### 4.3 Dedicated Skill Recommendation
-
-A separate skill (`thylas-coworker-avatar`) is recommended for the local agent / generation pipeline. The full skill definition is included below in Section 6.
+**Validation checklist**
+- [ ] Ground resolves to black only in dark, white only in warm/light
+- [ ] No coloured fill on the ground or face
+- [ ] Stroke is visible against the ground
+- [ ] Hair is present and flowing
+- [ ] No network request and no image asset for the avatar
 
 ---
 
-## 5. Color & Accessibility Notes
+## 4. Where it is used
 
-- Default gold on black provides excellent contrast.
-- When user selects light colors, ensure outlines remain visible; system may darken slightly or add thin stroke.
-- Maintain WCAG-friendly contrast where possible for UI use (avatars may be small).
+- `src/components/CoworkerAvatar.tsx` — the only drawing site.
+- Coworker directory list: 28px plate.
+- Coworker directory grid: 108px plate.
+- Planned: Coworker detail header and first-encounter surfaces reuse the same
+  component; no separate avatar renderer.
 
----
-
-## 6. Generation Skill: thylas-coworker-avatar
-
-```yaml
----
-name: thylas-coworker-avatar
-description: "Generate and enforce Thylas coworker avatar style. Use when creating or regenerating coworker profile avatars with strong visual constraints."
-type: workflow
-lifecycle: active
----
-```
-
-### When to Use
-- Creating a new coworker avatar
-- Regenerating avatar after user customization
-- Validating that a generated avatar matches the Thylas style guide
-
-### Core Workflow
-
-1. **Collect Parameters**
-   - Primary color (hex or name, default `#D4A017`)
-   - Face shape (oval / round / square / heart / long / etc.)
-   - Accessories (list of 挂件: earrings, glasses, hat, etc.)
-   - Optional: hair length, expression, gender presentation
-
-2. **Build Prompt**
-   - Start with fixed style anchor (see below)
-   - Inject user parameters as controlled fragments
-   - Always append negative prompt
-
-3. **Generate**
-   - Call image generation model with constructed prompt
-   - Prefer models strong at style adherence
-
-4. **Validate**
-   - Check for solid dark background
-   - Check high contrast and clean edges
-   - Reject if photorealistic or overly complex
-   - Retry up to 2 times with stronger negative prompt if needed
-
-5. **Output**
-   - Save as square PNG (recommended 1024×1024 or 512×512)
-   - Black background preferred
-
-### Fixed Style Anchor (Always Include)
-
-```
-minimalist elegant silhouette portrait, solid black background, [PRIMARY_COLOR] flowing dynamic wind-swept hair, face as solid black silhouette with thin elegant [PRIMARY_COLOR] outlines for eyes nose and lips, clean vector style, high contrast, sophisticated flat design, no photorealism, no texture
-```
-
-### Negative Prompt (Always Include)
-
-```
-photorealistic, realistic, detailed skin, 3d, cartoon, anime, chibi, low quality, blurry, complex background, gradient, multiple colors on face, messy, noise, text, watermark, ugly
-```
-
-### Parameter Mapping
-
-| User Input       | Prompt Fragment Example                          |
-|------------------|--------------------------------------------------|
-| Color            | `gold`, `emerald green`, `#FF6B6B`               |
-| Face Shape       | `oval face`, `heart-shaped face`, `square jaw`   |
-| Accessories      | `wearing elegant gold earrings`, `thin glasses`  |
-| Hair             | `long flowing hair`, `short dynamic hair`        |
-
-### Validation Checklist
-- [ ] Solid black (or near-black) background
-- [ ] Hair is flowing and dominant
-- [ ] Face is silhouette / minimal outline only
-- [ ] No photorealistic details
-- [ ] Clean edges
-- [ ] Primary color correctly applied
-
----
-
-## 7. How to Use (for Local Agent)
-
-1. Store this document as the official design system reference for Thylas Coworker avatars.
-2. When building the coworker avatar generation feature, implement the skill workflow defined in Section 6.
-3. All avatar generations must go through the constrained prompt + validation flow.
-4. Use the fixed style anchors and negative prompts exactly as specified to enforce strong visual consistency.
-
----
-
-**Document Owner:** Thylas Product / Design  
-**Next Steps:** Implement generation pipeline based on the skill workflow; test with multiple face shapes, colors, and accessories.
+The `thylas-coworker-avatar` generation skill from v1.0 is **retired**, not
+implemented. Nothing in the codebase calls an image model for avatars.

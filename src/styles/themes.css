@@ -52,6 +52,10 @@
   --cover-teal: #4F7A78;
   --cover-amber: #96783F;
 
+  /* Coworker avatars: the ground is binary — white in light palettes, black
+     in dark. Only the stroke may take an arbitrary colour. */
+  --avatar-ground: #FFFFFF;
+
   color-scheme: light;
 }
 
@@ -98,6 +102,8 @@
   --cover-teal: #79ABA8;
   --cover-amber: #C6A55E;
 
+  --avatar-ground: #000000;
+
   color-scheme: dark;
 }
 
@@ -140,6 +146,8 @@
   --cover-violet: #605580;
   --cover-teal: #416966;
   --cover-amber: #82672F;
+
+  --avatar-ground: #FFFFFF;
 
   color-scheme: light;
 }
