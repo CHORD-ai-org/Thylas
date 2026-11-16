@@ -3,6 +3,9 @@ import type { Id } from './types';
 export const routes = {
   root: () => '/',
   login: () => '/login',
+  /* The first-run journey sits outside the shell, like sign-in: no rail, no
+     dock. It ends by entering the shell at the overview. */
+  onboarding: () => '/onboarding',
   overview: () => '/overview',
   recently: () => '/recently',
   workspace: (wsId: Id) => `/w/${wsId}`,

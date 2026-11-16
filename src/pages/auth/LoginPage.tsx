@@ -38,13 +38,13 @@ export function LoginPage() {
     dy: number;
   } | null>(null);
 
-  /* Entering the product means entering the only onboarding this build has:
-     the profile initialization flow. The session is the same labelled dev
+  /* Creating an account begins the first-run journey; signing in goes to the
+     existing profile initialization surface. Both use the same labelled dev
      stand-in the rest of the prototype uses. */
   const finish = useCallback(() => {
     document.cookie = 'thylas_session=dev:u-local:ws-1; path=/';
-    navigate(routes.profileInit(), { replace: true });
-  }, [navigate]);
+    navigate(mode === 'create' ? routes.onboarding() : routes.profileInit(), { replace: true });
+  }, [navigate, mode]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -212,6 +212,14 @@ export function LoginPage() {
             <button type="button" className={s.devLink} onClick={enterAsDev} data-dev-enter>
               Continue as local dev user
             </button>
+            <Link
+              className={s.devLink}
+              style={{ marginLeft: 12 }}
+              to={routes.onboarding()}
+              data-onboarding-preview
+            >
+              Preview onboarding
+            </Link>
           </div>
         </form>
       </LoginSheet>

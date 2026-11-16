@@ -16,6 +16,8 @@ describe('routes', () => {
   });
 
   it('builds global paths', () => {
+    expect(routes.login()).toBe('/login');
+    expect(routes.onboarding()).toBe('/onboarding');
     expect(routes.overview()).toBe('/overview');
     expect(routes.recently()).toBe('/recently');
     expect(routes.notes()).toBe('/notes');
