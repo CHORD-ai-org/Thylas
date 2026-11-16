@@ -23,6 +23,7 @@
 | 7 | [`WAM-BOUNDARY.md`](WAM-BOUNDARY.md) | Thylas vs WAM responsibilities; why many Coworkers ≠ a multi-agent system |
 | 8 | [`LIFECYCLE.md`](LIFECYCLE.md) | Creation → participation → pause → archive; three statuses that are not one |
 | 9 | [`SCOPE.md`](SCOPE.md) | Confirmed decisions, proposals, open questions, MVP, deferred, dependencies |
+| 10 | [`TEAM-NAMING-CONVENTION.md`](TEAM-NAMING-CONVENTION.md) | **[P]** Norse naming sources, team identity fields, six candidate names, separation from Coworker / role / method naming. Candidates are not team definitions |
 
 ## The one-paragraph model **[C]**
 
