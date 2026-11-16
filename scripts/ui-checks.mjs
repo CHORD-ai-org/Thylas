@@ -3088,16 +3088,46 @@ async function main() {
   `), (v) => v.rail && v.h1 === 'Coworkers' && v.rows === 3);
 
   await js(`${helpers} click(document.querySelector('[aria-label="Grid view"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
-  check('coworkers: the grid shows the same three as cards with an identity plate', await js(`
+  check('coworkers: the grid shows three drawn plates with distinct stroke colours', await js(`
     const cards = [...document.querySelectorAll('[data-coworker-card]')];
+    const plates = cards.map(c => c.querySelector('[data-coworker-avatar]'));
     return {
       cards: cards.length,
-      plates: cards.map(c => c.querySelector('[data-hue]')?.getAttribute('data-hue')),
-      initials: cards.map(c => c.textContent.trim().slice(0, 2)),
-      distinctHues: new Set(cards.map(c => c.querySelector('[data-hue]')?.getAttribute('data-hue'))).size,
+      plates: plates.length,
+      hues: plates.map(p => p?.dataset.avatarHue),
+      distinctHues: new Set(plates.map(p => p?.dataset.avatarHue)).size,
+      grounds: plates.map(p => getComputedStyle(p.querySelector('rect')).fill),
+      strokes: plates.map(p => getComputedStyle(p.querySelector('g')).stroke),
       rows: document.querySelectorAll('[data-coworker-row]').length,
     };
-  `), (v) => v.cards === 3 && v.rows === 0 && v.distinctHues === 3 && v.initials.every((i) => /^[A-Z]{1,2}$/.test(i)));
+  `), (v) => v.cards === 3 && v.rows === 0 && v.plates === 3 && v.distinctHues === 3 &&
+    v.grounds.every(g => g === 'rgb(241, 235, 221)' || g === 'rgb(255, 255, 255)' || g === 'rgb(0, 0, 0)') &&
+    v.strokes.every(s => s !== 'none' && s !== ''));
+
+  check('coworkers: square plates, names below, three faces, brief hidden until hover', await js(`
+    const cards = [...document.querySelectorAll('[data-coworker-card]')];
+    return {
+      squares: cards.map(c => {
+        const r = c.querySelector('[class*="tilePlate"]').getBoundingClientRect();
+        return Math.abs(r.width - r.height) < 2;
+      }),
+      nameBelow: cards.every(c =>
+        c.querySelector('[data-tile-name]').getBoundingClientRect().top >=
+        c.querySelector('[data-coworker-avatar]').getBoundingClientRect().bottom - 1),
+      faces: cards.map(c => getComputedStyle(c.querySelector('[data-tile-name]')).fontFamily),
+      brief: cards.map(c => getComputedStyle(c.querySelector('[data-tile-brief]')).opacity),
+    };
+  `), (v) => v.squares.length === 3 && v.squares.every(Boolean) && v.nameBelow === true &&
+    new Set(v.faces).size === 3 && v.brief.every(o => o === '0'));
+
+  const tile = await js(`const r = document.querySelector('[data-coworker-card]').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };`);
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: tile.x, y: tile.y, button: 'none', buttons: 0 });
+  await new Promise(r => setTimeout(r, 200));
+  check('coworkers: hover reveals the brief on that plate', await js(`
+    return getComputedStyle(document.querySelector('[data-tile-brief]')).opacity;
+  `), '1');
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0, button: 'none', buttons: 0 });
+  await new Promise(r => setTimeout(r, 180));
 
   await js(`${helpers} click(document.querySelector('[aria-label="List view"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   check('coworkers: the list view is still the default and comes back', await js(`
@@ -3107,6 +3137,54 @@ async function main() {
       on: document.querySelector('[aria-label="List view"]')?.getAttribute('aria-pressed'),
     };
   `), { rows: 3, cards: 0, on: 'true' });
+
+  /* ---- the collective perspective -------------------------------------- */
+  await js(`${helpers} click(document.querySelector('[data-perspective="teams"]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('teams: the perspective shows six illustrative collectives', await js(`
+    const cards = [...document.querySelectorAll('[data-team-card]')];
+    return {
+      on: document.querySelector('[data-perspective="teams"]')?.getAttribute('aria-pressed'),
+      cards: cards.length,
+      rows: document.querySelectorAll('[data-coworker-row]').length,
+      names: cards.map(c => c.querySelector('[class*="teamName"]')?.textContent.trim()),
+      archetypes: cards.filter(c => c.textContent.includes('The ')).length,
+      create: !!document.querySelector('[data-create-coworker]'),
+      note: document.querySelector('[class*="resultNote"]')?.textContent.trim(),
+    };
+  `), (v) => v.on === 'true' && v.cards === 6 && v.rows === 0 && v.archetypes === 6 &&
+    v.create === false && v.note.includes('illustrative') && v.note.includes('Team runtime') &&
+    ['MÍMIR', 'ODIN', 'YGGDRASIL', 'BIFRÖST', 'LOKI', 'SVARTÁLFHEIM'].every(n => v.names.includes(n)));
+
+  await js(`${helpers} click(document.querySelector('[data-team-card="team-mimir"]')); await new Promise(r => setTimeout(r, 220)); return 1;`);
+  check('teams: opening MÍMIR explains why it exists and who does what', await js(`
+    const detail = document.querySelector('[data-team-detail="team-mimir"]');
+    return {
+      open: document.querySelector('[data-team-card="team-mimir"]')?.getAttribute('aria-expanded'),
+      detail: !!detail,
+      members: detail ? [...detail.querySelectorAll('[data-team-member]')].map(m => m.dataset.teamMember) : [],
+      text: detail?.textContent ?? '',
+      expandLabel: document.querySelector('[data-team-card="team-mimir"]')?.textContent.trim(),
+    };
+  `), (v) => v.open === 'true' && v.detail === true &&
+    JSON.stringify(v.members) === JSON.stringify(['Researcher', 'Critic', 'Synthesizer']) &&
+    v.text.includes('Hold the question open') && v.text.includes('Turn a broad question') &&
+    v.text.includes('no Coworkers are assigned') && v.expandLabel.includes('Hide composition'));
+
+  await fillAria('Search teams', 'forge');
+  check('teams: search filters by name and archetype', await js(`
+    return [...document.querySelectorAll('[data-team-card]')].map(c => c.querySelector('[class*="teamName"]')?.textContent.trim());
+  `), ['SVARTÁLFHEIM']);
+  await fillAria('Search teams', '');
+
+  await js(`${helpers} click(document.querySelector('[data-perspective="coworkers"]')); await new Promise(r => setTimeout(r, 220)); return 1;`);
+  check('teams: returning to individuals keeps every existing control', await js(`
+    return {
+      rows: document.querySelectorAll('[data-coworker-row]').length,
+      teams: document.querySelectorAll('[data-team-card]').length,
+      create: !!document.querySelector('[data-create-coworker]'),
+      on: document.querySelector('[data-perspective="coworkers"]')?.getAttribute('aria-pressed'),
+    };
+  `), { rows: 3, teams: 0, create: true, on: 'true' });
 
   await fillAria('Search coworkers', 'protocol');
   check('coworkers: search narrows to the reviewer', await js(`
