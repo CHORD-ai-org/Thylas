@@ -5,7 +5,10 @@ import { coworkersView, useCoworkers } from '../../state/coworkers';
 import { PlainLayout } from '../../shell/layouts';
 import { Button, EmptyState } from '../../components/ui';
 import { IconPlus } from '../../components/icons';
-import { hashId } from '../../lib/cover';
+import { CoworkerAvatar } from '../../components/CoworkerAvatar';
+import { avatarFontOf } from '../../lib/coworker-avatar';
+import { COWORKER_TEAMS } from '../../data/coworkerTeams';
+import { TeamGallery } from './TeamGallery';
 import a from '../artifacts/artifacts.module.css';
 import c from './coworker.module.css';
 
@@ -17,23 +20,9 @@ import c from './coworker.module.css';
 
 const DAY = 86_400_000;
 
-/** Same hash as the artifact covers: a character sum put two of the three
-    seeds on the same hue, which made the grid look like one colour. */
-function hue(id: string): string {
-  return String(hashId(id) % 4);
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-}
-
 export function CoworkerDirectory() {
   useCoworkers();
+  const [perspective, setPerspective] = useState<'coworkers' | 'teams'>('coworkers');
   const [view, setView] = useState<'all' | 'active' | 'archived'>('all');
   const [mode, setMode] = useState<'list' | 'grid'>('list');
   const [query, setQuery] = useState('');
@@ -59,71 +48,101 @@ export function CoworkerDirectory() {
           </p>
         </div>
         <div className={a.headActions}>
-          <div className={a.modeRow} role="group" aria-label="View mode">
-            <button
-              type="button"
-              className={[a.modeBtn, mode === 'list' ? a.modeBtnOn : ''].join(' ')}
-              aria-label="List view"
-              aria-pressed={mode === 'list'}
-              onClick={() => setMode('list')}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-                <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className={[a.modeBtn, mode === 'grid' ? a.modeBtnOn : ''].join(' ')}
-              aria-label="Grid view"
-              aria-pressed={mode === 'grid'}
-              onClick={() => setMode('grid')}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
-                <rect x="2.5" y="2.5" width="4.6" height="4.6" />
-                <rect x="8.9" y="2.5" width="4.6" height="4.6" />
-                <rect x="2.5" y="8.9" width="4.6" height="4.6" />
-                <rect x="8.9" y="8.9" width="4.6" height="4.6" />
-              </svg>
-            </button>
-          </div>
+          {perspective === 'coworkers' ? (
+            <div className={a.modeRow} role="group" aria-label="View mode">
+              <button
+                type="button"
+                className={[a.modeBtn, mode === 'list' ? a.modeBtnOn : ''].join(' ')}
+                aria-label="List view"
+                aria-pressed={mode === 'list'}
+                onClick={() => setMode('list')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                  <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className={[a.modeBtn, mode === 'grid' ? a.modeBtnOn : ''].join(' ')}
+                aria-label="Grid view"
+                aria-pressed={mode === 'grid'}
+                onClick={() => setMode('grid')}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                  <rect x="2.5" y="2.5" width="4.6" height="4.6" />
+                  <rect x="8.9" y="2.5" width="4.6" height="4.6" />
+                  <rect x="2.5" y="8.9" width="4.6" height="4.6" />
+                  <rect x="8.9" y="8.9" width="4.6" height="4.6" />
+                </svg>
+              </button>
+            </div>
+          ) : null}
           <input
             className={a.search}
             type="search"
-            aria-label="Search coworkers"
-            placeholder="Search name, brief"
+            aria-label={perspective === 'teams' ? 'Search teams' : 'Search coworkers'}
+            placeholder={perspective === 'teams' ? 'Search name, archetype' : 'Search name, brief'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <Link to={routes.coworkerNew()} className={a.createBtn} data-create-coworker>
-            <IconPlus size={12} /> Create Coworker
-          </Link>
+          {perspective === 'coworkers' ? (
+            <Link to={routes.coworkerNew()} className={a.createBtn} data-create-coworker>
+              <IconPlus size={12} /> Create Coworker
+            </Link>
+          ) : null}
         </div>
       </header>
 
       <div className={a.navRow}>
-        <div className={a.chipRow} role="group" aria-label="Views">
-          {(['all', 'active', 'archived'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={[a.chip, view === v ? a.chipOn : ''].join(' ')}
-              onClick={() => setView(v)}
-              aria-pressed={view === v}
-            >
-              {v[0]!.toUpperCase() + v.slice(1)}
-            </button>
-          ))}
+        <div className={c.navMeta}>
+          <div className={c.perspective} role="group" aria-label="Perspective">
+            {(['coworkers', 'teams'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={c.perspectiveBtn}
+                data-perspective={p}
+                aria-pressed={perspective === p}
+                onClick={() => setPerspective(p)}
+              >
+                {p === 'coworkers' ? 'Coworkers' : 'Teams'}
+              </button>
+            ))}
+          </div>
+          {perspective === 'coworkers' ? (
+            <div className={a.chipRow} role="group" aria-label="Views">
+              {(['all', 'active', 'archived'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={[a.chip, view === v ? a.chipOn : ''].join(' ')}
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                >
+                  {v[0]!.toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <div className={a.resultLine}>
         <span className={a.resultCount}>
-          {visible.length} coworker{visible.length === 1 ? '' : 's'}
+          {perspective === 'teams'
+            ? `${COWORKER_TEAMS.length} teams`
+            : `${visible.length} coworker${visible.length === 1 ? '' : 's'}`}
         </span>
-        <span className={a.resultNote}>prototype data — persists in this browser only</span>
+        <span className={a.resultNote}>
+          {perspective === 'teams'
+            ? 'illustrative teams — no assignment or Team runtime'
+            : 'prototype data — persists in this browser only'}
+        </span>
       </div>
 
-      {visible.length === 0 ? (
+      {perspective === 'teams' ? (
+        <TeamGallery query={query} />
+      ) : visible.length === 0 ? (
         query.trim() !== '' ? (
           <EmptyState
             title="No coworker matches this search"
@@ -148,29 +167,25 @@ export function CoworkerDirectory() {
           />
         )
       ) : mode === 'grid' ? (
-        <ul className={a.gallery} data-coworker-grid>
+        <ul className={c.tileGrid} data-coworker-grid>
           {visible.map((cw) => (
             <li key={cw.id}>
               <Link
-                className={a.galleryCard}
+                className={c.tileCard}
                 to={routes.coworker(cw.id)}
                 data-coworker-card={cw.id}
                 aria-label={`${cw.name}, ${cw.status}`}
               >
-                <span className={c.cardCover} data-hue={hue(cw.id)} aria-hidden>
-                  <span className={c.cardInitials}>{initials(cw.name)}</span>
+                <span className={c.tilePlate}>
+                  <CoworkerAvatar id={cw.id} size={128} />
                 </span>
-                <span className={a.cardBodyPad}>
-                  <span className={a.cardName}>{cw.name}</span>
-                  <span className={a.cardSummary}>{cw.responsibilities.forWork || cw.description}</span>
-                  <span className={a.cardMeta}>
-                    <span className={c.statusChip} data-status={cw.status}>
-                      {cw.status}
-                    </span>
-                    <span aria-hidden>·</span>
-                    <span>
-                      {cw.memberships.length} workspace{cw.memberships.length === 1 ? '' : 's'}
-                    </span>
+                <span className={[c.tileName, c[`font${avatarFontOf(cw.id)}`]].join(' ')} data-tile-name>
+                  {cw.name}
+                </span>
+                <span className={c.tileBrief} data-tile-brief>
+                  <span className={c.tileBriefText}>{cw.responsibilities.forWork || cw.description}</span>
+                  <span className={c.tileBriefMeta}>
+                    {cw.status} · {cw.memberships.length} workspace{cw.memberships.length === 1 ? '' : 's'}
                   </span>
                 </span>
               </Link>
@@ -181,13 +196,17 @@ export function CoworkerDirectory() {
         <ul className={a.rows}>
           {visible.map((cw) => (
             <li key={cw.id}>
-              <Link className={a.row} to={routes.coworker(cw.id)} data-coworker-row={cw.id}>
-                <span className={c.mark} data-hue={hue(cw.id)} aria-hidden>
-                  {initials(cw.name)}
-                </span>
+              <Link
+                className={[a.row, c.rowHover].join(' ')}
+                to={routes.coworker(cw.id)}
+                data-coworker-row={cw.id}
+              >
+                <CoworkerAvatar id={cw.id} size={28} className={c.avatarMark} />
                 <span className={a.rowMain}>
-                  <span className={a.rowTitle}>{cw.name}</span>
-                  <span className={a.rowMeta}>{cw.responsibilities.forWork || cw.description}</span>
+                  <span className={[a.rowTitle, c[`font${avatarFontOf(cw.id)}`]].join(' ')}>{cw.name}</span>
+                  <span className={[a.rowMeta, c.rowBrief].join(' ')}>
+                    {cw.responsibilities.forWork || cw.description}
+                  </span>
                 </span>
                 <span className={a.rowAside}>
                   <span className={c.statusChip} data-status={cw.status}>

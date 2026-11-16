@@ -1,46 +1,140 @@
 /* Coworker-specific pieces. Everything shared (heads, rows, chips, sections,
    forms) comes from the artifacts module — one list grammar across the product. */
 
-.mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* Drawn portrait plates. Ground = theme black/white; colour = stroke only.
+   The surrounding card keeps the shared grammar; no tinted fill behind it. */
+.avatarMark {
   width: 28px;
   height: 28px;
-  flex: 0 0 auto;
-  border-radius: var(--r-sm);
-  font: 500 10px/1 var(--mono);
-  letter-spacing: 0.02em;
-  color: var(--bg-app);
+  border: 1px solid var(--line-strong);
 }
 
-/* Hues come from the artifact cover palette: one colour system, not two.
-   The old values were hard-coded per palette; these follow the theme. */
-.mark[data-hue='0'] { background: var(--cover-blue); }
-.mark[data-hue='1'] { background: var(--cover-green); }
-.mark[data-hue='2'] { background: var(--cover-clay); }
-.mark[data-hue='3'] { background: var(--cover-violet); }
-
-/* ---- grid cards: same card grammar as artifacts, initials for a cover ---- */
-
-.cardCover {
+.avatarPlate {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 108px;
-  background: color-mix(in srgb, var(--coworker-hue) 13%, var(--bg-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
+  border-bottom: 1px solid var(--line);
 }
 
-.cardCover[data-hue='0'] { --coworker-hue: var(--cover-blue); }
-.cardCover[data-hue='1'] { --coworker-hue: var(--cover-green); }
-.cardCover[data-hue='2'] { --coworker-hue: var(--cover-clay); }
-.cardCover[data-hue='3'] { --coworker-hue: var(--cover-violet); }
+/* ---- square coworker tiles --------------------------------------------- */
 
-.cardInitials {
-  font: 500 22px/1 var(--mono);
-  letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--coworker-hue) 88%, var(--ink));
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4);
+  margin: var(--s4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1399px) {
+  .tileGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1023px) {
+  .tileGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 719px) {
+  .tileGrid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.tileCard {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  color: var(--ink);
+}
+
+.tileCard:hover,
+.tileCard:focus-visible {
+  border-color: var(--line-strong);
+}
+
+.tilePlate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+}
+
+.tilePlate svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tileName {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font0 { font-family: var(--ui); }
+.font1 { font-family: var(--mono); letter-spacing: -0.02em; }
+.font2 { font-family: var(--serif); }
+
+.tileBrief {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 46px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
+}
+
+.tileCard:hover .tileBrief,
+.tileCard:focus-visible .tileBrief {
+  opacity: 1;
+}
+
+.tileBriefText {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font: var(--t-caption);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.tileBriefMeta {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.rowBrief {
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
+}
+
+.rowHover:hover .rowBrief,
+.rowHover:focus-visible .rowBrief {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tileBrief,
+  .rowBrief { transition: none; }
 }
 
 .statusChip {
@@ -144,4 +238,295 @@
   border-bottom: 1px solid var(--line);
   font: var(--t-ui);
   color: var(--ink-2);
+}
+
+/* ---- perspectives: individuals vs collectives -------------------------- */
+
+.perspective {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+}
+
+.perspectiveBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: calc(var(--r-sm) - 2px);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+
+.perspectiveBtn:hover {
+  color: var(--ink);
+}
+
+.perspectiveBtn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg-app);
+}
+
+.navMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+/* ---- team cards -------------------------------------------------------- */
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+  margin: var(--s4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1023px) {
+  .teamGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 719px) {
+  .teamGrid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.teamItem {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) {
+  grid-column: 1 / -1;
+  border-color: var(--line-strong);
+}
+
+/* An open team becomes the row: identity, roles and composition read across
+   the page instead of being squeezed into one card column. */
+.teamItem:has(.teamCard[aria-expanded='true']) .teamCard {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 200px;
+  column-gap: 20px;
+  row-gap: 8px;
+  align-items: start;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamCardTop {
+  grid-column: 1 / -1;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamName {
+  margin-top: 8px;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamSubtitle {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 12px;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamRoles {
+  grid-column: 3;
+  grid-row: 2;
+  margin-top: 10px;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamPhilosophy {
+  grid-column: 2 / 4;
+  grid-row: 3;
+  margin-top: 0;
+  -webkit-line-clamp: 1;
+  min-height: 0;
+}
+
+.teamItem:has(.teamCard[aria-expanded='true']) .teamExplore {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.teamCard {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: 18px 18px 16px;
+  text-align: left;
+  color: var(--ink);
+}
+
+.teamCard:hover {
+  background: var(--tint-hover);
+}
+
+.teamCardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.teamIndex {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.teamArchetype {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.teamName {
+  margin-top: 18px;
+  font-family: var(--ui);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.teamSubtitle {
+  margin-top: 5px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+.teamPhilosophy {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 14px;
+  font: var(--t-caption);
+  line-height: 1.55;
+  color: var(--ink-2);
+  min-height: calc(2 * 1.55em);
+}
+
+.teamRoles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.teamRole {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-chip);
+  font: var(--t-caption);
+  color: var(--ink-2);
+}
+
+.teamExplore {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.teamExplore[data-open='true'] {
+  color: var(--ink-2);
+}
+
+/* ---- expanded composition --------------------------------------------- */
+
+.teamDetail {
+  padding: 0 18px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-app);
+}
+
+.teamFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.teamFactLabel {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.teamFactValue {
+  margin-top: 5px;
+  font: var(--t-caption);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.memberList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.memberRow {
+  display: grid;
+  grid-template-columns: 78px 74px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.memberRole {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.memberName {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.memberWork {
+  font: var(--t-caption);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.teamBoundary {
+  margin-top: 10px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.teamEmpty {
+  margin: var(--s6) 0;
+  font: var(--t-ui);
+  color: var(--ink-2);
+}
+
+@media (max-width: 719px) {
+  .teamItem:has(.teamCard[aria-expanded='true']) .teamCard { display: flex; }
+  .teamFacts { grid-template-columns: minmax(0, 1fr); }
+  .memberRow { grid-template-columns: 70px minmax(0, 1fr); }
+  .memberWork { grid-column: 2; }
 }
