@@ -10,7 +10,7 @@ const here = join(fileURLToPath(import.meta.url), '..');
 const outDir = join(here, '..', 'design', 'reference', 'coworkers');
 mkdirSync(outDir, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const BASE = 'http://localhost:5193';
+const BASE = process.env.CW_BASE ?? 'http://localhost:5193';
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe'].filter(existsSync)[0];
 const profile = mkdtempSync(join(tmpdir(), 'cw-shot-'));
 
@@ -51,5 +51,20 @@ for (const theme of ['warm', 'dark', 'light']) {
 await listBtn();
 await sleep(300);
 await shot('coworkers-list-warm');
+
+/* Team perspective: all six collectives, then one opened composition. */
+await evaluate(`(() => { document.querySelector('[data-perspective="teams"]')?.click(); return 'ok'; })()`);
+await sleep(350);
+await shot('coworkers-teams-warm');
+await evaluate(`(() => { document.querySelector('[data-team-card="team-mimir"]')?.click(); return 'ok'; })()`);
+await sleep(300);
+await shot('coworkers-team-detail-warm');
+
+await evaluate(`localStorage.setItem('thylas:user:v1', JSON.stringify({version:1, prefs:{theme:'dark'}})); 'ok'`);
+await send('Page.reload');
+await sleep(1400);
+await evaluate(`(() => { document.querySelector('[data-perspective="teams"]')?.click(); return 'ok'; })()`);
+await sleep(350);
+await shot('coworkers-teams-dark');
 
 ws.close(); chrome.kill(); process.exit(0);
