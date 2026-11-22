@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AI_MAX_PROMPT, selectionLabel, type AiStatusBody } from '../../lib/ai';
 import { boardsIn, filesIn } from '../../data/selectors';
 import { listNotes } from '../../state/notes';
@@ -11,6 +11,8 @@ import {
   type ContextSource,
   type Conversation,
 } from '../../state/chat';
+import { parseInvokeToken, toContextSource, type InvokeToken } from '../../lib/invoke';
+import { InvokePalette, invokeItems, useInvokeItems } from './InvokePalette';
 import { IconCheck, IconClose, IconPlus } from '../../components/icons';
 import s from './chat.module.css';
 
@@ -18,6 +20,12 @@ import s from './chat.module.css';
  * The Composer: multiline input, context bar, model control, send/stop. The
  * toolbar only exposes what exists — attaching means attaching real workspace
  * materials, and the model list comes from the server's own status answer.
+ *
+ * `@` (objects) and `/` (actions) open the invocation palette (P0-1/P0-2).
+ * Selecting a bindable object inserts a context binding — a chip, never a
+ * half-written token; a non-bindable object becomes a plain-text mention. On a
+ * draft, bindings wait in a visible chip row and are applied to the conversation
+ * the first send creates.
  */
 
 export function Composer({
@@ -29,10 +37,10 @@ export function Composer({
 }: {
   conversation: Conversation;
   streaming: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, binds: Omit<ContextSource, 'id'>[]) => void;
   onStop: () => void;
-  /** No conversation exists yet: the first send creates one. Context cannot be
-      attached to a conversation that does not exist, so the picker is absent. */
+  /** No conversation exists yet: the first send creates one. Bindings made
+      while drafting are applied at that moment, not dropped. */
   draft?: boolean;
 }) {
   useConnect();
@@ -46,6 +54,41 @@ export function Composer({
   const overLimit = text.trim().length > AI_MAX_PROMPT;
   const canSend = text.trim().length > 0 && !overLimit && !streaming;
 
+  /* ---- invocation (P0-1..P0-3) ---- */
+  const [invoke, setInvoke] = useState<{ token: InvokeToken; caret: number } | null>(null);
+  const [cursor, setCursor] = useState(0);
+  const [pending, setPending] = useState<Omit<ContextSource, 'id'>[]>([]);
+  const [usage, setUsage] = useState<string[]>([]);
+  const items = useInvokeItems();
+  const workspaces = useWorkspaces();
+
+  const scope = useMemo(() => {
+    const bound = conversation.context.find((c) => c.kind === 'workspace');
+    return workspaces.find((w) => w.name === bound?.name)?.id ?? workspaces[0]?.id ?? 'personal';
+  }, [conversation.context, workspaces]);
+
+  const matches = useMemo(
+    () =>
+      invoke
+        ? invokeItems(
+            {
+              token: invoke.token.query,
+              group: invoke.token.trigger === '/' ? 'action' : 'all',
+              scope,
+            },
+            items,
+            usage,
+          )
+        : [],
+    [invoke, items, usage, scope],
+  );
+
+  const syncInvoke = (el: HTMLTextAreaElement) => {
+    const token = parseInvokeToken(el.value, el.selectionStart ?? el.value.length);
+    setInvoke(token ? { token, caret: el.selectionStart ?? el.value.length } : null);
+    setCursor(0);
+  };
+
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
@@ -53,13 +96,76 @@ export function Composer({
     el.style.height = `${Math.min(216, Math.max(24, el.scrollHeight))}px`;
   }, [text, conversation.id]);
 
+  const focusAt = (position: number) => {
+    window.requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(position, position);
+    });
+  };
+
+  const pick = (id: string) => {
+    const item = matches.find((m) => `${m.group}:${m.id}` === id) ?? matches[cursor];
+    if (!item || !invoke) return;
+    const { start, query } = invoke.token;
+    const after = text.slice(invoke.caret);
+    const src = toContextSource(item);
+    setUsage((prev) => [item.id, ...prev.filter((u) => u !== item.id)].slice(0, 20));
+    setInvoke(null);
+    if (src) {
+      /* A finished binding: the token text is consumed, the chip carries the
+         reference (the "never leave a half-written token" rule). */
+      if (draft) setPending((prev) => [...prev, src]);
+      else addContextSource(conversation.id, src);
+      const next = text.slice(0, start) + after;
+      setText(next);
+      focusAt(start);
+    } else {
+      /* No binding shape for this kind yet (coworker/gsc/action): a plain
+         mention in the text, which is exactly what it can be today. */
+      const mention = `${invoke.token.trigger}${item.label} `;
+      setText(text.slice(0, start) + mention + after);
+      focusAt(start + mention.length);
+    }
+    void query;
+  };
+
   const submit = () => {
     if (!canSend) return;
-    onSend(text.trim());
+    onSend(text.trim(), draft ? pending : []);
     setText('');
+    setPending([]);
+    setInvoke(null);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (invoke && matches.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCursor((c) => (c + 1) % matches.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCursor((c) => (c - 1 + matches.length) % matches.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        pick(`${matches[cursor]!.group}:${matches[cursor]!.id}`);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setInvoke(null);
+        return;
+      }
+    } else if (invoke && e.key === 'Escape') {
+      e.preventDefault();
+      setInvoke(null);
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       submit();
@@ -72,6 +178,24 @@ export function Composer({
   return (
     <div className={[s.composer, 'glass'].join(' ')}>
       <div className={s.composerInner}>
+        {draft && pending.length > 0 ? (
+          <div className={s.contextBar} data-invoke-pending>
+            {pending.map((source, index) => (
+              <span key={`${source.name}:${index}`} className={s.chip} data-kind={source.kind} title="Binds to the new conversation when you send">
+                {source.name}
+                <button
+                  type="button"
+                  className={s.chipX}
+                  aria-label={`Remove ${source.name} from context`}
+                  onClick={() => setPending((prev) => prev.filter((_, i) => i !== index))}
+                >
+                  <IconClose size={9} />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
         {draft ? null : (
           <ContextBar conversation={conversation} open={contextOpen} setOpen={setContextOpen} />
         )}
@@ -94,10 +218,16 @@ export function Composer({
             ref={inputRef}
             className={s.input}
             aria-label="Message"
-            placeholder={streaming ? 'Generating… press Stop to keep the partial answer' : 'Ask about this workspace…'}
+            placeholder={streaming ? 'Generating… press Stop to keep the partial answer' : 'Ask about this workspace…  @ to reference'}
             rows={1}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            data-composer-input
+            onChange={(e) => {
+              setText(e.target.value);
+              syncInvoke(e.currentTarget);
+            }}
+            onSelect={(e) => syncInvoke(e.currentTarget)}
+            onKeyUp={(e) => syncInvoke(e.currentTarget)}
             onKeyDown={onKeyDown}
           />
           <button
@@ -119,11 +249,19 @@ export function Composer({
               </svg>
             )}
           </button>
+          {invoke ? (
+            <InvokePalette
+              items={matches}
+              cursor={Math.min(cursor, Math.max(0, matches.length - 1))}
+              onPick={(item) => pick(`${item.group}:${item.id}`)}
+              onHover={setCursor}
+            />
+          ) : null}
         </div>
 
         <div className={s.composerFoot}>
           <span className={s.hint}>
-            Enter sends · Shift+Enter for a newline
+            Enter sends · Shift+Enter for a newline · @ references
             {overLimit ? ` · ${text.trim().length} characters, over the ${AI_MAX_PROMPT} limit` : ''}
           </span>
           <span className={s.right}>

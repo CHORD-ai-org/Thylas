@@ -527,6 +527,7 @@
 }
 
 .inputWrap {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: var(--s2);
@@ -859,4 +860,195 @@
     box-shadow: var(--e2);
     width: min(420px, 100vw) !important;
   }
+}
+
+/* ---- invocation palette (P0-2) ---------------------------------------- */
+
+.invokePopover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: min(340px, 100%);
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--e2);
+  padding: 6px;
+  z-index: var(--z-overlay);
+}
+
+.invokeRow {
+  composes: focusInside from '../../styles/grammar.module.css';
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  text-align: left;
+}
+
+.invokeRowOn,
+.invokeRow:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.invokeDetail {
+  margin-left: auto;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 45%;
+}
+
+/* ---- extraction panel (P0-5..P0-8) ------------------------------------ */
+
+.extractPanel {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  padding: 14px 16px;
+  max-width: 720px;
+  margin: 12px auto;
+}
+
+.extractHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.extractHead .chipX {
+  margin-left: auto;
+  font-size: 14px;
+}
+
+.extractMeta {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.extractLede {
+  margin-top: 8px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.extractSources {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.extractSource {
+  composes: popoverRow;
+  width: 100%;
+}
+
+.extractSourceOn {
+  background: var(--tint-sel);
+  color: var(--ink);
+}
+
+.extractActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.extractActions .extractMeta {
+  margin-right: auto;
+}
+
+.candidateList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.candidate {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+}
+
+.candidate[data-status='accepted'] { border-color: var(--ok); }
+.candidate[data-status='rejected'] { opacity: 0.55; }
+.candidate[data-status='edited'] { border-color: var(--accent-strong); }
+
+.candidateTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.candidateName {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+}
+
+.candidateNameInput {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line-strong);
+  padding: 2px 0;
+}
+
+.candidateStatus {
+  margin-left: auto;
+  font: var(--t-mono-s);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+}
+
+.candidateBody {
+  margin-top: 6px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.candidateEvidence {
+  margin-top: 6px;
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.candidateActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.extractDone {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font: var(--t-ui);
+  color: var(--ink);
 }

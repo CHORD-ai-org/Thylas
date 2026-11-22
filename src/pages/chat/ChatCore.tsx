@@ -4,6 +4,7 @@ import type { AiErr } from '../../lib/ai';
 import { useAiSelection } from '../../state/ai';
 import {
   activeConversation,
+  addContextSource,
   addUserMessage,
   appendDelta,
   beginAssistantMessage,
@@ -20,6 +21,7 @@ import {
 import { Button, IconButton } from '../../components/ui';
 import { IconCheck, IconChat, IconCopy, IconPlus } from '../../components/icons';
 import { Composer } from './Composer';
+import { ExtractPanel } from './ExtractPanel';
 import { MarkdownBody } from './Markdown';
 import s from './chat.module.css';
 
@@ -64,6 +66,7 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
   const conversation = activeConversation(state);
   const streamRef = useRef<HTMLDivElement>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const selection = useAiSelection();
 
   const lastMessage = conversation?.messages.at(-1) ?? null;
@@ -149,15 +152,20 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
             <div className={s.streamEmpty}>
               <p className={s.streamEmptyTitle}>Ask about this workspace.</p>
               <p className={s.streamEmptyHint}>Nothing is read automatically.</p>
+              <Button size="sm" variant="ghost" onClick={() => setExtracting((v) => !v)} data-extract-open>
+                {extracting ? 'Hide extract' : 'Extract artifacts'}
+              </Button>
             </div>
           </div>
         </div>
+        {extracting ? <ExtractPanel onClose={() => setExtracting(false)} /> : null}
         <Composer
           draft
           conversation={DRAFT}
           streaming={false}
-          onSend={(text) => {
+          onSend={(text, binds) => {
             const created = newConversation();
+            for (const bind of binds) addContextSource(created.id, bind);
             send(text, created.id);
           }}
           onStop={() => {}}
@@ -179,6 +187,9 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
         </span>
         <span className={s.headerActions}>
           {headerExtra}
+          <Button size="sm" variant="ghost" onClick={() => setExtracting((v) => !v)} data-extract-open>
+            {extracting ? 'Hide extract' : 'Extract artifacts'}
+          </Button>
           <IconButton label="New conversation" onClick={() => openConversation(newConversation().id)}>
             <IconPlus size={13} />
           </IconButton>
@@ -229,10 +240,15 @@ export function ChatCore({ embedded = false, headerExtra }: { embedded?: boolean
         </div>
       </div>
 
+      {extracting ? <ExtractPanel onClose={() => setExtracting(false)} /> : null}
+
       <Composer
         conversation={conversation}
         streaming={streaming === true}
-        onSend={(text) => send(text, conversation.id)}
+        onSend={(text, binds) => {
+          for (const bind of binds) addContextSource(conversation.id, bind);
+          send(text, conversation.id);
+        }}
         onStop={stop}
       />
     </div>
@@ -328,14 +344,41 @@ function MessageBlock({ block, caret }: { block: Block; caret: boolean }) {
   if (block.kind === 'status') {
     return <span className={s.statusLine}>{block.label}</span>;
   }
-  /* artifact blocks are produced only by future tool flows; the renderer keeps
-     the contract without faking one. */
-  return (
-    <div className={s.code} data-artifact>
-      <div className={s.codeHead}>
-        <span>{block.title}</span>
+  if (block.kind === 'artifact') {
+    /* artifact blocks are produced only by future tool flows; the renderer keeps
+       the contract without faking one. */
+    return (
+      <div className={s.code} data-artifact>
+        <div className={s.codeHead}>
+          <span>{block.title}</span>
+        </div>
+        <pre className={s.codeText}>{block.content}</pre>
       </div>
-      <pre className={s.codeText}>{block.content}</pre>
+    );
+  }
+  /* Interaction blocks (source-picker / candidates / proposal / diff /
+     approval). Their real editing widgets ship with their producers (roadmap
+     P0-5..P0-8); until a producer exists this renders the block's actual data
+     as an inert label — never a control that only pretends to work. */
+  return <InteractionStub block={block} />;
+}
+
+function InteractionStub({ block }: { block: Extract<Block, { kind: 'source-picker' | 'candidates' | 'proposal' | 'diff' | 'approval' }> }) {
+  const meta =
+    block.kind === 'source-picker'
+      ? `${block.options.length} sources · ${block.selected.length} selected`
+      : block.kind === 'candidates'
+        ? `${block.candidateIds.length} candidates`
+        : block.kind === 'proposal' || block.kind === 'diff'
+          ? block.status
+          : block.kind === 'approval'
+            ? `${block.risk} risk · ${block.state}`
+            : '';
+  return (
+    <div className={s.evidenceRow} data-interaction-block={block.kind}>
+      <span className={s.evidence} title={meta}>
+        {block.title} · {meta}
+      </span>
     </div>
   );
 }
