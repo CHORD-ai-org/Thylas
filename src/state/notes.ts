@@ -1,9 +1,12 @@
 /**
- * Notes, stored one key per note plus an index.
+ * Notes, with the durable truth in the browser's local database (IndexedDB)
+ * and a synchronous localStorage mirror in front of it.
  *
- * Why not one blob: saving a 4 KB note must not rewrite a 200 KB library, and a
- * corrupt note must cost one note rather than all of them. Why an index at all:
- * the list needs titles and timestamps without reading every body.
+ * Why a database: notes must survive a reload, a restart, and a localStorage
+ * wipe, and hold more than a few hundred kilobytes. IndexedDB does all that
+ * locally with no server. The localStorage mirror keeps the synchronous reads
+ * the list needs on first paint, and carries any pre-existing notes across on
+ * first launch (a migration, not a re-seed).
  *
  * `version` is the conflict detector. Two saves in the same millisecond still
  * collide, which a timestamp could not guarantee.
@@ -11,6 +14,7 @@
 import { useSyncExternalStore } from 'react';
 import { NOTE_SEEDS } from '../data/note-seed';
 import type { Note, NoteIndexEntry } from '../data/types';
+import { notesDb } from '../services/notes/localDb';
 
 const INDEX_KEY = 'thylas:notes:v1';
 const noteKey = (id: string) => `thylas:note:v1:${id}`;
@@ -52,8 +56,16 @@ function readNote(id: string): Note | null {
 const hasStorage = (): boolean => typeof localStorage !== 'undefined';
 
 function writeNote(note: Note): void {
-  if (!hasStorage()) return;
-  localStorage.setItem(noteKey(note.id), JSON.stringify(note));
+  if (hasStorage()) {
+    try {
+      localStorage.setItem(noteKey(note.id), JSON.stringify(note));
+    } catch {
+      /* quota: the local database is still the durable copy */
+    }
+  }
+  void notesDb().put(note).catch(() => {
+    /* a failing local database must not break a save the surface already accepted */
+  });
 }
 
 function writeIndex(notes: Note[]): void {
@@ -118,6 +130,57 @@ function subscribe(listener: () => void): () => void {
   return () => {
     listeners.delete(listener);
   };
+}
+
+/**
+ * One reconciliation between the synchronous cache and the local database,
+ * run once at startup. The database wins on a shared note by recency; a note
+ * only the cache holds is pushed into the database so nothing is lost to a
+ * localStorage wipe. The result is written back to both sides.
+ */
+let hydrated: Promise<void> | null = null;
+
+function hydrate(): Promise<void> {
+  hydrated ??= (async () => {
+    const db = notesDb();
+    const before = read();
+    const stored = await db.getAll().catch(() => [] as Note[]);
+    const merged = new Map<string, Note>();
+    for (const note of before) merged.set(note.id, note);
+    for (const note of stored) {
+      const existing = merged.get(note.id);
+      if (!existing || note.updatedAt > existing.updatedAt) merged.set(note.id, note);
+    }
+    const notes = [...merged.values()].sort((a, b) => b.updatedAt - a.updatedAt);
+    /* Migration and drift repair: the database becomes the complete copy. */
+    for (const note of notes) await db.put(note).catch(() => {});
+    /* Nothing new to publish to the mirror — leave the snapshot alone. */
+    const changed =
+      notes.length !== before.length ||
+      notes.some((note) => {
+        const old = before.find((b) => b.id === note.id);
+        return !old || old.version !== note.version || old.updatedAt !== note.updatedAt;
+      });
+    if (!changed) return;
+    for (const note of notes) {
+      if (hasStorage()) {
+        try {
+          localStorage.setItem(noteKey(note.id), JSON.stringify(note));
+        } catch {
+          /* quota: the database is still the durable copy */
+        }
+      }
+    }
+    writeIndex(notes);
+    snapshot = notes;
+    for (const listener of listeners) listener();
+  })();
+  return hydrated;
+}
+
+/** Test seam: resolves once the startup reconciliation has finished. */
+export function whenNotesHydrated(): Promise<void> {
+  return hydrate();
 }
 
 const getSnapshot = (): Note[] => read();
@@ -200,15 +263,22 @@ export function renameNote(id: string, title: string): RenameResult {
 
 export function removeNote(id: string): void {
   const notes = read();
-  localStorage.removeItem(noteKey(id));
+  if (hasStorage()) localStorage.removeItem(noteKey(id));
+  void notesDb().delete(id).catch(() => {});
   commit(notes.filter((note) => note.id !== id));
 }
 
 /** Drops every stored note and writes the seeds back. Edits to a seed are lost. */
 export function resetNotes(): void {
   for (const note of read()) {
-    localStorage.removeItem(noteKey(note.id));
+    if (hasStorage()) localStorage.removeItem(noteKey(note.id));
   }
+  void notesDb()
+    .clear()
+    .then(async () => {
+      for (const note of NOTE_SEEDS) await notesDb().put(note);
+    })
+    .catch(() => {});
   for (const note of NOTE_SEEDS) writeNote(note);
   commit([...NOTE_SEEDS]);
 }
@@ -216,3 +286,6 @@ export function resetNotes(): void {
 export function useNotes(): Note[] {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
+
+/* Reconcile the synchronous cache with the local database once, at load. */
+void hydrate().catch(() => {});
