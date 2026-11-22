@@ -2,25 +2,36 @@ import type { CSSProperties } from 'react';
 import { avatarStroke, avatarStyleOf } from '../lib/coworker-avatar';
 import s from './coworker-avatar.module.css';
 
-/** Three flowing hair shapes; all stay inside the same 24×24 plate. */
+/** Filled hair masses: a cap plus tapered locks with air between them. */
 const HAIR: Record<0 | 1 | 2, string[]> = {
   0: [
-    'M9.8 11.4C9.2 7.8 10.6 6 12.4 6c2.1 0 3.4 1.9 3.2 5.1-.1 1.6-.7 2.6-1.3 3.2',
-    'M9.8 11.4c-1.7 1.4-2.6 3.4-2.8 6.1',
-    'M15.6 11.1c1.7 1.3 2.6 3.3 2.8 6',
+    'M26 12c-2-6 4-9 9-7 5 2 7 7 6 13l-3-1c0-5-3-8-7-8-3 0-5 2-5 6z',
+    'M26 12C18 7 10 8 4 12c6 0 13 3 20 7 1-3 2-5 2-7z',
+    'M25 16C16 12 7 14 1 18c8-2 16 0 23 3 1-2 1-4 1-5z',
+    'M24 20C15 17 6 20 1 26c8-5 16-3 22-1 1-2 1-4 1-5z',
+    'M24 25C16 23 8 27 4 33c7-5 14-4 19-2 1-2 1-4 1-6z',
+    'M24 30C18 29 12 33 9 39c6-5 11-5 15-4 0-2 0-3 0-5z',
+    'M39 18c3 6 2 13-1 18 1-7 0-12-2-15 1-1 2-2 3-3z',
   ],
   1: [
-    'M9.6 12c-1.3-3.9.2-6 2.9-6 2.5 0 4 2 3.4 5.6',
-    'M9.6 12c-1.9.6-3.2 2.3-3.5 4.8',
-    'M15.9 11.6c1.5.9 2.3 2.6 2.3 4.8',
-    'M11 6.6c1.4.6 2.6 1.6 3.4 3.1',
+    'M26 12c-2-6 4-9 9-7 5 2 7 7 6 13l-3-1c0-5-3-8-7-8-3 0-5 2-5 6z',
+    'M26 12C17 8 9 10 3 15c8-2 15 0 21 4 1-3 2-5 2-7z',
+    'M25 17C15 14 6 18 1 24c9-4 17-2 22 0 1-2 2-5 2-7z',
+    'M24 23C15 22 7 27 4 34c8-5 14-5 19-3 0-2 1-5 1-8z',
+    'M24 29C19 29 14 34 12 40c6-5 10-5 13-4-1-2-1-5-1-7z',
+    'M39 19c3 6 2 12-1 17 1-6 0-10-2-13 1-1 2-3 3-4z',
   ],
   2: [
-    'M9.5 12c-.9-3.6.6-5.8 2.9-5.8 2.4 0 3.9 2 3.4 5.4',
-    'M9.5 12c-1.4.7-2.2 1.9-2.5 3.6',
-    'M15.8 11.4c1.2.6 1.9 1.7 2.1 3.2',
+    'M26 12c-2-6 4-9 9-7 5 2 7 7 6 13l-3-1c0-5-3-8-7-8-3 0-5 2-5 6z',
+    'M26 12C19 8 12 9 6 13c7 0 13 2 18 6 1-3 2-5 2-7z',
+    'M25 18C17 15 9 18 4 24c8-3 14-2 20 1 1-2 1-5 1-7z',
+    'M24 25C17 24 11 29 8 35c7-4 12-4 16-2 0-2 0-5 0-8z',
+    'M39 20c2 5 1 10-1 14 1-5 0-8-2-10 1-1 2-3 3-4z',
   ],
 };
+
+/** Three-quarter face in the ground colour: negative space, not a filled mask. */
+const FACE = 'M27 12c4-3 10-1 12 4 2 4 1 8 1 10l3 2-3 1c-1 3-4 5-7 5-4 0-6-4-6-8 0-6 0-11 2-14z';
 
 type Props = {
   id: string;
@@ -31,9 +42,9 @@ type Props = {
 };
 
 /**
- * A drawn portrait, not a generated image. The ground is binary — black in
- * the dark palette, white in warm/light — and only the stroke carries colour.
- * Nothing is fetched, and the same id always draws the same face.
+ * A drawn silhouette portrait, not a generated image. The ground is binary —
+ * black in the dark palette, white in warm/light — and the figure carries the
+ * colour. No model, no prompt, no network, no image asset.
  */
 export function CoworkerAvatar({ id, color, size = 28, className }: Props) {
   const style = avatarStyleOf(id);
@@ -44,7 +55,7 @@ export function CoworkerAvatar({ id, color, size = 28, className }: Props) {
       className={[s.avatar, className ?? ''].filter(Boolean).join(' ')}
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 48 48"
       style={{ '--avatar-stroke': stroke } as CSSProperties}
       data-coworker-avatar
       data-avatar-hue={style.hue}
@@ -52,24 +63,25 @@ export function CoworkerAvatar({ id, color, size = 28, className }: Props) {
       data-avatar-accessory={style.accessory}
       aria-hidden
     >
-      <rect className={s.ground} x="0" y="0" width="24" height="24" />
-      <g className={s.ink}>
+      <rect className={s.ground} x="0" y="0" width="48" height="48" />
+      <g className={s.figure}>
         {HAIR[style.hair].map((path) => <path key={path} d={path} />)}
-        <path d="M9.6 13.6c0-2.9 1.1-4.9 2.8-4.9s2.8 2 2.8 4.9c0 2-1.1 3.4-2.8 3.4s-2.8-1.4-2.8-3.4z" />
-        <path d="M11 16.8v1.2M13.4 16.8v1.2" />
-        <path d="M6.4 21c.6-2.8 2.8-4.2 6-4.2s5.4 1.4 6 4.2" />
-        <g className={s.features}>
-          <path d="M10.4 12.5h.9M13.1 12.5h.9" />
-          <path d="M12.2 13.2v1.1l.6.3" />
-          <path d="M11.6 15.8c.5.3 1.3.3 1.8 0" />
+        <path className={s.face} d={FACE} />
+        <g className={s.line}>
+          <path d="M30 19c1.5-.8 3-.8 4 0" />
+          <path d="M39 22l2 5-2 1" />
+          <path d="M33 29c2 1 4 .5 5-1" />
+          <path d="M29 32c1 2 4 3 6 2" />
+          <path d="M30 35l-1 4" />
+          <path d="M23 45c5-2 9-3 13-2 3 0 5 1 7 2" />
         </g>
-        {style.accessory === 1 ? <circle cx="15.9" cy="14.4" r="0.65" /> : null}
+        <path className={s.eye} d="M30 21c2-1.5 3.5-1.5 4.5 0-2 1-3.5 1-4.5 0z" />
+        <path className={s.eye} d="M36 21c1.2-1 2.2-1 3 0-1.2.8-2.2.8-3 0z" />
+        {style.accessory === 1 ? <circle className={s.eye} cx="39" cy="26" r="1" /> : null}
         {style.accessory === 2 ? (
-          <>
-            <rect x="9.8" y="11.5" width="2.3" height="1.8" rx="0.7" />
-            <rect x="12.9" y="11.5" width="2.3" height="1.8" rx="0.7" />
-            <path d="M12.1 12.3h.8" />
-          </>
+          <g className={s.line}>
+            <path d="M28 19h7M35 19h7M35 19v3" />
+          </g>
         ) : null}
       </g>
     </svg>

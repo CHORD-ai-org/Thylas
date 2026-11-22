@@ -1,5 +1,5 @@
-/* Drawn avatar plate. Ground comes from the active palette; the stroke is the
-   only place colour is allowed. No gradient, no shadow, no generated image. */
+/* Drawn avatar plate. Ground comes from the active palette; the figure carries
+   the colour. No gradient, no shadow, no generated image. */
 
 .avatar {
   display: block;
@@ -12,14 +12,22 @@
   fill: var(--avatar-ground);
 }
 
-.ink {
+.figure {
+  fill: var(--avatar-stroke);
+}
+
+.face {
+  fill: var(--avatar-ground);
+}
+
+.line {
   fill: none;
   stroke: var(--avatar-stroke);
-  stroke-width: 1.1;
+  stroke-width: 0.85;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.features {
-  opacity: 0.62;
+.eye {
+  fill: var(--avatar-stroke);
 }

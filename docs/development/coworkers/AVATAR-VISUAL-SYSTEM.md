@@ -29,10 +29,10 @@ The user resolved the v1.0 colour conflict:
 | Element | Requirement | Why |
 | --- | --- | --- |
 | Ground | `var(--avatar-ground)` — `#000000` in dark, `#FFFFFF` in warm/light | Follows the person's display setting; never a tinted fill |
-| Colour placement | Stroke only. The ground is never tinted and the face is never colour-filled | The old gold-on-black fill was the defect |
-| Rendering | Drawn SVG, flat 1.1px lines, vector-clean edges | Deterministic, scales from 28px to 108px |
-| Face | Minimal outline; eyes / nose / lips as thin lines at 0.62 opacity | Silhouette register without photorealism |
-| Hair | Flowing, wind-swept strokes; one of three derived shapes | Signature of the original style, kept |
+| Colour placement | On the figure: filled hair masses and thin facial lines. The ground stays binary | The colour is the portrait, not the background |
+| Rendering | Drawn SVG, filled paths + 0.85px lines, vector-clean edges | Deterministic, scales from 28px to the full tile |
+| Face | Ground-coloured negative space; brow / nose / lips / eyes as fine lines | Silhouette register without photorealism |
+| Hair | Filled cap plus tapered, wind-swept locks with air between them; one of three derived shapes | Signature of the reference style, kept |
 | Composition | Centred head and shoulders inside a square plate | Consistent in rows, grids and detail views |
 | Lighting | None. No gradient, no rim light, no shadow | Quiet computationalism |
 
@@ -40,8 +40,9 @@ The user resolved the v1.0 colour conflict:
 
 ## 2. Customizable elements (shipped)
 
-- **Stroke colour** — any CSS colour string (name or `#hex`). Omitted: a hue
-  from the shared six-colour cover palette, derived from the Coworker id.
+- **Figure colour** — any CSS colour string (name or `#hex`), applied to filled
+  hair and fine facial lines. Omitted: a hue from the shared six-colour cover
+  palette, derived from the Coworker id.
 - **Hair shape** — three variants derived from the id.
 - **Accessory** — none, earring, or glasses; derived from the id.
 
@@ -72,8 +73,11 @@ store payload from injecting markup into SVG attributes.
 ## 4. Where it is used
 
 - `src/components/CoworkerAvatar.tsx` — the only drawing site.
-- Coworker directory list: 28px plate.
-- Coworker directory grid: 108px plate.
+- Coworker directory list: 28px square plate, name beside it.
+- Coworker directory grid: square plate that fills the card width; the name
+  sits directly below it and uses one of three faces derived from the id
+  (`avatarFontOf()` — sans / mono / serif). Brief information stays hidden
+  until hover or keyboard focus.
 - Planned: Coworker detail header and first-encounter surfaces reuse the same
   component; no separate avatar renderer.
 
