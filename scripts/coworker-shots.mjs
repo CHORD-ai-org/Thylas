@@ -48,9 +48,19 @@ for (const theme of ['warm', 'dark', 'light']) {
   await shot(`coworkers-grid-${theme}`);
 }
 
+await evaluate(`localStorage.setItem('thylas:user:v1', JSON.stringify({version:1, prefs:{theme:'warm'}})); 'ok'`);
+await send('Page.reload');
+await sleep(1400);
 await listBtn();
 await sleep(300);
 await shot('coworkers-list-warm');
+
+await grid();
+await sleep(350);
+const tile = await evaluate(`(() => { const r = document.querySelector('[data-coworker-card]').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; })()`);
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: tile.result?.value?.x ?? 0, y: tile.result?.value?.y ?? 0, button: 'none', buttons: 0 });
+await sleep(250);
+await shot('coworkers-grid-hover-warm');
 
 /* Team perspective: all six collectives, then one opened composition. */
 await evaluate(`(() => { document.querySelector('[data-perspective="teams"]')?.click(); return 'ok'; })()`);
