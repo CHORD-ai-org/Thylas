@@ -33,12 +33,28 @@ describe('chat contract', () => {
     expect(MAX_MESSAGES).toBe(200);
   });
 
-  it('validates all four block kinds and rejects a foreign one', () => {
+  it('validates the base block kinds and rejects a foreign one', () => {
     expect(isBlock({ kind: 'text', text: 'x' })).toBe(true);
     expect(isBlock({ kind: 'artifact', title: 'a', artifactKind: 'code', content: 'x' })).toBe(true);
     expect(isBlock({ kind: 'evidence', name: 'a', sourceType: 'file' })).toBe(true);
     expect(isBlock({ kind: 'status', label: 'a', state: 'done' })).toBe(true);
     expect(isBlock({ type: 'text', text: 'old shape' })).toBe(false);
+  });
+
+  it('validates the five interaction block kinds', () => {
+    expect(
+      isBlock({ kind: 'source-picker', title: 't', options: [{ id: 'o1', name: 'Diary' }], selected: ['o1'] }),
+    ).toBe(true);
+    expect(isBlock({ kind: 'candidates', title: 't', candidateIds: ['c1'] })).toBe(true);
+    expect(
+      isBlock({ kind: 'proposal', title: 't', summary: 's', target: { kind: 'artifact' }, risk: 'high', status: 'proposed' }),
+    ).toBe(true);
+    expect(isBlock({ kind: 'diff', title: 't', before: 'a', after: 'b', status: 'proposed' })).toBe(true);
+    expect(isBlock({ kind: 'approval', title: 't', body: 'b', risk: 'low', state: 'pending' })).toBe(true);
+    /* A bad enum or a missing field must not pass as a decision surface. */
+    expect(isBlock({ kind: 'approval', title: 't', body: 'b', risk: 'nuke', state: 'pending' })).toBe(false);
+    expect(isBlock({ kind: 'candidates', title: 't' })).toBe(false);
+    expect(isBlock({ kind: 'source-picker', title: 't', options: 'x', selected: [] })).toBe(false);
   });
 
   it('validates a message and a conversation', () => {

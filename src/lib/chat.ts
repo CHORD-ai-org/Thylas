@@ -27,7 +27,39 @@ export type Block =
   | { kind: 'text'; text: string; streaming?: boolean }
   | { kind: 'artifact'; title: string; artifactKind: 'code' | 'note'; content: string; savedAs?: string }
   | { kind: 'evidence'; name: string; sourceType: string; route?: string }
-  | { kind: 'status'; label: string; state: 'active' | 'done' | 'failed' };
+  | { kind: 'status'; label: string; state: 'active' | 'done' | 'failed' }
+  /* Interaction blocks (home-interaction 05). Data-only shapes: the live
+     editing state lives in domain stores, the block records what is offered
+     and what was decided. A block that mutates is gated by 06 (commit). */
+  | {
+      kind: 'source-picker';
+      title: string;
+      options: { id: string; name: string; detail?: string }[];
+      selected: string[];
+    }
+  | { kind: 'candidates'; title: string; candidateIds: string[]; session?: string }
+  | {
+      kind: 'proposal';
+      title: string;
+      summary: string;
+      target: { kind: string; id?: string };
+      risk: 'low' | 'medium' | 'high';
+      status: 'proposed' | 'accepted' | 'rejected';
+    }
+  | {
+      kind: 'diff';
+      title: string;
+      before: string;
+      after: string;
+      status: 'proposed' | 'accepted' | 'rejected';
+    }
+  | {
+      kind: 'approval';
+      title: string;
+      body: string;
+      risk: 'low' | 'medium' | 'high';
+      state: 'pending' | 'approved' | 'rejected';
+    };
 
 export type Message = {
   id: string;
@@ -118,6 +150,38 @@ export function isBlock(value: unknown): value is Block {
     return typeof b.name === 'string' && typeof b.sourceType === 'string';
   if (b.kind === 'status')
     return typeof b.label === 'string' && (b.state === 'active' || b.state === 'done' || b.state === 'failed');
+  if (b.kind === 'source-picker')
+    return (
+      typeof b.title === 'string' &&
+      Array.isArray(b.options) &&
+      b.options.every((o) => typeof o?.id === 'string' && typeof o?.name === 'string') &&
+      Array.isArray(b.selected) &&
+      b.selected.every((id) => typeof id === 'string')
+    );
+  if (b.kind === 'candidates')
+    return typeof b.title === 'string' && Array.isArray(b.candidateIds) && b.candidateIds.every((id) => typeof id === 'string');
+  if (b.kind === 'proposal')
+    return (
+      typeof b.title === 'string' &&
+      typeof b.summary === 'string' &&
+      typeof b.target?.kind === 'string' &&
+      (b.risk === 'low' || b.risk === 'medium' || b.risk === 'high') &&
+      (b.status === 'proposed' || b.status === 'accepted' || b.status === 'rejected')
+    );
+  if (b.kind === 'diff')
+    return (
+      typeof b.title === 'string' &&
+      typeof b.before === 'string' &&
+      typeof b.after === 'string' &&
+      (b.status === 'proposed' || b.status === 'accepted' || b.status === 'rejected')
+    );
+  if (b.kind === 'approval')
+    return (
+      typeof b.title === 'string' &&
+      typeof b.body === 'string' &&
+      (b.risk === 'low' || b.risk === 'medium' || b.risk === 'high') &&
+      (b.state === 'pending' || b.state === 'approved' || b.state === 'rejected')
+    );
   return false;
 }
 
