@@ -1,8 +1,15 @@
 # THINKING.md — Active Task
 
-> Last updated: 2026-11-14
-> Source: user task brief — "Thylas Coworker — Product Vision & Initial Design Specification"
-> Status: TASK SAVED. Design/spec work NOT yet started. Execution deferred pending user go-ahead.
+> Last updated: 2026-11-21
+> **Active task:** Thylas Home Interaction System — documentation & execution planning.
+> Home Conversation = **Overview 输入框与 Chat 合并演化**（创始人 2026-11-21 拍板）；
+> Agent 执行 = **真实编排**（/api/ai + profile 管线模式，接口留 WAM 兼容）。
+> 文档体系：`docs/home-interaction/`（00–11，含 11-21 深夜创始人修订，见其 README Change log）。
+> 执行拆解：`11-execution-plan.md`（P0/P1/K；前置默认 Q2 @=/ 分流、Q7 artifacts 先本地 store、Q1 landing 暂不动）。
+> 事实锚：@ 调用已落地 T0.1（`src/lib/invoke.ts` + 17 单测）；下一步按 11 的 P0-1 起逐单元推进。
+>
+> **以下为 2026-11-14 存档任务（Coworker brief）**：8 项交付物已落
+> `docs/development/coworkers/DESIGN.md` 等（见 docs/README §1-17）；原文保留备查。
 
 ## Why this file
 - Standing instruction: read root `THINKING.md` before every answer.
