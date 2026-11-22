@@ -2945,6 +2945,54 @@ async function main() {
   aiMode = 'ok';
   await js(`localStorage.removeItem('thylas:chat:v1'); return 1;`);
 
+  // ---- Home interaction: extract → review → commit (MVP demo) ----
+  await goto('/chat');
+  await js(`${helpers} click(document.querySelector('[data-extract-open]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('extract: the panel lists real sources and can run an extraction', await js(`
+    return {
+      panel: !!document.querySelector('[data-extract-panel]'),
+      sources: document.querySelectorAll('[data-extract-source]').length,
+    };
+  `), (v) => v.panel && v.sources > 0);
+
+  await js(`${helpers} click(document.querySelector('[data-extract-source]')); await new Promise(r => setTimeout(r, 120)); click(document.querySelector('[data-extract-run]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
+  check('extract: candidates carry evidence and a review status', await js(`
+    const cands = [...document.querySelectorAll('[data-extract-candidates] > li')];
+    return {
+      count: cands.length,
+      pending: cands.filter(c => c.getAttribute('data-status') === 'pending').length,
+      hasEvidence: cands.every(c => (c.textContent || '').includes('evidence:')),
+      kinds: cands.length > 0,
+    };
+  `), (v) => v.count > 2 && v.pending === v.count && v.hasEvidence && v.kinds);
+
+  await js(`${helpers} document.querySelectorAll('[data-candidate-accept]')[0].click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('[data-candidate-reject]')[1].click(); await new Promise(r => setTimeout(r, 120)); return 1;`);
+  check('extract: accept and reject change the review state', await js(`
+    return {
+      accepted: document.querySelectorAll('[data-extract-candidates] > li[data-status="accepted"]').length,
+      rejected: document.querySelectorAll('[data-extract-candidates] > li[data-status="rejected"]').length,
+    };
+  `), (v) => v.accepted === 1 && v.rejected === 1);
+
+  await js(`${helpers} click(document.querySelector('[data-extract-commit]')); await new Promise(r => setTimeout(r, 300)); return 1;`);
+  check('extract: committing persists accepted candidates with provenance', await js(`
+    const done = document.querySelector('[data-extract-done]')?.textContent ?? '';
+    return {
+      done: done.includes('Committed'),
+      provenance: done.toLowerCase().includes('provenance'),
+    };
+  `), { done: true, provenance: true });
+
+  await goto('/artifacts');
+  check('extract: the committed artifact is in the library with a version', await js(`
+    return { cards: document.querySelectorAll('[data-artifact-card]').length };
+  `), (v) => v.cards >= 8);
+  /* The commit wrote a real artifact; clear it so the artifacts section below
+     still starts from its seven seeds. */
+  await js(`localStorage.removeItem('thylas:artifacts:v1'); localStorage.removeItem('thylas:artifact-candidates:v1'); return 1;`);
+  await send('Page.reload');
+  await sleep(700);
+
   // ---- Artifacts: library, detail, creation ----
   await goto('/artifacts');
   check('artifacts: the rail opens the library with all seven seeds', await js(`
@@ -3097,12 +3145,12 @@ async function main() {
       hues: plates.map(p => p?.dataset.avatarHue),
       distinctHues: new Set(plates.map(p => p?.dataset.avatarHue)).size,
       grounds: plates.map(p => getComputedStyle(p.querySelector('rect')).fill),
-      strokes: plates.map(p => getComputedStyle(p.querySelector('g')).stroke),
+      fills: plates.map(p => getComputedStyle(p.querySelector('g')).fill),
       rows: document.querySelectorAll('[data-coworker-row]').length,
     };
   `), (v) => v.cards === 3 && v.rows === 0 && v.plates === 3 && v.distinctHues === 3 &&
     v.grounds.every(g => g === 'rgb(241, 235, 221)' || g === 'rgb(255, 255, 255)' || g === 'rgb(0, 0, 0)') &&
-    v.strokes.every(s => s !== 'none' && s !== ''));
+    v.fills.every(f => f !== 'none' && f !== 'rgba(0, 0, 0, 0)' && f !== ''));
 
   check('coworkers: square plates, names below, three faces, brief hidden until hover', await js(`
     const cards = [...document.querySelectorAll('[data-coworker-card]')];
