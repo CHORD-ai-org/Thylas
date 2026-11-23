@@ -25,6 +25,8 @@ export const routes = {
   coworkers: () => '/coworkers',
   coworkerNew: () => '/coworkers/new',
   coworker: (coworkerId: Id) => `/coworkers/${coworkerId}`,
+  /* Skills are global capability modules; materials live per workspace in Files. */
+  skills: () => '/skills',
   /* User is the person's own surface. Account was renamed, and the old path
      is a redirect — no page keeps the old name. */
   profileInit: () => '/user/profile',
