@@ -36,6 +36,14 @@ export const IconFiles = ({ size = 16 }: Props) => (
   </svg>
 );
 
+export const IconSkill = ({ size = 16 }: Props) => (
+  <svg {...base(size)} aria-hidden>
+    <rect x="3" y="3" width="10" height="10" rx="1" />
+    <circle cx="8" cy="3" r="1.4" />
+    <circle cx="3" cy="8" r="1.4" />
+  </svg>
+);
+
 export const IconBoards = ({ size = 16 }: Props) => (
   <svg {...base(size)} aria-hidden>
     <rect x="2.4" y="3" width="5" height="4.4" />
