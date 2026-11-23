@@ -502,3 +502,104 @@
 }
 
 
+
+/* ---- materials grid (P0-3): thumbnail cards + list switch ---- */
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.gcard {
+  composes: focusInside from '../styles/grammar.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  text-align: left;
+}
+
+.gcard:hover {
+  border-color: var(--line-strong);
+}
+
+.gcardOn {
+  border-color: var(--ink);
+}
+
+.gcardTomb {
+  opacity: 0.55;
+}
+
+.gthumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-paper);
+  color: var(--ink-2);
+}
+
+.gname {
+  font: var(--t-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gmeta {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.searchInput {
+  height: 28px;
+  width: 180px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.viewBtn {
+  height: 26px;
+  padding: 0 12px;
+  font: var(--t-caption);
+  color: var(--ink-2);
+  background: transparent;
+}
+
+.viewBtn:hover {
+  color: var(--ink);
+}
+
+.viewBtnOn {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
