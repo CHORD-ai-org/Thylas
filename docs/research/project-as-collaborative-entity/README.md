@@ -37,6 +37,8 @@
 - [x] 执行计划（2026-11-22 晚）：→ [05-execution-plan.md](05-execution-plan.md)（P0–P4 + K；修订①对话抽屉、修订②文字预算）。
 - [x] 设计文档 Outline（2026-11-22 晚）：→ [06-design-doc-outline.md](06-design-doc-outline.md)（PDF 版，待过目后开写）。
 - [ ] A 核心稿（Part II+III）→ `draft/A-core.md` **已出草稿，待创始人评审概念模型**；B 交互稿 → C 成书（PDF）。
+- [ ] B 交互稿（Part IV+V）→ `draft/B-interaction.md` + `draft/figures/fig1–3.svg` **已出草稿，待评审**（关卡：文字预算走查 13.2 已过一遍、配图 v1 定稿）；剩 C 成书。
+- [ ] C 成书 → **`draft/Thylas-Project-Design.md` v0.1 全书装配完成** + **PDF 已产出**（`draft/Thylas-Project-Design.pdf`，17 页含三张 layout 图）。剩 C 关卡：独立可读性测试。
 
 ## 5. 未决问题
 
@@ -61,6 +63,7 @@
 | [04-ream-application.md](04-ream-application.md) | **Ream 应用脑暴（暂存）**：取 8 / 补 5 / 增 5 |
 | [05-execution-plan.md](05-execution-plan.md) | **执行计划**：P0–P4 + K、验证关卡、文字预算、home-interaction 会师点 |
 | [06-design-doc-outline.md](06-design-doc-outline.md) | **设计文档 Outline（PDF）**：18 章 + 附录、页预算、PDF 管线 |
+| [07-ui-ux-guidelines.md](07-ui-ux-guidelines.md) | **UI-UX-Pro-Max 指导并入**：交付检查表 / 韧性文本 / IME / 设计系统纪律 / 冲突裁定 |
 | `docs/product/projects/DESIGN-BOUNDARIES.md` | 创始人原话 7 原子（A–G）、边界图、撞名裁定、依赖顺序 |
 | `docs/product/definition.md` | Workspace=central object [C]；D4 一对象一 scope、引用不复制；B2 ingestion；责任矩阵 |
 | `docs/product/artifacts/` | 对象性四论证（lifetime/agency/reference/evolution）、治理、CANONICAL-REUSE |
