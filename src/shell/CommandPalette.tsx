@@ -36,6 +36,7 @@ export function CommandPalette() {
       { id: 'go-artifacts', label: 'Artifacts', group: 'Go', run: () => navigate(routes.artifacts()) },
       { id: 'go-login', label: 'Sign in', group: 'Go', run: () => navigate(routes.login()) },
       { id: 'go-coworkers', label: 'Coworkers', group: 'Go', run: () => navigate(routes.coworkers()) },
+      { id: 'go-skills', label: 'Skills', group: 'Go', run: () => navigate(routes.skills()) },
       { id: 'go-connect', label: 'Connect', group: 'Go', run: () => navigate(routes.connect()) },
       { id: 'go-chat', label: 'Chat', group: 'Go', run: () => navigate(routes.chat()) },
       { id: 'go-user', label: 'User', group: 'Go', run: () => navigate(routes.user()) },
