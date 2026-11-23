@@ -1,8 +1,13 @@
 # THINKING.md — Active Task
 
-> Last updated: 2026-11-21
-> **Active task:** Thylas Home Interaction System — documentation & execution planning.
-> Home Conversation = **Overview 输入框与 Chat 合并演化**（创始人 2026-11-21 拍板）；
+> Last updated: 2026-11-22
+> **Active task:** Project 设计与制定（Project as a Collaborative Entity）。
+> 定位已校准：**Workspace ⊃ Project**（`docs/research/project-as-collaborative-entity/01-positioning-workspace-project.md`）；
+> 6 条细分按默认推进（可翻案）；D1 场景推演已落 `02-scenarios.md`（暴露 S1–S6 未决）；
+> 下一步 D2 设计备选（方案卡，不选唯一方案）→ D3 领域模型/Thylas×GSC 边界 → D4 交互 → D5 路线图。
+> 研究纪律：结论标注【事实/直觉/假设/提案/开放】；不实现、不动现有架构。
+>
+> **以下为 2026-11-21 存档任务（Home Interaction）**：Home Conversation = **Overview 输入框与 Chat 合并演化**（创始人 2026-11-21 拍板）；
 > Agent 执行 = **真实编排**（/api/ai + profile 管线模式，接口留 WAM 兼容）。
 > 文档体系：`docs/home-interaction/`（00–11，含 11-21 深夜创始人修订，见其 README Change log）。
 > 执行拆解：`11-execution-plan.md`（P0/P1/K；前置默认 Q2 @=/ 分流、Q7 artifacts 先本地 store、Q1 landing 暂不动）。
