@@ -39,7 +39,7 @@
 | D2 | **Q-F 共享策略**：concepts / spec / SDK | 08-Q-F | SDK 早做会耦合，晚做会漂移 |
 | D3 | **先做哪个场景**（A GSC / B Thylas / C Lemma） | 09 #4 | 三线并进 = 蔓延 |
 | D4 | **C1 版本哲学**：Thylas 不可变+权威 vs GSC supersede —— 统一、映射、并存？ | 10-glossary C1 | 阻塞交换格式 |
-| D5 | **Q-C 空间状态**：视图 / 环境 / 混合 | 08-Q-C | 阻塞 boards/Huabu 持久层 |
+| D5 | **Q-C 空间状态**：视图 / 环境 / 混合 | 08-Q-C | **已定 2026-11-22：C2 完整环境** → 设计稿 `docs/product/boards/SPATIAL-ENVIRONMENT-VISION.md` |
 | D6 | **Q-E 持久阶梯** + scratch TTL | 08-Q-E | 表示存储未定 |
 | D7 | **Q-D 过程一等**：derived / first-class / hybrid | 08-Q-D | schema vs events 之争 |
 | D8 | 是否接受 C 主张"长程协作必须显式过程"（尽管有开销） | 09 #4[概念] | 影响 D7 |
