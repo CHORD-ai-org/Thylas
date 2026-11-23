@@ -9,6 +9,7 @@ import { AI_PATH, AI_STATUS_PATH, AI_STREAM_PATH, failure } from '../src/lib/ai.
 import { CHAT_STATE_PATH } from '../src/lib/chat.ts';
 import { CONVERSATIONS_PATH } from '../src/lib/conversations.ts';
 import { FILES_PATH } from '../src/lib/files.ts';
+import { PROJECTS_PATH } from '../src/lib/projects.ts';
 import { SESSION_PATH } from '../src/lib/session.ts';
 import { PROFILE_PATH } from '../src/lib/profile.ts';
 import { USER_PATH } from '../src/lib/user.ts';
@@ -19,6 +20,7 @@ import { createDb } from './persistence/client.ts';
 import { createChatRouter } from './routes/chat.ts';
 import { createConversationRouter } from './routes/conversations.ts';
 import { createFilesRouter } from './routes/files.ts';
+import { createProjectsRouter } from './routes/projects.ts';
 import { createDefaultProfileRouter } from './routes/profile.ts';
 import { createDefaultUserRouter } from './routes/user.ts';
 import { createSessionHandler } from './session/handler.ts';
@@ -38,6 +40,7 @@ export function createApiRouter(config: ServerConfig): ApiRouter {
   const db = createDb(config);
   const conversations = createConversationRouter(db, sessionSource);
   const files = createFilesRouter(db, createLocalStorage(config), sessionSource);
+  const projects = createProjectsRouter(db, sessionSource);
   const chat = createChatRouter(db, sessionSource);
   const profile = createDefaultProfileRouter(config, sessionSource);
   const user = createDefaultUserRouter(config, sessionSource);
@@ -59,6 +62,9 @@ export function createApiRouter(config: ServerConfig): ApiRouter {
     }
     if (path === FILES_PATH || path.startsWith(`${FILES_PATH}/`)) {
       return files(req, res, path);
+    }
+    if (path === PROJECTS_PATH || path.startsWith(`${PROJECTS_PATH}/`)) {
+      return projects(req, res, path);
     }
     if (path.startsWith('/api/')) {
       sendJson(res, 404, failure('contract', 'Unknown API path.'));

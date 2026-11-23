@@ -74,6 +74,9 @@ export const files = pgTable(
     id: text('id').primaryKey(),
     workspaceId: text('workspace_id').notNull(),
     folderId: text('folder_id'),
+    /** P0-2: nullable on purpose — null means 未归类 (unfiled). Assignment is
+        an application action, never inferred from paths. */
+    projectId: text('project_id'),
     name: text('name').notNull(),
     kind: text('kind').notNull(),
     sizeBytes: integer('size_bytes').notNull(),

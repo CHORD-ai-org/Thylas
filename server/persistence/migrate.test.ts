@@ -25,7 +25,14 @@ describe('chat + files migrations', () => {
         "select tablename from pg_tables where schemaname = 'public' order by tablename",
       );
       expect(tables.rows.map((r) => r.tablename)).toEqual(
-        expect.arrayContaining(['conversations', 'messages', 'files']),
+        expect.arrayContaining([
+          'conversations',
+          'messages',
+          'files',
+          'projects',
+          'project_connections',
+          'project_members',
+        ]),
       );
 
       await db.insert(schema.conversations).values({
