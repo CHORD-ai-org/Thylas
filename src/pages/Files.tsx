@@ -99,6 +99,10 @@ export function FilesPage() {
   const [folderId, setFolderId] = useState<string | null>(folders[0]?.id ?? null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string[]>(folders.map((f) => f.id));
+  /* Materials view (P0-3): the design's thumbnail grid, with the dense list
+     kept as a switch — both are projections of the same files. */
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [query, setQuery] = useState('');
 
   const rows = useMemo(() => filesInFolder(wsId, folderId), [wsId, folderId]);
   const tombstones = useMemo(
@@ -108,13 +112,18 @@ export function FilesPage() {
       ),
     [tabs, wsId],
   );
-  const items = useMemo<RowItem[]>(
-    () => [
+  const items = useMemo<RowItem[]>(() => {
+    const all: RowItem[] = [
       ...rows.map((file) => ({ key: file.id, kind: 'file' as const, file })),
       ...tombstones.map((tab) => ({ key: tab.id, kind: 'tombstone' as const, tab })),
-    ],
-    [rows, tombstones],
-  );
+    ];
+    const needle = query.trim().toLowerCase();
+    return needle === ''
+      ? all
+      : all.filter((it) =>
+          (it.kind === 'file' ? it.file.name : it.tab.label).toLowerCase().includes(needle),
+        );
+  }, [rows, tombstones, query]);
 
   useEffect(() => {
     setFolderId(folders[0]?.id ?? null);
@@ -177,6 +186,34 @@ export function FilesPage() {
         <span>{folders.find((f) => f.id === folderId)?.name ?? 'All files'}</span>
         <span className={s.crumbTail}>· {items.length} items</span>
         <div className={s.crumbsActions}>
+          <input
+            className={s.searchInput}
+            placeholder="搜索文件"
+            aria-label="搜索文件"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            data-file-search
+          />
+          <span className={s.viewToggle} role="group" aria-label="视图">
+            <button
+              type="button"
+              className={[s.viewBtn, view === 'grid' ? s.viewBtnOn : ''].join(' ')}
+              aria-pressed={view === 'grid'}
+              onClick={() => setView('grid')}
+              data-view-grid
+            >
+              网格
+            </button>
+            <button
+              type="button"
+              className={[s.viewBtn, view === 'list' ? s.viewBtnOn : ''].join(' ')}
+              aria-pressed={view === 'list'}
+              onClick={() => setView('list')}
+              data-view-list
+            >
+              列表
+            </button>
+          </span>
           <Button
             size="sm"
             icon={<IconUpload size={13} />}
@@ -274,6 +311,54 @@ export function FilesPage() {
           </p>
         </nav>
 
+      {view === 'grid' ? (
+        items.length === 0 ? (
+          <EmptyState
+            title={query.trim() ? '没有匹配的文件' : 'This folder is empty'}
+            hint={query.trim() ? '换个关键词，或切回列表视图。' : 'No files yet.'}
+          />
+        ) : (
+          <ul className={s.grid} data-files-grid>
+            {items.map((item) =>
+              item.kind === 'file' ? (
+                <li key={item.key}>
+                  <button
+                    type="button"
+                    className={[s.gcard, item.key === selectedKey ? s.gcardOn : ''].join(' ')}
+                    data-file-card={item.file.id}
+                    aria-selected={item.key === selectedKey}
+                    onClick={() => setSelectedKey(item.key)}
+                    onDoubleClick={() => open(item.file)}
+                  >
+                    <span className={s.gthumb}>
+                      <TypeGlyph kind={item.file.kind} />
+                    </span>
+                    <span className={s.gname}>{item.file.name}</span>
+                    <span className={s.gmeta}>
+                      {item.file.size} · {item.file.updated}
+                    </span>
+                  </button>
+                </li>
+              ) : (
+                <li key={item.key}>
+                  <button
+                    type="button"
+                    className={[s.gcard, s.gcardTomb, item.key === selectedKey ? s.gcardOn : ''].join(' ')}
+                    data-tombstone="true"
+                    onClick={() => setSelectedKey(item.key)}
+                  >
+                    <span className={s.gthumb}>
+                      <TypeGlyph kind="txt" />
+                    </span>
+                    <span className={s.gname}>{item.tab.label}</span>
+                    <span className={s.gmeta}>deleted</span>
+                  </button>
+                </li>
+              ),
+            )}
+          </ul>
+        )
+      ) : (
         <div
           className={s.tableWrap}
           tabIndex={0}
@@ -350,6 +435,7 @@ export function FilesPage() {
             </div>
           )}
         </div>
+        )}
       </div>
     </WorkspaceLayout>
   );
