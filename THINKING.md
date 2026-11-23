@@ -1,11 +1,16 @@
 # THINKING.md — Active Task
 
-> Last updated: 2026-11-22
-> **Active task:** Project 设计与制定（Project as a Collaborative Entity）。
-> 定位已校准：**Workspace ⊃ Project**（`docs/research/project-as-collaborative-entity/01-positioning-workspace-project.md`）；
-> 6 条细分按默认推进（可翻案）；D1 场景推演已落 `02-scenarios.md`（暴露 S1–S6 未决）；
-> 下一步 D2 设计备选（方案卡，不选唯一方案）→ D3 领域模型/Thylas×GSC 边界 → D4 交互 → D5 路线图。
-> 研究纪律：结论标注【事实/直觉/假设/提案/开放】；不实现、不动现有架构。
+> Last updated: 2026-11-23
+> **Active task:** Project 执行（设计文档已成书 + PDF，进入 P0–P4 实现）。
+> **P0 骨架 ✅（11-23）**：projects/project_connections/project_members 三表 + migration 0003/0004、
+> files.project_id（空=未归类）、`/api/projects` CRUD + 连接器健康检查（local-folder 探针）、
+> H1 门禁链测试过（连接→解析→改名→标失效→修复，卡存活）；全量 625 测试 + tsc 干净。
+> 下一步 **P2 项目桌面**（桌面路由 + C2 空间复用 + 四区布局 + 对话抽屉 + 文字预算）。
+> **P1 项目地图 ✅（11-23）**：列表先行项目卡（名字/摘要/活跃度）、创建/归档/软删、
+> 连接抽屉（local-folder + github-repo，locator 归一化 owner/repo、诚实健康度）、
+> services/projects 客户端、Rail/路由接线；631 测试 + tsc 干净。P1 门禁（三 repo 一张卡）测试覆盖。
+> 设计文档：`docs/research/project-as-collaborative-entity/draft/Thylas-Project-Design.pdf`（17 页）。
+> 研究纪律：结论标注【事实/直觉/假设/提案/开放】。
 >
 > **以下为 2026-11-21 存档任务（Home Interaction）**：Home Conversation = **Overview 输入框与 Chat 合并演化**（创始人 2026-11-21 拍板）；
 > Agent 执行 = **真实编排**（/api/ai + profile 管线模式，接口留 WAM 兼容）。
