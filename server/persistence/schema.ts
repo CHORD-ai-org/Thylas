@@ -12,6 +12,9 @@
  *   thylas:connect:v1                  → integrations        (later)
  *   thylas:compute:v2                  → compute_*           (later)
  *   files                             → files               (P1-6)
+ *   projects / connections / members  → projects, project_connections,
+ *                                       project_members     (P0-1 of the
+ *                                       Project plan; design doc ch6)
  *   boards / processes                → seed data, no table yet
  *   AI calls                          → no persistence
  *
@@ -19,7 +22,7 @@
  * does not mint a second identity scheme. Foreign keys to tables that do not
  * exist yet arrive with their domains, never as guesses.
  */
-import { bigint, index, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { bigint, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import type { AiErr } from '../../src/lib/ai.ts';
 import type { Block, ContextSource } from '../../src/lib/chat.ts';
 
@@ -80,4 +83,68 @@ export const files = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [index('files_workspace_folder_idx').on(table.workspaceId, table.folderId)],
+);
+
+/**
+ * P0-1 (Project plan). A project is a work-scene identity inside a workspace;
+ * it owns no resource content — resources arrive as connections (引用不复制).
+ * `state` is active | archived | deleted (deleted is the soft-delete mark).
+ */
+export const projects = pgTable(
+  'projects',
+  {
+    id: text('id').primaryKey(),
+    workspaceId: text('workspace_id').notNull(),
+    name: text('name').notNull(),
+    summary: text('summary').notNull().default(''),
+    state: text('state').notNull().default('active'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('projects_workspace_idx').on(table.workspaceId)],
+);
+
+/**
+ * P0-3. A connection registers a reference to a resource that lives elsewhere
+ * (local folder, repo, file, note, artifact, gsc-context). `locator` is the
+ * resource's own address; `health` caches the last probe (ok | broken | unknown).
+ * A broken locator never touches the project row — the card survives (H1).
+ */
+export const projectConnections = pgTable(
+  'project_connections',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    locator: text('locator').notNull(),
+    label: text('label').notNull().default(''),
+    health: text('health').notNull().default('unknown'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('project_connections_project_idx').on(table.projectId),
+    uniqueIndex('project_connections_unique').on(table.projectId, table.kind, table.locator),
+  ],
+);
+
+/**
+ * P0-1 table, P4-1 surface. Participation (参工) inside one project: role and a
+ * resource-grant subset. Roster/employment (入职) stays at the workspace level.
+ */
+export const projectMembers = pgTable(
+  'project_members',
+  {
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    actorId: text('actor_id').notNull(),
+    actorKind: text('actor_kind').notNull().default('user'),
+    role: text('role').notNull().default(''),
+    grants: jsonb('grants').$type<string[]>().notNull().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.actorId] })],
 );
