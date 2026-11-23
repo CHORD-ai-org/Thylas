@@ -9,6 +9,7 @@ export const routes = {
   overview: () => '/overview',
   recently: () => '/recently',
   workspace: (wsId: Id) => `/w/${wsId}`,
+  projects: (wsId: Id) => `/w/${wsId}/projects`,
   files: (wsId: Id) => `/w/${wsId}/files`,
   file: (wsId: Id, fileId: Id) => `/w/${wsId}/files/${fileId}`,
   boards: (wsId: Id) => `/w/${wsId}/boards`,
@@ -53,13 +54,13 @@ export const routes = {
   computeListing: (listingId: Id) => `/compute/marketplace/${listingId}`,
 };
 
-export type WorkspaceRoom = 'files' | 'boards' | 'processes';
+export type WorkspaceRoom = 'projects' | 'files' | 'boards' | 'processes';
 
 /** Which room of a workspace the current path belongs to, if any. An object
     detail path belongs to its room too — switching scope must never carry an
     object tab from workspace A into workspace B. */
 export function workspaceRoom(pathname: string): WorkspaceRoom | null {
-  const match = /^\/w\/[^/]+\/(files|boards|processes)(?:\/|$)/.exec(pathname);
+  const match = /^\/w\/[^/]+\/(projects|files|boards|processes)(?:\/|$)/.exec(pathname);
   return (match?.[1] as WorkspaceRoom | undefined) ?? null;
 }
 

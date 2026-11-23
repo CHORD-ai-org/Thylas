@@ -11,6 +11,7 @@ import { useApp } from '../state/app';
 import { IconButton } from '../components/ui';
 import {
   IconBoards,
+  IconCard,
   IconChat,
   IconChevron,
   IconCompute,
@@ -309,6 +310,13 @@ export function Rail() {
 
               {expanded && !railCollapsed ? (
                 <div className={s.rooms}>
+                  <RailItem
+                    label="Projects"
+                    path={routes.projects(ws.id)}
+                    icon={<IconCard />}
+                    active={pathname.startsWith(routes.projects(ws.id))}
+                    collapsed={false}
+                  />
                   <RailItem
                     label="Files"
                     path={routes.files(ws.id)}

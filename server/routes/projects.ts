@@ -43,7 +43,7 @@ import {
   type SessionUser,
 } from '../../src/lib/session.ts';
 import { isSafeSegment } from '../../src/lib/files.ts';
-import { createConnectorProbe, type LocatorProbe } from '../connectors.ts';
+import { createConnectorProbe, normalizeConnectionLocator, type LocatorProbe } from '../connectors.ts';
 import { sendJson } from '../http.ts';
 import {
   projectConnections,
@@ -292,12 +292,13 @@ function makeHandlers(database: ConversationDatabase, probe: LocatorProbe) {
       fail(res, 'contract', 'Expected a known kind, a locator and a label under 255 characters.');
       return;
     }
-    const health = await probe(kind, locator);
+    const normalized = normalizeConnectionLocator(kind, locator);
+    const health = await probe(kind, normalized);
     const id = randomUUID();
     try {
       const [created] = await database
         .insert(projectConnections)
-        .values({ id, projectId, kind, locator, label, health })
+        .values({ id, projectId, kind, locator: normalized, label, health })
         .returning();
       if (!created) {
         fail(res, 'upstream', 'The connection was not created.');
@@ -349,8 +350,9 @@ function makeHandlers(database: ConversationDatabase, probe: LocatorProbe) {
         fail(res, 'contract', 'The locator must be 1-2048 characters.');
         return;
       }
-      updates.locator = locator;
-      updates.health = await probe(connection.kind as ConnectionKind, locator);
+      const normalized = normalizeConnectionLocator(connection.kind as ConnectionKind, locator);
+      updates.locator = normalized;
+      updates.health = await probe(connection.kind as ConnectionKind, normalized);
     }
     if (body.label !== undefined) {
       const label = cleanText(body.label, 255);

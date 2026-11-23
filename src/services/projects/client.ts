@@ -1,0 +1,119 @@
+/**
+ * Client side of the projects contract (P1). Wire shapes come from
+ * `src/lib/projects.ts` — the same file the server route imports — so a field
+ * change is a compile error on both sides (D-006). House style: nothing throws
+ * across this boundary; every call resolves with a typed value.
+ */
+import {
+  PROJECTS_PATH,
+  projectFailure,
+  type ConnectionBody,
+  type ConnectionDeleteBody,
+  type ConnectionListBody,
+  type CreateConnectionBody,
+  type CreateProjectBody,
+  type PatchConnectionBody,
+  type PatchProjectBody,
+  type ProjectBody,
+  type ProjectDeleteBody,
+  type ProjectErr,
+  type ProjectListBody,
+  type ProjectResultBody,
+} from '../../lib/projects';
+
+type Fetcher = typeof fetch;
+
+export type ProjectsClient = {
+  list: (workspaceId?: string) => Promise<ProjectListBody | ProjectErr>;
+  create: (body: CreateProjectBody) => Promise<ProjectBody | ProjectErr>;
+  get: (id: string) => Promise<ProjectBody | ProjectErr>;
+  patch: (id: string, body: PatchProjectBody) => Promise<ProjectBody | ProjectErr>;
+  remove: (id: string) => Promise<ProjectDeleteBody | ProjectErr>;
+  listConnections: (projectId: string) => Promise<ConnectionListBody | ProjectErr>;
+  createConnection: (
+    projectId: string,
+    body: CreateConnectionBody,
+  ) => Promise<ConnectionBody | ProjectErr>;
+  patchConnection: (
+    projectId: string,
+    connectionId: string,
+    body: PatchConnectionBody,
+  ) => Promise<ConnectionBody | ProjectErr>;
+  checkConnection: (
+    projectId: string,
+    connectionId: string,
+  ) => Promise<ConnectionBody | ProjectErr>;
+  removeConnection: (
+    projectId: string,
+    connectionId: string,
+  ) => Promise<ConnectionDeleteBody | ProjectErr>;
+};
+
+async function request<T extends ProjectResultBody>(
+  fetcher: Fetcher,
+  url: string,
+  init?: RequestInit,
+): Promise<T | ProjectErr> {
+  try {
+    const res = await fetcher(url, init);
+    const body = (await res.json()) as ProjectResultBody;
+    return body.ok ? (body as T) : body;
+  } catch {
+    return projectFailure('upstream', 'The projects API could not be reached.');
+  }
+}
+
+function jsonInit(method: string, body?: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'content-type': 'application/json' },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  };
+}
+
+function projectPath(id: string): string {
+  return `${PROJECTS_PATH}/${encodeURIComponent(id)}`;
+}
+
+function connectionPath(projectId: string, connectionId?: string): string {
+  const base = `${projectPath(projectId)}/connections`;
+  return connectionId === undefined ? base : `${base}/${encodeURIComponent(connectionId)}`;
+}
+
+export function createProjectsClient(fetcher: Fetcher = fetch): ProjectsClient {
+  return {
+    list: (workspaceId) =>
+      request<ProjectListBody>(
+        fetcher,
+        workspaceId
+          ? `${PROJECTS_PATH}?workspaceId=${encodeURIComponent(workspaceId)}`
+          : PROJECTS_PATH,
+      ),
+    create: (body) => request<ProjectBody>(fetcher, PROJECTS_PATH, jsonInit('POST', body)),
+    get: (id) => request<ProjectBody>(fetcher, projectPath(id)),
+    patch: (id, body) => request<ProjectBody>(fetcher, projectPath(id), jsonInit('PATCH', body)),
+    remove: (id) => request<ProjectDeleteBody>(fetcher, projectPath(id), jsonInit('DELETE')),
+    listConnections: (projectId) =>
+      request<ConnectionListBody>(fetcher, connectionPath(projectId)),
+    createConnection: (projectId, body) =>
+      request<ConnectionBody>(fetcher, connectionPath(projectId), jsonInit('POST', body)),
+    patchConnection: (projectId, connectionId, body) =>
+      request<ConnectionBody>(
+        fetcher,
+        connectionPath(projectId, connectionId),
+        jsonInit('PATCH', body),
+      ),
+    checkConnection: (projectId, connectionId) =>
+      request<ConnectionBody>(
+        fetcher,
+        `${connectionPath(projectId, connectionId)}/check`,
+        jsonInit('POST'),
+      ),
+    removeConnection: (projectId, connectionId) =>
+      request<ConnectionDeleteBody>(
+        fetcher,
+        connectionPath(projectId, connectionId),
+        jsonInit('DELETE'),
+      ),
+  };
+}

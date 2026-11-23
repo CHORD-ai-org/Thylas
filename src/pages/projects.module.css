@@ -1,0 +1,221 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #2c2c2a;
+}
+
+.filters {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.filter,
+.filterOn {
+  border: 0.5px solid transparent;
+  background: none;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #888780;
+  cursor: pointer;
+}
+
+.filterOn {
+  border-color: #d3d1c7;
+  background: #ffffff;
+  color: #2c2c2a;
+}
+
+.notice {
+  margin: 0;
+  font-size: 11px;
+  color: #993c1d;
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0.5px solid #d3d1c7;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #2c2c2a;
+  background: #ffffff;
+}
+
+.input:focus-visible {
+  outline: 2px solid #85b7eb;
+  outline-offset: 1px;
+}
+
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  border: 0.5px solid #d3d1c7;
+  border-radius: 10px;
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 10px 12px;
+}
+
+.cardMain {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2c2c2a;
+  white-space: nowrap;
+}
+
+.cardSummary {
+  font-size: 11px;
+  color: #888780;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left;
+}
+
+.cardMeta {
+  font-size: 11px;
+  color: #b4b2a9;
+  white-space: nowrap;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iconAction {
+  border: 0;
+  background: none;
+  padding: 3px;
+  border-radius: 5px;
+  color: #888780;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.iconAction:hover {
+  background: #f1efe8;
+  color: #993c1d;
+}
+
+.drawer {
+  grid-column: 1 / -1;
+  border-top: 0.5px solid #e7e4dc;
+  margin-top: 4px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawerEmpty {
+  margin: 0;
+  font-size: 11px;
+  color: #b4b2a9;
+}
+
+.connections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: #444441;
+  padding: 3px 0;
+}
+
+.connectionKind {
+  color: #888780;
+  white-space: nowrap;
+}
+
+.connectionLocator {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+  font-size: 10px;
+}
+
+.health-ok {
+  color: #3b6d11;
+  white-space: nowrap;
+}
+
+.health-broken {
+  color: #a32d2d;
+  white-space: nowrap;
+}
+
+.health-unknown {
+  color: #888780;
+  white-space: nowrap;
+}
+
+.addLine {
+  display: flex;
+  gap: 8px;
+}
+
+.select {
+  border: 0.5px solid #d3d1c7;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #2c2c2a;
+  background: #ffffff;
+}

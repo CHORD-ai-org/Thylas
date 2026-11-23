@@ -4,6 +4,7 @@ import { landingPath, useUser } from '../state/user';
 import { Overview } from '../pages/Overview';
 import { Recently } from '../pages/Recently';
 import { FilesPage, FileDetailPage } from '../pages/Files';
+import { ProjectsPage } from '../pages/Projects';
 import { BoardsPage, BoardDetailPage } from '../pages/Boards';
 import { ProcessesPage, RunDetailPage } from '../pages/Processes';
 import { NotesPage } from '../pages/Notes';
@@ -54,6 +55,7 @@ export const routerChildren = [
   { path: 'overview', element: <Overview /> },
   { path: 'recently', element: <Recently /> },
   { path: 'w/:wsId', element: <WorkspaceRedirect /> },
+  { path: 'w/:wsId/projects', element: <ProjectsPage /> },
   { path: 'w/:wsId/files', element: <FilesPage /> },
   { path: 'w/:wsId/files/:fileId', element: <FileDetailPage /> },
   { path: 'w/:wsId/boards', element: <BoardsPage /> },

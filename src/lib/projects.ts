@@ -65,6 +65,16 @@ export type ProjectDeleteBody = { ok: true; id: string };
 export type ConnectionListBody = { ok: true; items: ProjectConnectionDto[] };
 export type ConnectionBody = { ok: true; item: ProjectConnectionDto };
 export type ConnectionDeleteBody = { ok: true; id: string };
+
+export type CreateProjectBody = { workspaceId: string; name: string; summary?: string };
+export type PatchProjectBody = {
+  name?: string;
+  summary?: string;
+  state?: Extract<ProjectState, 'active' | 'archived'>;
+};
+export type CreateConnectionBody = { kind: ConnectionKind; locator: string; label?: string };
+export type PatchConnectionBody = { locator?: string; label?: string };
+
 export type ProjectResultBody =
   | ProjectListBody
   | ProjectBody

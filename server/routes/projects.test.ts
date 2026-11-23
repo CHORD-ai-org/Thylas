@@ -138,8 +138,42 @@ describe('P0 projects API over real HTTP', () => {
     expect((await json<ConnectionBody>(repaired)).item.health).toBe('ok');
   });
 
-  it('rejects a duplicate connection with 409', async () => {
-    const duplicate = await call('POST', `${PROJECTS_PATH}/${projectId}/connections`, {
+  it('P1-3: three repo spellings become one Lemma card with normalized locators', async () => {
+    const created = await call('POST', PROJECTS_PATH, {
+      workspaceId: 'ws-1',
+      name: 'Lemma',
+    });
+    const lemmaId = (await json<ProjectBody>(created)).item.id;
+
+    const spellings = [
+      'https://github.com/zbbsdsb/lemma-ai',
+      'zbbsdsb/LemmaKnowledgeBase',
+      'zbbsdsb/Analysis-Engine.git',
+    ];
+    for (const locator of spellings) {
+      const res = await call('POST', `${PROJECTS_PATH}/${lemmaId}/connections`, {
+        kind: 'github-repo',
+        locator,
+      });
+      expect(res.status).toBe(201);
+      const item = (await json<ConnectionBody>(res)).item;
+      expect(item.locator).not.toContain('github.com');
+      expect(item.locator.endsWith('.git')).toBe(false);
+      expect(item.health).toBe('unknown');
+    }
+    const list = await call('GET', `${PROJECTS_PATH}/${lemmaId}/connections`);
+    const items = (await json<ConnectionListBody>(list)).items;
+    expect(items).toHaveLength(3);
+    expect(items.map((x) => x.locator)).toContain('zbbsdsb/lemma-ai');
+
+    const malformed = await call('POST', `${PROJECTS_PATH}/${lemmaId}/connections`, {
+      kind: 'github-repo',
+      locator: 'not a repo',
+    });
+    expect((await json<ConnectionBody>(malformed)).item.health).toBe('broken');
+  });
+
+  it('rejects a duplicate connection with 409', async () => {    const duplicate = await call('POST', `${PROJECTS_PATH}/${projectId}/connections`, {
       kind: 'local-folder',
       locator: join(root, 'thylas-repo-renamed'),
     });
@@ -158,7 +192,8 @@ describe('P0 projects API over real HTTP', () => {
     expect(removed.status).toBe(200);
 
     const list = await call('GET', PROJECTS_PATH);
-    expect((await json<ProjectListBody>(list)).items).toHaveLength(0);
+    const ids = (await json<ProjectListBody>(list)).items.map((x) => x.id);
+    expect(ids).not.toContain(projectId);
 
     const gone = await call('GET', `${PROJECTS_PATH}/${projectId}`);
     expect(gone.status).toBe(404);
