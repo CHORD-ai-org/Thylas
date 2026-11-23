@@ -7,6 +7,7 @@ import { FilesPage, FileDetailPage } from '../pages/Files';
 import { BoardsPage, BoardDetailPage } from '../pages/Boards';
 import { ProcessesPage, RunDetailPage } from '../pages/Processes';
 import { NotesPage } from '../pages/Notes';
+import { SkillsPage } from '../pages/Skills';
 import { ChatPage } from '../pages/chat/ChatPage';
 import { ArtifactLibrary } from '../pages/artifacts/ArtifactLibrary';
 import { CoworkerDirectory } from '../pages/coworkers/CoworkerDirectory';
@@ -67,6 +68,7 @@ export const routerChildren = [
   { path: 'coworkers/new', element: <CoworkerNew /> },
   { path: 'coworkers/:coworkerId', element: <CoworkerDetail /> },
   { path: 'coworkers/:coworkerId/config', element: <CoworkerConfig /> },
+  { path: 'skills', element: <SkillsPage /> },
   { path: 'artifacts', element: <ArtifactLibrary /> },
   { path: 'artifacts/new', element: <ArtifactNew /> },
   { path: 'artifacts/:artifactId', element: <ArtifactDetail /> },
