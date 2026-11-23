@@ -24,6 +24,7 @@ import {
   IconPlus,
   IconRecently,
   IconSearch,
+  IconSkill,
 } from '../components/icons';
 import s from './shell.module.css';
 
@@ -59,6 +60,76 @@ function RailItem({
   );
 }
 
+/**
+ * The「自定义」entry (design brief): one row at the rail foot that opens a two
+ * item menu — 技能 (global) and 素材 (the workspace's materials). A menu, not
+ * navigation: these two live in different scopes, so one row cannot be both.
+ */
+function RailCustom({
+  collapsed,
+  materialsPath,
+  materialsTitle,
+}: {
+  collapsed: boolean;
+  materialsPath: string | null;
+  materialsTitle: string;
+}) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={s.railCustom} data-rail-custom>
+      <button
+        type="button"
+        className={[s.railItem, open ? s.railActive : ''].join(' ')}
+        data-rail-item="/custom"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="自定义"
+        title={collapsed ? '自定义' : undefined}
+      >
+        <span className={s.railIcon}>
+          <IconSkill />
+        </span>
+        {collapsed ? null : <span className={s.railLabel}>自定义</span>}
+      </button>
+      {open ? (
+        <div className={[s.railPop, 'glass'].join(' ')} role="menu" aria-label="自定义" data-custom-pop>
+          <button
+            type="button"
+            role="menuitem"
+            className={s.railPopRow}
+            data-custom-skills
+            onClick={() => {
+              setOpen(false);
+              navigate(routes.skills());
+            }}
+          >
+            <IconSkill size={13} />
+            技能
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={s.railPopRow}
+            data-custom-materials
+            disabled={materialsPath === null}
+            title={materialsPath === null ? materialsTitle : undefined}
+            onClick={() => {
+              if (!materialsPath) return;
+              setOpen(false);
+              navigate(materialsPath);
+            }}
+          >
+            <IconFiles size={13} />
+            素材
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function needsYou(ws: Workspace): number {
   return processesIn(ws.id).filter((p) => p.state === 'needs_input').length;
 }
@@ -70,6 +141,9 @@ export function Rail() {
   useCompute();
   const user = useUser();
   const { pathname } = useLocation();
+  /* Materials are per workspace: the「素材」row lands in the current one. */
+  const materialsWs = workspaces.find((w) => pathname.startsWith(`/w/${w.id}`)) ?? workspaces[0];
+  const materialsPath = materialsWs ? routes.files(materialsWs.id) : null;
   const navigate = useNavigate();
   const [open, setOpen] = useState<string[]>([]);
   const [sectionOpen, setSectionOpen] = useState(true);
@@ -300,6 +374,11 @@ export function Rail() {
       </nav>
 
       <div className={s.railFoot}>
+        <RailCustom
+          collapsed={railCollapsed}
+          materialsPath={materialsPath}
+          materialsTitle="No workspace yet — create one first."
+        />
         <button
           type="button"
           className={s.profile}
