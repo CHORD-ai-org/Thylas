@@ -632,6 +632,17 @@ async function main() {
 
   await js(`${helpers} click(byText('button', 'Research')); await new Promise(r => setTimeout(r, 700));`);
   check('rail: opens workspace files', await js(`return location.pathname;`), '/w/ws-research/files');
+  check('files: the materials grid renders thumbnail cards', await js(`
+    return document.querySelectorAll('[data-file-card]').length;
+  `), (v) => v >= 5);
+  check('files: grid search filters the cards', await js(`
+    const input = document.querySelector('[data-file-search]');
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    set.call(input, 'eval'); input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 150));
+    return document.querySelectorAll('[data-file-card]').length;
+  `), (v) => v >= 1 && v <= 3);
+  await js(`${helpers} const input = document.querySelector('[data-file-search]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); click(document.querySelector('[data-view-list]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
   check('files: rows render', await js(`return document.querySelectorAll('[role="row"][aria-selected]').length;`), (v) => v >= 5);
   check('panel: selection details are present', await js(`${helpers} return !!byText('aside', 'Used by');`), true);
 
@@ -926,7 +937,7 @@ async function main() {
       navUser: [...document.querySelectorAll('[data-rail-item]')].some(a => a.textContent.trim() === 'User'),
       last: [...document.querySelectorAll('[data-rail-item]')].map(a => a.textContent.trim()).filter(Boolean).pop(),
     };
-  `), { profile: true, navUser: false, last: 'Chat' });
+  `), { profile: true, navUser: false, last: '自定义' });
 
   await js(`${helpers} click(document.querySelector('[data-ws-section]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   check('rail: the Workspace group collapses', await js(`
@@ -1283,6 +1294,7 @@ async function main() {
 
   await goto('/w/ws-research/files');
   await js('await new Promise(r => setTimeout(r, 700)); return 1;');
+  await js(`${helpers} click(document.querySelector('[data-view-list]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
   check('files: Upload is disabled with a stated reason', await js(`
     const b = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Upload');
     return !!b && b.disabled && /files service/i.test(b.title) && b.getAttribute('aria-describedby') === 'files-limit';
@@ -1351,6 +1363,7 @@ async function main() {
      route left open turns them into "button not found". */
   await goto('/w/ws-research/files');
   await js('await new Promise(r => setTimeout(r, 600)); return 1;');
+  await js(`${helpers} click(document.querySelector('[data-view-list]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
 
   check('files: folder disclosure is a real button with aria-expanded', await js(`
     const b = document.querySelector('button[aria-label^="Collapse datasets"]');
@@ -1365,6 +1378,7 @@ async function main() {
   `), 'false');
 
   await goto('/w/ws-research/files');
+  await js(`${helpers} click(document.querySelector('[data-view-list]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   const key = (k) => js(`
     const el = document.querySelector('[data-scroll-region="files-table"]');
     el.dispatchEvent(new KeyboardEvent('keydown', { key: '${k}', bubbles: true }));
@@ -3437,6 +3451,54 @@ async function main() {
     const later = await fetch('/api/user');
     return { written: written.status, later: later.status, body: await later.json() };
   `), (v) => v.written === 200 && v.later === 200 && v.body?.user?.displayName === 'C. Zhao');
+
+  // ---- Skills & materials entry (P0-1..P0-5) ----
+  await goto('/overview');
+  await js(`localStorage.removeItem('thylas:skills:v1'); return 1;`);
+  await send('Page.reload');
+  await sleep(800);
+  await js(`${helpers} click(document.querySelector('[data-rail-item="/custom"]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('skills: the「自定义」rail entry opens the two-item menu', await js(`
+    return {
+      pop: !!document.querySelector('[data-custom-pop]'),
+      skills: !!document.querySelector('[data-custom-skills]'),
+      materials: !!document.querySelector('[data-custom-materials]'),
+    };
+  `), { pop: true, skills: true, materials: true });
+
+  await js(`${helpers} click(document.querySelector('[data-custom-skills]')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('skills: the menu navigates to the Skills page', await js(`
+    return {
+      path: location.pathname,
+      cards: document.querySelectorAll('[data-skill-card]').length,
+      my: !!document.querySelector('[data-my-skills]'),
+      official: !!document.querySelector('[data-official-skills]'),
+    };
+  `), (v) => v.path === '/skills' && v.cards >= 8 && v.my && v.official);
+
+  const beforeToggle = await js(`return document.querySelector('[data-skill-toggle]')?.getAttribute('aria-checked');`);
+  await js(`${helpers} click(document.querySelector('[data-skill-toggle]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
+  check('skills: a toggle really flips and survives a reload', await js(`
+    return document.querySelector('[data-skill-toggle]')?.getAttribute('aria-checked');
+  `), (v) => v !== beforeToggle);
+  await send('Page.reload');
+  await sleep(800);
+  check('skills: the flipped state persisted', await js(`
+    return document.querySelector('[data-skill-toggle]')?.getAttribute('aria-checked');
+  `), (v) => v !== beforeToggle);
+
+  check('skills: category filter narrows the catalog', await js(`${helpers} click(document.querySelector('[data-skill-cat="数据"]')); await new Promise(r => setTimeout(r, 150)); return document.querySelectorAll('[data-skill-card]').length;`), (v) => v === 2);
+  check('skills: 全部禁用 turns every skill off', await js(`${helpers} click(document.querySelector('[data-skill-cat="全部"]')); await new Promise(r => setTimeout(r, 120)); click(document.querySelector('[data-skill-disable-all]')); await new Promise(r => setTimeout(r, 150)); return [...document.querySelectorAll('[data-skill-toggle]')].every(b => b.getAttribute('aria-checked') === 'false');`), true);
+
+  await js(`${helpers} click(document.querySelector('[data-add-skill]')); await new Promise(r => setTimeout(r, 150)); const n = document.querySelector('[data-add-skill-name]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(n, 'E2E 技能'); n.dispatchEvent(new Event('input', { bubbles: true })); click(document.querySelector('[data-add-skill-submit]')); await new Promise(r => setTimeout(r, 200)); return 1;`);
+  check('skills: a custom skill lands in 我的技能', await js(`
+    const mine = document.querySelector('[data-my-skills]');
+    return mine ? mine.textContent.includes('E2E 技能') : false;
+  `), true);
+
+  await js(`${helpers} click(document.querySelector('[data-rail-item="/custom"]')); await new Promise(r => setTimeout(r, 150)); click(document.querySelector('[data-custom-materials]')); await new Promise(r => setTimeout(r, 400)); return 1;`);
+  check('skills: the menu lands in the workspace materials', await js(`return location.pathname;`),
+    (v) => /^\/w\/[^/]+\/files$/.test(v));
 
   await goto('/overview');
 
