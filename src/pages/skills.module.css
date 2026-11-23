@@ -1,0 +1,228 @@
+/* Skills page — Quiet Computationalism: hairlines, typography, one switch
+   accent. No card walls, no gradients. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 48px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  font: var(--t-title);
+  color: var(--ink);
+  margin: 0;
+  margin-right: auto;
+}
+
+.searchWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--ink-3);
+}
+
+.searchWrap:focus-within {
+  border-color: var(--line-strong);
+}
+
+.search {
+  border: none;
+  background: transparent;
+  outline: none;
+  font: var(--t-ui);
+  color: var(--ink);
+  width: 200px;
+}
+
+.search::placeholder {
+  color: var(--ink-3);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.count {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+}
+
+.link {
+  font: var(--t-ui);
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  color: var(--ink);
+}
+
+.cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 14px;
+}
+
+.cat {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font: var(--t-caption);
+  color: var(--ink-2);
+  background: transparent;
+}
+
+.cat:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.catOn {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--tint-hover);
+}
+
+.grid {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-surface);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardIcon {
+  display: inline-flex;
+  color: var(--ink-3);
+}
+
+.cardName {
+  font: var(--t-ui-strong);
+  color: var(--ink);
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardDesc {
+  margin: 0;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  line-height: 1.5;
+  min-height: 42px;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardCat {
+  font: var(--t-mono-s);
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+  margin-right: auto;
+}
+
+/* The one accent on the page: the switch. */
+.switch {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.knob {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transition: transform 120ms var(--ease), background 120ms var(--ease);
+}
+
+.switchOn {
+  border-color: var(--ink);
+}
+
+.switchOn .knob {
+  transform: translateX(12px);
+  background: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
+}
+
+.form {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+}
+
+.formInput {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
