@@ -10,6 +10,7 @@ export const routes = {
   recently: () => '/recently',
   workspace: (wsId: Id) => `/w/${wsId}`,
   projects: (wsId: Id) => `/w/${wsId}/projects`,
+  projectDetail: (wsId: Id, projectId: Id) => `/w/${wsId}/p/${projectId}`,
   files: (wsId: Id) => `/w/${wsId}/files`,
   file: (wsId: Id, fileId: Id) => `/w/${wsId}/files/${fileId}`,
   boards: (wsId: Id) => `/w/${wsId}/boards`,
