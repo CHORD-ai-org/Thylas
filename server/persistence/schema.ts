@@ -153,6 +153,31 @@ export const projectMembers = pgTable(
 );
 
 /**
+ * C2-2 (署名落回): a Coworker's output lands as a candidate; the human
+ * confirms it. `proposed_by_name` is denormalized so the signature survives
+ * renames. Status is proposed → accepted | rejected (the candidate→review→
+ * commit governance shape, same as the artifact-candidates pipeline).
+ */
+export const projectCandidates = pgTable(
+  'project_candidates',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    body: text('body').notNull().default(''),
+    proposedBy: text('proposed_by').notNull(),
+    proposedByName: text('proposed_by_name').notNull().default(''),
+    status: text('status').notNull().default('proposed'),
+    confirmedBy: text('confirmed_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('project_candidates_project_idx').on(table.projectId, table.createdAt)],
+);
+
+/**
  * C0-1 (Coworker plan §27). A Coworker is an independent working identity —
  * `owner_id` is the tenant key (cloud-readiness §24), not a workspace: the
  * record survives across workspaces; employment (入职) is a roster relation

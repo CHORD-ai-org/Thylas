@@ -7,12 +7,18 @@
 import {
   PROJECTS_PATH,
   projectFailure,
+  type CandidateBody,
+  type CandidateListBody,
   type ConnectionBody,
   type ConnectionDeleteBody,
   type ConnectionListBody,
+  type CreateCandidateBody,
   type CreateConnectionBody,
   type CreateProjectBody,
   type EntriesBody,
+  type MemberBody,
+  type MemberDeleteBody,
+  type MemberListBody,
   type PatchConnectionBody,
   type PatchProjectBody,
   type ProjectBody,
@@ -20,6 +26,7 @@ import {
   type ProjectErr,
   type ProjectListBody,
   type ProjectResultBody,
+  type UpsertMemberBody,
 } from '../../lib/projects';
 
 type Fetcher = typeof fetch;
@@ -54,6 +61,23 @@ export type ProjectsClient = {
     connectionId: string,
     path?: string,
   ) => Promise<EntriesBody | ProjectErr>;
+  listMembers: (projectId: string) => Promise<MemberListBody | ProjectErr>;
+  upsertMember: (
+    projectId: string,
+    actorId: string,
+    body: UpsertMemberBody,
+  ) => Promise<MemberBody | ProjectErr>;
+  removeMember: (projectId: string, actorId: string) => Promise<MemberDeleteBody | ProjectErr>;
+  listCandidates: (projectId: string) => Promise<CandidateListBody | ProjectErr>;
+  createCandidate: (
+    projectId: string,
+    body: CreateCandidateBody,
+  ) => Promise<CandidateBody | ProjectErr>;
+  setCandidateStatus: (
+    projectId: string,
+    candidateId: string,
+    accept: boolean,
+  ) => Promise<CandidateBody | ProjectErr>;
 };
 
 async function request<T extends ProjectResultBody>(
@@ -126,6 +150,29 @@ export function createProjectsClient(fetcher: Fetcher = fetch): ProjectsClient {
       request<EntriesBody>(
         fetcher,
         `${connectionPath(projectId, connectionId)}/entries?path=${encodeURIComponent(path)}`,
+      ),
+    listMembers: (projectId) => request<MemberListBody>(fetcher, `${projectPath(projectId)}/members`),
+    upsertMember: (projectId, actorId, body) =>
+      request<MemberBody>(
+        fetcher,
+        `${projectPath(projectId)}/members/${encodeURIComponent(actorId)}`,
+        jsonInit('PUT', body),
+      ),
+    removeMember: (projectId, actorId) =>
+      request<MemberDeleteBody>(
+        fetcher,
+        `${projectPath(projectId)}/members/${encodeURIComponent(actorId)}`,
+        jsonInit('DELETE'),
+      ),
+    listCandidates: (projectId) =>
+      request<CandidateListBody>(fetcher, `${projectPath(projectId)}/candidates`),
+    createCandidate: (projectId, body) =>
+      request<CandidateBody>(fetcher, `${projectPath(projectId)}/candidates`, jsonInit('POST', body)),
+    setCandidateStatus: (projectId, candidateId, accept) =>
+      request<CandidateBody>(
+        fetcher,
+        `${projectPath(projectId)}/candidates/${encodeURIComponent(candidateId)}/${accept ? 'confirm' : 'reject'}`,
+        jsonInit('POST'),
       ),
   };
 }

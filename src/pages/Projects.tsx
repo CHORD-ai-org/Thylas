@@ -10,9 +10,13 @@ import {
   CONNECTION_KINDS,
   type ConnectionHealth,
   type ConnectionKind,
+  type ProjectCandidateDto,
   type ProjectConnectionDto,
   type ProjectDto,
+  type ProjectMemberDto,
 } from '../lib/projects';
+import { coworkersView } from '../state/coworkers';
+import { displayNameOf, useUser } from '../state/user';
 import s from './projects.module.css';
 
 /**
@@ -202,20 +206,23 @@ export function ProjectsPage() {
                   </button>
                 </div>
                 {openId === project.id ? (
-                  <ConnectionDrawer
-                    connections={connections}
-                    onAdd={addConnection}
-                    onCheck={async (connectionId) => {
-                      await client.checkConnection(project.id, connectionId);
-                      const list = await client.listConnections(project.id);
-                      if (list.ok && 'items' in list) setConnections(list.items);
-                    }}
-                    onRemove={async (connectionId) => {
-                      await client.removeConnection(project.id, connectionId);
-                      const list = await client.listConnections(project.id);
-                      if (list.ok && 'items' in list) setConnections(list.items);
-                    }}
-                  />
+                  <>
+                    <ConnectionDrawer
+                      connections={connections}
+                      onAdd={addConnection}
+                      onCheck={async (connectionId) => {
+                        await client.checkConnection(project.id, connectionId);
+                        const list = await client.listConnections(project.id);
+                        if (list.ok && 'items' in list) setConnections(list.items);
+                      }}
+                      onRemove={async (connectionId) => {
+                        await client.removeConnection(project.id, connectionId);
+                        const list = await client.listConnections(project.id);
+                        if (list.ok && 'items' in list) setConnections(list.items);
+                      }}
+                    />
+                    <ParticipationPanel projectId={project.id} />
+                  </>
                 ) : null}
               </li>
             ))}
@@ -295,6 +302,127 @@ export function ConnectionDrawer({
           连接
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * C2 参工与署名落回 (Coworker plan §27): the project's participants and the
+ * signed outputs that landed back. Signature format follows 01 §5.3 —
+ * "由 Mira 提出 · Ceaser 确认", display names, never technical actors.
+ */
+function ParticipationPanel({ projectId }: { projectId: string }) {
+  const [client] = useState<ProjectsClient>(() => createProjectsClient());
+  const [members, setMembers] = useState<ProjectMemberDto[]>([]);
+  const [candidates, setCandidates] = useState<ProjectCandidateDto[]>([]);
+  const [actorId, setActorId] = useState('');
+  const [role, setRole] = useState('');
+  const user = useUser();
+  const coworkers = useMemo(() => coworkersView(), []);
+
+  const refresh = useCallback(async () => {
+    const memberBody = await client.listMembers(projectId);
+    if (memberBody.ok && 'items' in memberBody) setMembers(memberBody.items);
+    const candidateBody = await client.listCandidates(projectId);
+    if (candidateBody.ok && 'items' in candidateBody) setCandidates(candidateBody.items);
+  }, [client, projectId]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const dispatch = async () => {
+    const chosen = actorId || coworkers[0]?.id;
+    if (!chosen) return;
+    await client.upsertMember(projectId, chosen, { role, actorKind: 'coworker' });
+    setActorId('');
+    setRole('');
+    await refresh();
+  };
+
+  return (
+    <div className={s.drawer} data-participation-panel>
+      <SectionLabel>参与者</SectionLabel>
+      {members.length === 0 ? (
+        <p className={s.drawerEmpty}>还没有派工</p>
+      ) : (
+        <ul className={s.connections}>
+          {members.map((member) => (
+            <li key={member.actorId} className={s.connection} data-member={member.actorId}>
+              <span className={s.connectionKind}>{member.actorId}</span>
+              <span className={s.connectionLocator}>{member.role}</span>
+              <Button size="sm" onClick={async () => {
+                await client.removeMember(projectId, member.actorId);
+                await refresh();
+              }}>
+                移除
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className={s.addLine}>
+        <select
+          className={s.select}
+          aria-label="派给"
+          value={actorId || coworkers[0]?.id || ''}
+          onChange={(e) => setActorId(e.target.value)}
+          data-member-actor
+        >
+          {coworkers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <input
+          className={s.input}
+          placeholder="角色（可空）"
+          aria-label="角色"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        />
+        <Button size="sm" onClick={dispatch} data-member-add>
+          派工
+        </Button>
+      </div>
+
+      <SectionLabel>产出</SectionLabel>
+      {candidates.length === 0 ? (
+        <p className={s.drawerEmpty}>还没有产出</p>
+      ) : (
+        <ul className={s.connections}>
+          {candidates.map((candidate) => (
+            <li key={candidate.id} className={s.connection} data-candidate={candidate.id}>
+              <span className={s.connectionLocator}>{candidate.title}</span>
+              <span className={s.connectionKind}>
+                由 {candidate.proposedByName} 提出
+                {candidate.status === 'accepted'
+                  ? ` · ${displayNameOf(user, candidate.confirmedBy ?? '')} 确认`
+                  : candidate.status === 'rejected'
+                    ? ' · 已驳回'
+                    : ' · 待确认'}
+              </span>
+              {candidate.status === 'proposed' ? (
+                <>
+                  <Button size="sm" onClick={async () => {
+                    await client.setCandidateStatus(projectId, candidate.id, true);
+                    await refresh();
+                  }} data-candidate-confirm>
+                    确认
+                  </Button>
+                  <Button size="sm" onClick={async () => {
+                    await client.setCandidateStatus(projectId, candidate.id, false);
+                    await refresh();
+                  }}>
+                    驳回
+                  </Button>
+                </>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

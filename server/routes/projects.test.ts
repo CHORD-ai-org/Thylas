@@ -16,6 +16,7 @@ import {
   type ProjectErr,
   type ProjectListBody,
 } from '../../src/lib/projects.ts';
+import { effectiveGrants } from '../../src/lib/coworkers.ts';
 import { SESSION_COOKIE } from '../../src/lib/session.ts';
 import { readConfig } from '../config.ts';
 import type { ConversationDatabase } from '../persistence/client.ts';
@@ -274,5 +275,68 @@ describe('P0 projects API over real HTTP', () => {
     const cid = (await json<ConnectionBody>(connected)).item.id;
     const res = await call('GET', `${PROJECTS_PATH}/${pid}/connections/${cid}/entries`);
     expect(res.status).toBe(503);
+  });
+});
+
+describe('C2 参工与署名落回', () => {
+  let c2Project = '';
+
+  it('C2-1: member upsert carries the grant subset; foreign workspace 403', async () => {
+    const created = await call('POST', PROJECTS_PATH, { workspaceId: 'ws-1', name: 'Lemma C2' });
+    c2Project = (await json<ProjectBody>(created)).item.id;
+
+    const put = await call('PUT', `${PROJECTS_PATH}/${c2Project}/members/cw-1`, {
+      role: 'researcher',
+      grants: ['f-1', 'n-2'],
+    });
+    expect(put.status).toBe(200);
+
+    const list = await call('GET', `${PROJECTS_PATH}/${c2Project}/members`);
+    const items = (await json<{ items: { actorId: string; grants: string[] }[] }>(list)).items;
+    expect(items).toHaveLength(1);
+    expect(items[0]?.actorId).toBe('cw-1');
+
+    /* three-layer red line: the project subset narrows, never widens */
+    expect(effectiveGrants(['f-1', 'f-9'], ['f-1', 'n-2', 'x'], items[0]?.grants ?? [])).toEqual(['f-1']);
+
+    await client.query(
+      "insert into projects (id, workspace_id, name, state) values ('p-foreign', 'ws-2', 'Foreign', 'active')",
+    );
+    const foreign = await call('PUT', `${PROJECTS_PATH}/p-foreign/members/cw-1`, { role: 'x' });
+    expect(foreign.status).toBe(403);
+
+    const removed = await call('DELETE', `${PROJECTS_PATH}/${c2Project}/members/cw-1`);
+    expect(removed.status).toBe(200);
+    const empty = await call('GET', `${PROJECTS_PATH}/${c2Project}/members`);
+    expect((await json<{ items: unknown[] }>(empty)).items).toHaveLength(0);
+  });
+
+  it('C2-2: signed candidate lands and confirm carries both signatures', async () => {
+    const proposed = await call('POST', `${PROJECTS_PATH}/${c2Project}/candidates`, {
+      title: '竞品对比表',
+      body: '三列对比',
+      proposedBy: 'cw-1',
+      proposedByName: 'Mira',
+    });
+    expect(proposed.status).toBe(201);
+    const candidateId = (await json<{ item: { id: string } }>(proposed)).item.id;
+
+    const confirmed = await call('POST', `${PROJECTS_PATH}/${c2Project}/candidates/${candidateId}/confirm`);
+    expect(confirmed.status).toBe(200);
+    const accepted = (await json<{ item: { status: string; proposedByName: string; confirmedBy: string | null } }>(confirmed)).item;
+    expect(accepted.status).toBe('accepted');
+    expect(accepted.proposedByName).toBe('Mira');
+    expect(accepted.confirmedBy).toBe('u-1');
+
+    const second = await call('POST', `${PROJECTS_PATH}/${c2Project}/candidates`, {
+      title: '草稿 B',
+      proposedBy: 'cw-1',
+      proposedByName: 'Mira',
+    });
+    const secondId = (await json<{ item: { id: string } }>(second)).item.id;
+    const rejected = await call('POST', `${PROJECTS_PATH}/${c2Project}/candidates/${secondId}/reject`);
+    const rejectedItem = (await json<{ item: { status: string; confirmedBy: string | null } }>(rejected)).item;
+    expect(rejectedItem.status).toBe('rejected');
+    expect(rejectedItem.confirmedBy).toBeNull();
   });
 });

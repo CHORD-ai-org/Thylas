@@ -37,6 +37,15 @@ import {
   type ProjectListBody,
   type ProjectResultBody,
   type ProjectState,
+  type CandidateBody,
+  type CandidateListBody,
+  type CreateCandidateBody,
+  type MemberBody,
+  type MemberDeleteBody,
+  type MemberListBody,
+  type ProjectCandidateDto,
+  type ProjectMemberDto,
+  type UpsertMemberBody,
 } from '../../src/lib/projects.ts';
 import {
   sessionFailure,
@@ -54,7 +63,9 @@ import {
 } from '../connectors.ts';
 import { sendJson } from '../http.ts';
 import {
+  projectCandidates,
   projectConnections,
+  projectMembers,
   projects as table,
 } from '../persistence/schema.ts';
 import type { ConversationDatabase } from '../persistence/client.ts';
@@ -118,6 +129,35 @@ function toConnectionDto(row: ConnectionRow): ProjectConnectionDto {
     locator: row.locator,
     label: row.label,
     health: row.health as ConnectionHealth,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+type MemberRow = typeof projectMembers.$inferSelect;
+type CandidateRow = typeof projectCandidates.$inferSelect;
+
+function toMemberDto(row: MemberRow): ProjectMemberDto {
+  return {
+    projectId: row.projectId,
+    actorId: row.actorId,
+    actorKind: row.actorKind,
+    role: row.role,
+    grants: row.grants,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toCandidateDto(row: CandidateRow): ProjectCandidateDto {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    title: row.title,
+    body: row.body,
+    proposedBy: row.proposedBy,
+    proposedByName: row.proposedByName,
+    status: row.status as ProjectCandidateDto['status'],
+    confirmedBy: row.confirmedBy,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -468,6 +508,157 @@ function makeHandlers(
     } satisfies EntriesBody);
   };
 
+  /* C2-1 参工层 + C2-2 署名落回 (Coworker plan §27). */
+  const listMembers = async (
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const rows = await database
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId));
+    result(res, 200, { ok: true, items: rows.map(toMemberDto) } satisfies MemberListBody);
+  };
+
+  const upsertMember = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    projectId: string,
+    actorId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const body = (await readJson(req)) as UpsertMemberBody;
+    const [existing] = await database
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.actorId, actorId)));
+    const role = typeof body.role === 'string' ? body.role.trim().slice(0, 120) : (existing?.role ?? '');
+    const grants = body.grants ?? existing?.grants ?? [];
+    if (!Array.isArray(grants) || !grants.every((g) => typeof g === 'string')) {
+      fail(res, 'contract', 'grants must be a list of resource ids.');
+      return;
+    }
+    const actorKind =
+      typeof body.actorKind === 'string' ? body.actorKind : (existing?.actorKind ?? 'coworker');
+    const [member] = await database
+      .insert(projectMembers)
+      .values({ projectId, actorId, actorKind, role, grants })
+      .onConflictDoUpdate({
+        target: [projectMembers.projectId, projectMembers.actorId],
+        set: { role, grants, actorKind },
+      })
+      .returning();
+    if (!member) {
+      fail(res, 'upstream', 'The member was not saved.');
+      return;
+    }
+    result(res, 200, { ok: true, item: toMemberDto(member) } satisfies MemberBody);
+  };
+
+  const removeMember = async (
+    res: ServerResponse,
+    projectId: string,
+    actorId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    await database
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.actorId, actorId)));
+    result(res, 200, { ok: true, actorId } satisfies MemberDeleteBody);
+  };
+
+  const listCandidates = async (
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const rows = await database
+      .select()
+      .from(projectCandidates)
+      .where(eq(projectCandidates.projectId, projectId))
+      .orderBy(asc(projectCandidates.createdAt));
+    result(res, 200, { ok: true, items: rows.map(toCandidateDto) } satisfies CandidateListBody);
+  };
+
+  const createCandidate = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const body = (await readJson(req)) as CreateCandidateBody;
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const text = typeof body.body === 'string' ? body.body : '';
+    const proposedBy = typeof body.proposedBy === 'string' ? body.proposedBy : '';
+    const proposedByName =
+      typeof body.proposedByName === 'string' ? body.proposedByName.trim().slice(0, 60) : '';
+    if (title.length === 0 || title.length > 255 || text.length > 4000 || !isSafeSegment(proposedBy)) {
+      fail(res, 'contract', 'Expected a title (1-255), a body under 4000 and a proposedBy id.');
+      return;
+    }
+    const [created] = await database
+      .insert(projectCandidates)
+      .values({
+        id: randomUUID(),
+        projectId,
+        title,
+        body: text,
+        proposedBy,
+        proposedByName,
+        status: 'proposed',
+      })
+      .returning();
+    if (!created) {
+      fail(res, 'upstream', 'The candidate was not recorded.');
+      return;
+    }
+    result(res, 201, { ok: true, item: toCandidateDto(created) } satisfies CandidateBody);
+  };
+
+  const setCandidateStatus = async (
+    res: ServerResponse,
+    projectId: string,
+    candidateId: string,
+    accept: boolean,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const [candidate] = await database
+      .select()
+      .from(projectCandidates)
+      .where(eq(projectCandidates.id, candidateId));
+    if (!candidate || candidate.projectId !== projectId) {
+      fail(res, 'not_found', `No candidate with id "${candidateId}".`);
+      return;
+    }
+    const [updated] = await database
+      .update(projectCandidates)
+      .set({
+        status: accept ? 'accepted' : 'rejected',
+        confirmedBy: accept ? session.id : candidate.confirmedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectCandidates.id, candidateId))
+      .returning();
+    if (!updated) {
+      fail(res, 'upstream', 'The candidate was not updated.');
+      return;
+    }
+    result(res, 200, { ok: true, item: toCandidateDto(updated) } satisfies CandidateBody);
+  };
+
   return {
     list,
     create,
@@ -480,6 +671,12 @@ function makeHandlers(
     checkConnection,
     removeConnection,
     listEntries,
+    listMembers,
+    upsertMember,
+    removeMember,
+    listCandidates,
+    createCandidate,
+    setCandidateStatus,
   };
 }
 
@@ -585,6 +782,40 @@ export function createProjectsRouter(
           subpath = '';
         }
         return handlers.listEntries(res, id, connectionId, subpath, session);
+      } else if (segments.length === 2 && segments[1] === 'members') {
+        const id = segments[0] ?? '';
+        if (!isSafeSegment(id)) {
+          fail(res, 'contract', 'The project id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.listMembers(res, id, session);
+      } else if (segments.length === 3 && segments[1] === 'members') {
+        const id = segments[0] ?? '';
+        const actorId = segments[2] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(actorId)) {
+          fail(res, 'contract', 'The project or actor id is not a valid path segment.');
+          return;
+        }
+        if (method === 'PUT') return handlers.upsertMember(req, res, id, actorId, session);
+        if (method === 'DELETE') return handlers.removeMember(res, id, actorId, session);
+      } else if (segments.length === 2 && segments[1] === 'candidates') {
+        const id = segments[0] ?? '';
+        if (!isSafeSegment(id)) {
+          fail(res, 'contract', 'The project id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.listCandidates(res, id, session);
+        if (method === 'POST') return handlers.createCandidate(req, res, id, session);
+      } else if (segments.length === 4 && segments[1] === 'candidates' && method === 'POST') {
+        const id = segments[0] ?? '';
+        const candidateId = segments[2] ?? '';
+        const action = segments[3] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(candidateId)) {
+          fail(res, 'contract', 'The project or candidate id is not a valid path segment.');
+          return;
+        }
+        if (action === 'confirm') return handlers.setCandidateStatus(res, id, candidateId, true, session);
+        if (action === 'reject') return handlers.setCandidateStatus(res, id, candidateId, false, session);
       }
       fail(res, 'contract', `${method} is not allowed on this path.`);
     };
@@ -599,6 +830,5 @@ export function createProjectsRouter(
   };
 }
 
-/* `projectMembers` lands in the schema now (P0-1, one migration boundary) but
-   its participation surface is P4-1 and must arrive with the Coworker minimum
-   entity (P4-0) — no endpoints on purpose. */
+/* `projectMembers` shipped empty in P0-1; its surface arrived with C2-1
+   (参工层) together with the Coworker minimum entity — see the handlers above. */

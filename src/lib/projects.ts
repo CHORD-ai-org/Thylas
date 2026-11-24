@@ -86,6 +86,45 @@ export type PatchProjectBody = {
 export type CreateConnectionBody = { kind: ConnectionKind; locator: string; label?: string };
 export type PatchConnectionBody = { locator?: string; label?: string };
 
+/** C2-1 (参工层): participation inside one project. Role + resource subset. */
+export type ProjectMemberDto = {
+  projectId: string;
+  actorId: string;
+  actorKind: string;
+  role: string;
+  grants: string[];
+  createdAt: string;
+};
+export type MemberListBody = { ok: true; items: ProjectMemberDto[] };
+export type MemberBody = { ok: true; item: ProjectMemberDto };
+export type MemberDeleteBody = { ok: true; actorId: string };
+export type UpsertMemberBody = { role?: string; grants?: string[]; actorKind?: string };
+
+/** C2-2 (署名落回): a Coworker's output lands as a candidate the human
+    confirms. `proposedByName` is denormalized so the signature survives
+    renames (01 §5.3). */
+export type CandidateStatus = 'proposed' | 'accepted' | 'rejected';
+export type ProjectCandidateDto = {
+  id: string;
+  projectId: string;
+  title: string;
+  body: string;
+  proposedBy: string;
+  proposedByName: string;
+  status: CandidateStatus;
+  confirmedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type CandidateListBody = { ok: true; items: ProjectCandidateDto[] };
+export type CandidateBody = { ok: true; item: ProjectCandidateDto };
+export type CreateCandidateBody = {
+  title: string;
+  body?: string;
+  proposedBy: string;
+  proposedByName: string;
+};
+
 export type ProjectResultBody =
   | ProjectListBody
   | ProjectBody
@@ -94,6 +133,11 @@ export type ProjectResultBody =
   | ConnectionListBody
   | ConnectionBody
   | ConnectionDeleteBody
+  | MemberListBody
+  | MemberBody
+  | MemberDeleteBody
+  | CandidateListBody
+  | CandidateBody
   | ProjectErr;
 
 const RETRYABLE: Record<ProjectErrorKind, boolean> = {
