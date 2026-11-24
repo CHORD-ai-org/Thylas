@@ -419,3 +419,102 @@ describe('C3 交接包与 INPUT_REQUIRED', () => {
     expect(resumedItem.status).toBe('open');
   });
 });
+
+describe('C4-1b 协作场次与 journal', () => {
+  let c4Project = '';
+  let sessionId = '';
+
+  it('creates a session and journals exactly one event per legal transition', async () => {
+    const created = await call('POST', PROJECTS_PATH, { workspaceId: 'ws-1', name: 'Lemma C4' });
+    c4Project = (await json<ProjectBody>(created)).item.id;
+    await client.query(
+      "insert into coworkers (id, owner_id, name, created_at_ms) values ('cw-sa', 'u-1', 'Mira', $1)",
+      [Date.now()],
+    );
+    await client.query(
+      "insert into coworkers (id, owner_id, name, created_at_ms) values ('cw-sb', 'u-1', 'Archer', $1)",
+      [Date.now()],
+    );
+
+    const session = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions`, {
+      participants: {
+        a: { coworkerId: 'cw-sa', name: 'Mira' },
+        b: { coworkerId: 'cw-sb', name: 'Archer' },
+      },
+      budget: { maxSteps: 4, maxSeconds: 120 },
+      summary: '竞品对比一场',
+    });
+    expect(session.status).toBe(201);
+    const item = (await json<{ item: { id: string; state: string } }>(session)).item;
+    expect(item.state).toBe('proposed');
+    sessionId = item.id;
+
+    const before = (
+      await client.query("select id from coworker_events where coworker_id = 'cw-sa'")
+    ).rows.length;
+
+    const delegated = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, {
+      verb: 'delegate',
+      actorId: 'cw-sa',
+      note: '派给 Mira',
+    });
+    expect(delegated.status).toBe(200);
+    expect((await json<{ item: { state: string; currentStep: number } }>(delegated)).item.state).toBe('delegated');
+
+    const after = (
+      await client.query<{ verb: string }>(
+        "select verb from coworker_events where coworker_id = 'cw-sa'",
+      )
+    ).rows;
+    expect(after.length).toBe(before + 1);
+    expect(after[after.length - 1]?.verb).toBe('delegate');
+  });
+
+  it('illegal transitions are refused and change nothing', async () => {
+    const bad = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, {
+      verb: 'complete',
+    });
+    expect(bad.status).toBe(400);
+
+    const still = await call('GET', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}`);
+    expect((await json<{ item: { state: string } }>(still)).item.state).toBe('delegated');
+
+    const events = (
+      await client.query("select id from coworker_events where coworker_id = 'cw-sa'")
+    ).rows.length;
+    const badAgain = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, {
+      verb: 'challenge',
+    });
+    expect(badAgain.status).toBe(400);
+    const eventsAfter = (
+      await client.query("select id from coworker_events where coworker_id = 'cw-sa'")
+    ).rows.length;
+    expect(eventsAfter).toBe(events);
+
+    const unknownVerb = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, {
+      verb: 'explode',
+    });
+    expect(unknownVerb.status).toBe(400);
+  });
+
+  it('walks to completed and the terminal then refuses everything', async () => {
+    for (const verb of ['respond', 'complete']) {
+      const res = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, { verb });
+      expect(res.status).toBe(200);
+    }
+    const final = await call('GET', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}`);
+    expect((await json<{ item: { state: string; currentStep: number } }>(final)).item.state).toBe('completed');
+
+    const refused = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions/${sessionId}/transition`, {
+      verb: 'delegate',
+    });
+    expect(refused.status).toBe(400);
+  });
+
+  it('断链 guard: participants must be real Coworkers', async () => {
+    const broken = await call('POST', `${PROJECTS_PATH}/${c4Project}/sessions`, {
+      participants: { a: { coworkerId: 'cw-ghost', name: 'Ghost' } },
+    });
+    expect(broken.status).toBe(404);
+  });
+});

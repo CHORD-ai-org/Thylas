@@ -16,6 +16,7 @@ import {
   type CreateConnectionBody,
   type CreateHandoffBody,
   type CreateProjectBody,
+  type CreateSessionBody,
   type EntriesBody,
   type HandoffBody,
   type HandoffListBody,
@@ -29,6 +30,9 @@ import {
   type ProjectErr,
   type ProjectListBody,
   type ProjectResultBody,
+  type SessionBody,
+  type SessionListBody,
+  type TransitionSessionBody,
   type UpsertMemberBody,
 } from '../../lib/projects';
 
@@ -85,6 +89,17 @@ export type ProjectsClient = {
   createHandoff: (projectId: string, body: CreateHandoffBody) => Promise<HandoffBody | ProjectErr>;
   setHandoffStuck: (projectId: string, handoffId: string) => Promise<HandoffBody | ProjectErr>;
   resumeHandoff: (projectId: string, handoffId: string) => Promise<HandoffBody | ProjectErr>;
+  listSessions: (projectId: string) => Promise<SessionListBody | ProjectErr>;
+  createSession: (
+    projectId: string,
+    body: CreateSessionBody,
+  ) => Promise<SessionBody | ProjectErr>;
+  getSession: (projectId: string, sessionId: string) => Promise<SessionBody | ProjectErr>;
+  transitionSession: (
+    projectId: string,
+    sessionId: string,
+    body: TransitionSessionBody,
+  ) => Promise<SessionBody | ProjectErr>;
 };
 
 async function request<T extends ProjectResultBody>(
@@ -196,6 +211,21 @@ export function createProjectsClient(fetcher: Fetcher = fetch): ProjectsClient {
         fetcher,
         `${projectPath(projectId)}/handoffs/${encodeURIComponent(handoffId)}/resume`,
         jsonInit('POST'),
+      ),
+    listSessions: (projectId) =>
+      request<SessionListBody>(fetcher, `${projectPath(projectId)}/sessions`),
+    createSession: (projectId, body) =>
+      request<SessionBody>(fetcher, `${projectPath(projectId)}/sessions`, jsonInit('POST', body)),
+    getSession: (projectId, sessionId) =>
+      request<SessionBody>(
+        fetcher,
+        `${projectPath(projectId)}/sessions/${encodeURIComponent(sessionId)}`,
+      ),
+    transitionSession: (projectId, sessionId, body) =>
+      request<SessionBody>(
+        fetcher,
+        `${projectPath(projectId)}/sessions/${encodeURIComponent(sessionId)}/transition`,
+        jsonInit('POST', body),
       ),
   };
 }

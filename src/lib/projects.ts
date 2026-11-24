@@ -166,6 +166,42 @@ export type CreateHandoffBody = {
   grants?: string[];
 };
 
+/** C4-1b (协作场次): the session record. Transitions are validated against
+    the state machine (`src/lib/collaboration.ts`) on the server; every legal
+    transition journals one event BEFORE the state is committed (先落库后执行). */
+import type {
+  CollaborationState,
+  CollaborationVerb,
+} from './collaboration';
+
+export type SessionParticipant = { coworkerId: string; name: string };
+export type SessionParticipants = { a: SessionParticipant; b?: SessionParticipant };
+export type SessionBudget = { maxSteps: number; maxSeconds: number };
+
+export type CollaborationSessionDto = {
+  id: string;
+  projectId: string;
+  state: CollaborationState;
+  participants: SessionParticipants;
+  budget: SessionBudget;
+  currentStep: number;
+  summary: string;
+  createdAt: string;
+  updatedAt: string;
+};
+export type SessionListBody = { ok: true; items: CollaborationSessionDto[] };
+export type SessionBody = { ok: true; item: CollaborationSessionDto };
+export type CreateSessionBody = {
+  participants: SessionParticipants;
+  budget?: Partial<SessionBudget>;
+  summary?: string;
+};
+export type TransitionSessionBody = {
+  verb: CollaborationVerb;
+  actorId?: string;
+  note?: string;
+};
+
 export type ProjectResultBody =
   | ProjectListBody
   | ProjectBody
@@ -181,6 +217,8 @@ export type ProjectResultBody =
   | CandidateBody
   | HandoffListBody
   | HandoffBody
+  | SessionListBody
+  | SessionBody
   | ProjectErr;
 
 const RETRYABLE: Record<ProjectErrorKind, boolean> = {

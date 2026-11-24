@@ -211,6 +211,35 @@ export const handoffPackages = pgTable(
 );
 
 /**
+ * C4-1b (协作场次): one collaboration session. `state` is validated against
+ * the transition table in `src/lib/collaboration.ts`; every legal transition
+ * journals one event BEFORE this row updates (先落库后执行).
+ */
+export const collaborationSessions = pgTable(
+  'collaboration_sessions',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    state: text('state').notNull().default('proposed'),
+    participants: jsonb('participants')
+      .$type<{ a: { coworkerId: string; name: string }; b?: { coworkerId: string; name: string } }>()
+      .notNull()
+      .default({ a: { coworkerId: '', name: '' } }),
+    budget: jsonb('budget')
+      .$type<{ maxSteps: number; maxSeconds: number }>()
+      .notNull()
+      .default({ maxSteps: 8, maxSeconds: 600 }),
+    currentStep: bigint('current_step', { mode: 'number' }).notNull().default(0),
+    summary: text('summary').notNull().default(''),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('collaboration_sessions_project_idx').on(table.projectId, table.createdAt)],
+);
+
+/**
  * C0-1 (Coworker plan §27). A Coworker is an independent working identity —
  * `owner_id` is the tenant key (cloud-readiness §24), not a workspace: the
  * record survives across workspaces; employment (入职) is a roster relation

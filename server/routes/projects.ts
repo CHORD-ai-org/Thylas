@@ -41,6 +41,8 @@ import {
   type CandidateListBody,
   type CreateCandidateBody,
   type CreateHandoffBody,
+  type CreateSessionBody,
+  type CollaborationSessionDto,
   type HandoffBody,
   type HandoffDto,
   type HandoffListBody,
@@ -49,6 +51,9 @@ import {
   type MemberListBody,
   type ProjectCandidateDto,
   type ProjectMemberDto,
+  type SessionBody,
+  type SessionListBody,
+  type TransitionSessionBody,
   type UpsertMemberBody,
 } from '../../src/lib/projects.ts';
 import {
@@ -59,6 +64,11 @@ import {
 } from '../../src/lib/session.ts';
 import { isSafeSegment } from '../../src/lib/files.ts';
 import {
+  isCollaborationVerb,
+  transition as nextCollaborationState,
+  type CollaborationVerb,
+} from '../../src/lib/collaboration.ts';
+import {
   createConnectorEntries,
   createConnectorProbe,
   normalizeConnectionLocator,
@@ -67,7 +77,9 @@ import {
 } from '../connectors.ts';
 import { sendJson } from '../http.ts';
 import {
+  collaborationSessions,
   coworkerEvents,
+  coworkers,
   handoffPackages,
   projectCandidates,
   projectConnections,
@@ -189,6 +201,22 @@ function toHandoffDto(row: HandoffRow): HandoffDto {
     grants: row.grants,
     status: row.status as HandoffDto['status'],
     stuckNote: row.stuckNote,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+type SessionRow = typeof collaborationSessions.$inferSelect;
+
+function toSessionDto(row: SessionRow): CollaborationSessionDto {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    state: row.state as CollaborationSessionDto['state'],
+    participants: row.participants,
+    budget: row.budget,
+    currentStep: row.currentStep,
+    summary: row.summary,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -829,6 +857,178 @@ function makeHandlers(
     result(res, 200, { ok: true, item: toHandoffDto(updated) } satisfies HandoffBody);
   };
 
+  /* C4-1b 协作场次: server-side transition validation against the machine in
+     `src/lib/collaboration.ts`; every legal move journals one event BEFORE the
+     state commits (先落库后执行). Illegal moves leave state untouched. */
+  const listSessions = async (
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const rows = await database
+      .select()
+      .from(collaborationSessions)
+      .where(eq(collaborationSessions.projectId, projectId))
+      .orderBy(asc(collaborationSessions.createdAt));
+    result(res, 200, { ok: true, items: rows.map(toSessionDto) } satisfies SessionListBody);
+  };
+
+  const createSession = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const body = (await readJson(req)) as CreateSessionBody;
+    const participants = body.participants;
+    const aId = typeof participants?.a?.coworkerId === 'string' ? participants.a.coworkerId : '';
+    const bId = typeof participants?.b?.coworkerId === 'string' ? participants.b.coworkerId : '';
+    if (!isSafeSegment(aId) || (bId !== '' && !isSafeSegment(bId))) {
+      fail(res, 'contract', 'Expected safe participant coworker ids.');
+      return;
+    }
+    /* 断链 guard: participants must be real Coworkers. */
+    const rows = await database
+      .select()
+      .from(coworkers)
+      .where(eq(coworkers.id, aId));
+    if (rows.length === 0 || rows[0]?.deletedAt !== null) {
+      fail(res, 'not_found', `Participant "${aId}" is not a Coworker.`);
+      return;
+    }
+    if (bId !== '') {
+      const bRows = await database
+        .select()
+        .from(coworkers)
+        .where(eq(coworkers.id, bId));
+      if (bRows.length === 0 || bRows[0]?.deletedAt !== null) {
+        fail(res, 'not_found', `Participant "${bId}" is not a Coworker.`);
+        return;
+      }
+    }
+    const maxSteps =
+      typeof body.budget?.maxSteps === 'number' && body.budget.maxSteps >= 1 && body.budget.maxSteps <= 100
+        ? Math.floor(body.budget.maxSteps)
+        : 8;
+    const maxSeconds =
+      typeof body.budget?.maxSeconds === 'number' && body.budget.maxSeconds >= 10
+        ? Math.floor(body.budget.maxSeconds)
+        : 600;
+    const [created] = await database
+      .insert(collaborationSessions)
+      .values({
+        id: randomUUID(),
+        projectId,
+        state: 'proposed',
+        participants: {
+          a: { coworkerId: aId, name: participants.a.name.trim().slice(0, 60) },
+          ...(bId === ''
+            ? {}
+            : { b: { coworkerId: bId, name: (participants.b?.name ?? '').trim().slice(0, 60) } }),
+        },
+        budget: { maxSteps, maxSeconds },
+        summary: typeof body.summary === 'string' ? body.summary.slice(0, 4000) : '',
+      })
+      .returning();
+    if (!created) {
+      fail(res, 'upstream', 'The session was not created.');
+      return;
+    }
+    result(res, 201, { ok: true, item: toSessionDto(created) } satisfies SessionBody);
+  };
+
+  const readSession = async (
+    res: ServerResponse,
+    projectId: string,
+    sessionId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const [found] = await database
+      .select()
+      .from(collaborationSessions)
+      .where(eq(collaborationSessions.id, sessionId));
+    if (!found || found.projectId !== projectId) {
+      fail(res, 'not_found', `No session with id "${sessionId}".`);
+      return;
+    }
+    result(res, 200, { ok: true, item: toSessionDto(found) } satisfies SessionBody);
+  };
+
+  const transitionSession = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    projectId: string,
+    sessionId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const [found] = await database
+      .select()
+      .from(collaborationSessions)
+      .where(eq(collaborationSessions.id, sessionId));
+    if (!found || found.projectId !== projectId) {
+      fail(res, 'not_found', `No session with id "${sessionId}".`);
+      return;
+    }
+    const body = (await readJson(req)) as TransitionSessionBody;
+    if (!isCollaborationVerb(body.verb)) {
+      fail(res, 'contract', 'Unknown collaboration verb.');
+      return;
+    }
+    const verb: CollaborationVerb = body.verb;
+    const outcome = nextCollaborationState(found.state as never, verb);
+    if (!outcome.ok) {
+      fail(res, 'contract', outcome.reason);
+      return;
+    }
+    const actorId =
+      typeof body.actorId === 'string' && isSafeSegment(body.actorId)
+        ? body.actorId
+        : found.participants.a.coworkerId;
+    /* 先落库后执行: the journal entry commits before the state does. */
+    try {
+      await database.transaction(async (tx) => {
+        await tx.insert(coworkerEvents).values({
+          id: randomUUID(),
+          coworkerId: actorId,
+          projectId,
+          actorKind: 'coworker',
+          verb,
+          payload: {
+            sessionId,
+            from: found.state,
+            to: outcome.next,
+            step: found.currentStep + 1,
+            note: typeof body.note === 'string' ? body.note.slice(0, 1000) : '',
+          },
+        });
+        await tx
+          .update(collaborationSessions)
+          .set({ state: outcome.next, currentStep: found.currentStep + 1, updatedAt: new Date() })
+          .where(eq(collaborationSessions.id, sessionId));
+      });
+    } catch {
+      fail(res, 'upstream', 'The transition was not recorded.');
+      return;
+    }
+    const [updated] = await database
+      .select()
+      .from(collaborationSessions)
+      .where(eq(collaborationSessions.id, sessionId));
+    if (!updated) {
+      fail(res, 'upstream', 'The transition was not recorded.');
+      return;
+    }
+    result(res, 200, { ok: true, item: toSessionDto(updated) } satisfies SessionBody);
+  };
+
   return {
     list,
     create,
@@ -850,6 +1050,10 @@ function makeHandlers(
     listHandoffs,
     createHandoff,
     setHandoffStatus,
+    listSessions,
+    createSession,
+    readSession,
+    transitionSession,
   };
 }
 
@@ -1007,6 +1211,30 @@ export function createProjectsRouter(
         }
         if (action === 'stuck') return handlers.setHandoffStatus(res, id, handoffId, true, session);
         if (action === 'resume') return handlers.setHandoffStatus(res, id, handoffId, false, session);
+      } else if (segments.length === 2 && segments[1] === 'sessions') {
+        const id = segments[0] ?? '';
+        if (!isSafeSegment(id)) {
+          fail(res, 'contract', 'The project id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.listSessions(res, id, session);
+        if (method === 'POST') return handlers.createSession(req, res, id, session);
+      } else if (segments.length === 3 && segments[1] === 'sessions') {
+        const id = segments[0] ?? '';
+        const sessionId = segments[2] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(sessionId)) {
+          fail(res, 'contract', 'The project or session id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.readSession(res, id, sessionId, session);
+      } else if (segments.length === 4 && segments[1] === 'sessions' && method === 'POST') {
+        const id = segments[0] ?? '';
+        const sessionId = segments[2] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(sessionId)) {
+          fail(res, 'contract', 'The project or session id is not a valid path segment.');
+          return;
+        }
+        if (segments[3] === 'transition') return handlers.transitionSession(req, res, id, sessionId, session);
       }
       fail(res, 'contract', `${method} is not allowed on this path.`);
     };

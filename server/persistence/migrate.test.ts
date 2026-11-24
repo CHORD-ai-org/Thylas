@@ -33,6 +33,7 @@ describe('chat + files migrations', () => {
           'project_connections',
           'project_members',
           'project_candidates',
+          'collaboration_sessions',
           'coworkers',
           'coworker_events',
         ]),

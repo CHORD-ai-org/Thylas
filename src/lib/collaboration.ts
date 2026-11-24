@@ -97,6 +97,10 @@ export function isTerminal(state: CollaborationState): boolean {
   return state === 'completed' || state === 'cancelled';
 }
 
+export function isCollaborationVerb(value: unknown): value is CollaborationVerb {
+  return typeof value === 'string' && (COLLABORATION_VERBS as readonly string[]).includes(value);
+}
+
 export function canTransition(state: CollaborationState, verb: CollaborationVerb): boolean {
   return TRANSITION_TABLE[state][verb] !== undefined;
 }
