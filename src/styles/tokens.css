@@ -12,11 +12,13 @@
 :root {
   /* Radius: one scale, four steps and a pill (D-041). The archive's 2/4/6 are
      overridden here rather than edited there, so `design/tokens.css` stays the
-     frozen record of the prototype and the running app owns its own step. */
+     frozen record of the prototype and the running app owns its own step.
+     `--r-md` moved 12 → 18 with the visual-refresh (T1): GSC's softened-surface
+     recipe reads tired at small radii. */
   --r-xs: 4px; /* kbd, 8–10px markers, anything too small to show a curve */
   --r-sm: 8px; /* buttons, inputs, menu rows, table hover */
-  --r-md: 12px; /* cards, panels, popovers, code blocks */
-  --r-lg: 16px; /* command palette, dialogs */
+  --r-md: 18px; /* cards, panels, popovers, code blocks */
+  --r-lg: 24px; /* command palette, dialogs */
   --r-pill: 999px; /* section capsules, tabs, status chips, meters */
 
   /* The archive's names, each pointed at the step it was trying to be. Sixty
@@ -30,6 +32,20 @@
   --tint-hover: rgba(73, 54, 38, 0.035);
   --tint-live: rgba(181, 111, 80, 0.055);
   --scrim: rgba(73, 54, 38, 0.16);
+
+  /* Soft-surface recipe (visual-refresh T1/T2): cards carry a quiet two-layer
+     shadow instead of a permanent hairline. The shadow VALUES live in
+     themes.css next to --e1/--e2 — dark must replace the warm ink shadow
+     rather than paint it over a black surface. */
+
+  /* Soft 6-hue fills (T6-ready): the cover hues at 22% over the surface, so
+     structure can come from quiet color blocks instead of borders. */
+  --fill-1: color-mix(in srgb, var(--cover-blue) 22%, var(--bg-surface));
+  --fill-2: color-mix(in srgb, var(--cover-green) 22%, var(--bg-surface));
+  --fill-3: color-mix(in srgb, var(--cover-clay) 22%, var(--bg-surface));
+  --fill-4: color-mix(in srgb, var(--cover-violet) 22%, var(--bg-surface));
+  --fill-5: color-mix(in srgb, var(--cover-teal) 22%, var(--bg-surface));
+  --fill-6: color-mix(in srgb, var(--cover-amber) 22%, var(--bg-surface));
 
   /* Shared narrow-sheet width for Account, Recently, file preview and route
      error. 35rem is the previous fixed sheet width at a 16px root; written
