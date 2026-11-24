@@ -8,9 +8,9 @@
  * connectors land. Route tests inject their own probe, so this module is the
  * only place that touches the filesystem.
  */
-import { stat } from 'node:fs/promises';
-import { isAbsolute } from 'node:path';
-import type { ConnectionHealth, ConnectionKind } from '../src/lib/projects.ts';
+import { readdir, stat } from 'node:fs/promises';
+import { isAbsolute, resolve, sep } from 'node:path';
+import type { ConnectionHealth, ConnectionKind, FolderEntry } from '../src/lib/projects.ts';
 
 export type LocatorProbe = (kind: ConnectionKind, locator: string) => Promise<ConnectionHealth>;
 
@@ -45,6 +45,37 @@ export const probeLocalFolder: LocatorProbe = async (_kind, locator) => {
   } catch {
     return 'broken';
   }
+};
+
+/**
+ * Detail-page browsing (08 P0-3): list one level of a connected folder.
+ * `subpath` is relative and may never escape the connection root. Returns
+ * `null` for kinds with no listing connector — the route must answer
+ * `not_configured` instead of inventing entries.
+ */
+export type ConnectorEntries = (
+  kind: ConnectionKind,
+  locator: string,
+  subpath: string,
+) => Promise<FolderEntry[] | null>;
+
+export const listLocalFolderEntries = async (locator: string, subpath: string): Promise<FolderEntry[]> => {
+  const root = resolve(locator);
+  const target = resolve(root, subpath);
+  if (target !== root && !target.startsWith(root + sep)) {
+    throw new Error('entries path escapes the connection root');
+  }
+  const items = await readdir(target, { withFileTypes: true });
+  return items
+    .map((item) => ({ name: item.name, kind: item.isDirectory() ? ('dir' as const) : ('file' as const) }))
+    .sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === 'dir' ? -1 : 1));
+};
+
+export const createConnectorEntries = (): ConnectorEntries => {
+  return async (kind, locator, subpath) => {
+    if (kind === 'local-folder') return listLocalFolderEntries(locator, subpath);
+    return null;
+  };
 };
 
 export const createConnectorProbe = (): LocatorProbe => {
