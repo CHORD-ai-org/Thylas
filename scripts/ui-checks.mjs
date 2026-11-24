@@ -271,6 +271,7 @@ async function main() {
   // ---- Themes: warm default, black, white — persisted, no flash ----
   await goto('/user/preferences');
   await js('await new Promise(r => setTimeout(r, 500)); return 1;');
+  await waitForSelector('[data-theme-option]');
   const themeState = () => js(`
     return {
       attr: document.documentElement.dataset.theme ?? null,
@@ -3323,8 +3324,12 @@ async function main() {
   await js(`${helpers} click(document.querySelector('[data-config-status]')); await new Promise(r => setTimeout(r, 150)); return 1;`);
 
   await goto('/coworkers/new');
+  /* The default is the step wizard (C1); the flat quick-create channel is what
+     this flow exercises — one toggle, then every field is on one page. */
+  await js(`${helpers} click(document.querySelector('[data-create-mode-toggle]')); await new Promise(r => setTimeout(r, 250)); return 1;`);
   await fillAria('Coworker name', 'Roadmap Checker');
   await fillAria('Responsible for', 'Checks roadmap stages against the artifact graph.');
+  await waitForSelector('select[aria-label="Initial workspace"]');
   await js(`
     const sel = document.querySelector('select[aria-label="Initial workspace"]');
     const set = Object.getOwnPropertyDescriptor(sel.constructor.prototype, 'value').set;
@@ -3516,6 +3521,31 @@ async function main() {
   check('projects: the card has a wired 打开 action',
     /data-project-open/.test(readFileSync(new URL('../src/pages/Projects.tsx', import.meta.url), 'utf8')),
     true);
+
+  // ---- Visual refresh T1/T2: soft-surface cards + roomier type ----
+  await goto('/skills');
+  await js('await new Promise(r => setTimeout(r, 600)); return 1;');
+  check('visual: a sample card carries the shadow and no permanent hairline', await js(`
+    const card = document.querySelector('[data-skill-card]');
+    if (!card) return { missing: true, at: location.pathname, saw: document.body.innerText.slice(0, 120) };
+    const cs = getComputedStyle(card);
+    return {
+      border: cs.borderTopColor,
+      shadow: cs.boxShadow !== 'none',
+      radius: Math.round(parseFloat(cs.borderTopLeftRadius)),
+    };
+  `), (v) => !!v && v.missing !== true && v.border === 'rgba(0, 0, 0, 0)' && v.shadow === true && v.radius >= 18);
+  check('visual: reading text sits at the roomier 14.5px scale', await js(`
+    const desc = document.querySelector('[data-skill-card] [class*="cardDesc"]');
+    return desc ? Math.round(parseFloat(getComputedStyle(desc).fontSize) * 10) / 10 : 'missing';
+  `), 14.5);
+  const cssRead = (f) => readFileSync(new URL(`../src/styles/${f}`, import.meta.url), 'utf8');
+  check('visual: type tokens carry the table freeze and the meta step',
+    ['--t-ui-table', '--t-meta', '14.5px/23px'].every((t) => cssRead('typography.css').includes(t)),
+    true);
+  const softCards = ['files.module.css', 'skills.module.css', 'projects.module.css'].every((f) =>
+    readFileSync(new URL(`../src/pages/${f}`, import.meta.url), 'utf8').includes('box-shadow: var(--shadow-card)'));
+  check('visual: every sample card declares the soft-surface recipe', softCards, true);
 
   await goto('/overview');
 
