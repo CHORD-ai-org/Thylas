@@ -17,6 +17,7 @@ import {
 } from '../lib/projects';
 import { coworkersView } from '../state/coworkers';
 import { displayNameOf, useUser } from '../state/user';
+import { runGenerationLoop } from '../services/generation/loop';
 import s from './projects.module.css';
 
 /**
@@ -317,6 +318,10 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
   const [candidates, setCandidates] = useState<ProjectCandidateDto[]>([]);
   const [actorId, setActorId] = useState('');
   const [role, setRole] = useState('');
+  const [genTask, setGenTask] = useState('');
+  const [genRubric, setGenRubric] = useState('');
+  const [genBusy, setGenBusy] = useState(false);
+  const [genNotice, setGenNotice] = useState('');
   const user = useUser();
   const coworkers = useMemo(() => coworkersView(), []);
 
@@ -388,6 +393,54 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
       </div>
 
       <SectionLabel>产出</SectionLabel>
+      <div className={s.addLine}>
+        <input
+          className={s.input}
+          placeholder="任务（一行）"
+          aria-label="生成任务"
+          value={genTask}
+          onChange={(e) => setGenTask(e.target.value)}
+          data-gen-task
+        />
+        <input
+          className={s.input}
+          placeholder="检查清单，一行一条"
+          aria-label="检查清单"
+          value={genRubric}
+          onChange={(e) => setGenRubric(e.target.value)}
+          data-gen-rubric
+        />
+        <Button
+          size="sm"
+          disabled={genBusy || genTask.trim() === ''}
+          data-gen-run
+          onClick={async () => {
+            const chosen = coworkers.find((c) => c.id === actorId) ?? coworkers[0];
+            if (!chosen) return;
+            setGenBusy(true);
+            setGenNotice('生成中…第 1 轮');
+            const result = await runGenerationLoop({
+              coworkerId: chosen.id,
+              coworkerName: chosen.name,
+              projectId,
+              task: genTask.trim(),
+              rubric: genRubric.split('\n').map((line) => line.trim()).filter(Boolean),
+            });
+            setGenBusy(false);
+            setGenNotice(
+              result.rounds.length === 0
+                ? '生成未完成——检查 AI 是否已配置'
+                : result.capped
+                  ? `已到轮次上限（${result.rounds.length} 轮）——产出已落回，待你确认`
+                  : `第 ${result.rounds.length} 轮通过——产出已落回，待你确认`,
+            );
+            await refresh();
+          }}
+        >
+          {genBusy ? '生成中…' : '生成产出'}
+        </Button>
+      </div>
+      {genNotice === '' ? null : <p className={s.drawerEmpty} data-gen-notice>{genNotice}</p>}
       {candidates.length === 0 ? (
         <p className={s.drawerEmpty}>还没有产出</p>
       ) : (
