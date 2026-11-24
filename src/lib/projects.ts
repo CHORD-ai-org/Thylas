@@ -66,6 +66,17 @@ export type ConnectionListBody = { ok: true; items: ProjectConnectionDto[] };
 export type ConnectionBody = { ok: true; item: ProjectConnectionDto };
 export type ConnectionDeleteBody = { ok: true; id: string };
 
+/* Detail-page worktree browsing (08 P0-3): one level of a connected folder.
+   Only `local-folder` lists entries today; other kinds answer `not_configured`
+   rather than pretending to read a remote tree. */
+export type FolderEntry = { name: string; kind: 'dir' | 'file' };
+export type EntriesBody = {
+  ok: true;
+  connectionId: string;
+  path: string;
+  entries: FolderEntry[];
+};
+
 export type CreateProjectBody = { workspaceId: string; name: string; summary?: string };
 export type PatchProjectBody = {
   name?: string;
@@ -79,6 +90,7 @@ export type ProjectResultBody =
   | ProjectListBody
   | ProjectBody
   | ProjectDeleteBody
+  | EntriesBody
   | ConnectionListBody
   | ConnectionBody
   | ConnectionDeleteBody
