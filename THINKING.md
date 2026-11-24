@@ -9,6 +9,8 @@
 > **P1 项目地图 ✅（11-23）**：列表先行项目卡（名字/摘要/活跃度）、创建/归档/软删、
 > 连接抽屉（local-folder + github-repo，locator 归一化 owner/repo、诚实健康度）、
 > services/projects 客户端、Rail/路由接线；631 测试 + tsc 干净。P1 门禁（三 repo 一张卡）测试覆盖。
+> **并行**：Coworker 规划 PDF 原型已出（`docs/research/coworker-system/draft/Coworker-System-Plan.pdf`，
+> OpenAI 风，创始人逐处修订中；待裁 Q-A/Q-C/Q-D/Q-E）。
 > 设计文档：`docs/research/project-as-collaborative-entity/draft/Thylas-Project-Design.pdf`（17 页）。
 > 研究纪律：结论标注【事实/直觉/假设/提案/开放】。
 >
