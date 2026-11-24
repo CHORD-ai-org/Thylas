@@ -12,6 +12,7 @@ import {
   type ConnectionListBody,
   type CreateConnectionBody,
   type CreateProjectBody,
+  type EntriesBody,
   type PatchConnectionBody,
   type PatchProjectBody,
   type ProjectBody,
@@ -47,6 +48,12 @@ export type ProjectsClient = {
     projectId: string,
     connectionId: string,
   ) => Promise<ConnectionDeleteBody | ProjectErr>;
+  /** One level of a connected folder (`path` is relative to the root). */
+  listEntries: (
+    projectId: string,
+    connectionId: string,
+    path?: string,
+  ) => Promise<EntriesBody | ProjectErr>;
 };
 
 async function request<T extends ProjectResultBody>(
@@ -114,6 +121,11 @@ export function createProjectsClient(fetcher: Fetcher = fetch): ProjectsClient {
         fetcher,
         connectionPath(projectId, connectionId),
         jsonInit('DELETE'),
+      ),
+    listEntries: (projectId, connectionId, path = '') =>
+      request<EntriesBody>(
+        fetcher,
+        `${connectionPath(projectId, connectionId)}/entries?path=${encodeURIComponent(path)}`,
       ),
   };
 }
