@@ -25,12 +25,12 @@
 
 ## P0 — 令牌与样板（一夜见效）
 
-### T1 令牌升级
+### T1 令牌升级 ✅ DONE（合批 T1+T2，2026-11-24）
 - **改动**：`src/styles/tokens.css` — `--r-md 12→18`、新增 `--shadow-card`/`--shadow-pill`（GSC 双层低透明度配方）、`--fill-N`（6-hue 22% color-mix，Q4）；`typography.css` — `--t-ui/--t-ui-strong` 13/20→14.5/23、新增 `--t-meta 500 12.5/18 sans`。
 - **验收**：三主题（warm/black/white）截图走查；e2e 像素断言同步（见风险）。
 - **风险**：**e2e 表格断言（44/32px、列宽）与 Overview 输入框测量可能回退——表格行内字号不动即安全，仅改卡片/正文档**。**独立性**：一切的前提。
 
-### T2 三张样板卡柔面
+### T2 三张样板卡柔面 ✅ DONE
 - **改动**：`projects.module.css .card`、`skills.module.css .card`、`files.module.css .gcard` —— 常驻边框→`transparent`，hover/选中显 `--line-strong`，加 `--shadow-card`；填充分层（surface/paper）。
 - **验收**：e2e 新断言——三卡 hover 显边、默认无边（css 计数 ≤2）；截图对照 visual-refresh §5 标准 1/4。
 - **独立性**：依赖 T1。
