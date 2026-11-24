@@ -10,7 +10,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { COWORKERS_PATH } from '../../lib/coworkers.ts';
-import { type CollaborationSessionDto } from '../../lib/projects.ts';
+import { PROJECTS_PATH, type CollaborationSessionDto } from '../../lib/projects.ts';
 import { SESSION_COOKIE } from '../../lib/session.ts';
 import { readConfig } from '../../../server/config.ts';
 import type { ConversationDatabase } from '../../../server/persistence/client.ts';
@@ -237,5 +237,110 @@ describe('C4-2 本地协调器', () => {
       coworkers,
     });
     expect(again.stoppedReason).toContain('不重新开局');
+  });
+});
+
+describe('C4-3 对抗五连', () => {
+  it('断网: a throwing askFn flips to needs_human and stays recoverable', async () => {
+    const { projectId, sessionId } = await seed('Lemma C4-3 offline');
+    const result = await runCollaborationSession({
+      projectId,
+      sessionId,
+      task: '做对比表',
+      rubric: RUBRIC,
+      askFn: () => {
+        throw new Error('offline');
+      },
+      projects,
+      coworkers,
+    });
+    expect(result.state).toBe('needs_human');
+    expect(result.stoppedReason).toContain('生成中断');
+
+    const recovered = await projects.transitionSession(projectId, sessionId, { verb: 'approve' });
+    expect((recovered as { item: { state: string } }).item.state).toBe('working');
+  });
+
+  it('半交接: a failed handoff leaves no half state', async () => {
+    const { projectId, sessionId } = await seed('Lemma C4-3 half');
+    flakyCalls = 0;
+    const broken: ProjectsClient = {
+      ...projects,
+      createHandoff: async () => ({
+        ok: false,
+        kind: 'upstream',
+        message: 'forced failure',
+        retryable: true,
+      }),
+    };
+    const result = await runCollaborationSession({
+      projectId,
+      sessionId,
+      task: '做对比表',
+      rubric: RUBRIC,
+      askFn: flakyAsk,
+      projects: broken,
+      coworkers,
+    });
+    expect(result.state).toBe('needs_human');
+    expect(result.stoppedReason).toContain('交接失败');
+
+    const handoffs = await projects.listHandoffs(projectId);
+    expect((handoffs as { items: unknown[] }).items).toHaveLength(0);
+    const handoffEvents = (
+      await client.query(
+        "select id from coworker_events where project_id = $1 and verb = 'handoff'",
+        [projectId],
+      )
+    ).rows;
+    expect(handoffEvents).toHaveLength(0);
+  });
+
+  it('越权: a foreign workspace session gets 403', async () => {
+    const { projectId, sessionId } = await seed('Lemma C4-3 foreign');
+    const res = await fetch(`${base}${PROJECTS_PATH}/${projectId}/sessions/${sessionId}/transition`, {
+      method: 'POST',
+      headers: { cookie: `${SESSION_COOKIE}=dev:u-2:ws-2`, 'content-type': 'application/json' },
+      body: JSON.stringify({ verb: 'delegate' }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('断链: a ghost actor fails closed and corrupts nothing', async () => {
+    const { projectId, sessionId } = await seed('Lemma C4-3 ghost');
+    await projects.transitionSession(projectId, sessionId, { verb: 'delegate' });
+    const res = await fetch(`${base}${PROJECTS_PATH}/${projectId}/sessions/${sessionId}/transition`, {
+      method: 'POST',
+      headers: { cookie: DEV_COOKIE, 'content-type': 'application/json' },
+      body: JSON.stringify({ verb: 'respond', actorId: 'cw-ghost' }),
+    });
+    expect(res.status).toBe(502);
+
+    const still = await projects.getSession(projectId, sessionId);
+    expect((still as { item: { state: string } }).item.state).toBe('delegated');
+  });
+
+  it('连点: complete is one-shot — one event, terminal refusal after', async () => {
+    const { projectId, sessionId } = await seed('Lemma C4-3 double');
+    for (const verb of ['delegate', 'respond', 'complete'] as const) {
+      const res = await projects.transitionSession(projectId, sessionId, { verb });
+      expect((res as { item: { state: string } }).item.state).toBe(
+        verb === 'delegate' ? 'delegated' : verb === 'respond' ? 'responded' : 'completed',
+      );
+    }
+    const again = await fetch(`${base}${PROJECTS_PATH}/${projectId}/sessions/${sessionId}/transition`, {
+      method: 'POST',
+      headers: { cookie: DEV_COOKIE, 'content-type': 'application/json' },
+      body: JSON.stringify({ verb: 'complete' }),
+    });
+    expect(again.status).toBe(400);
+
+    const completes = (
+      await client.query(
+        "select id from coworker_events where project_id = $1 and verb = 'complete'",
+        [projectId],
+      )
+    ).rows;
+    expect(completes).toHaveLength(1);
   });
 });

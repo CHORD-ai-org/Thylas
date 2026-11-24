@@ -10,6 +10,7 @@ import {
   CONNECTION_KINDS,
   type ConnectionHealth,
   type ConnectionKind,
+  type CollaborationSessionDto,
   type HandoffDto,
   type ProjectCandidateDto,
   type ProjectConnectionDto,
@@ -19,6 +20,7 @@ import {
 import { coworkersView } from '../state/coworkers';
 import { displayNameOf, useUser } from '../state/user';
 import { runGenerationLoop } from '../services/generation/loop';
+import { runCollaborationSession } from '../services/collaboration/session';
 import s from './projects.module.css';
 
 /**
@@ -327,6 +329,10 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
   const [handFrom, setHandFrom] = useState('');
   const [handTo, setHandTo] = useState('');
   const [handTask, setHandTask] = useState('');
+  const [sessions, setSessions] = useState<CollaborationSessionDto[]>([]);
+  const [sessTask, setSessTask] = useState('');
+  const [sessBusy, setSessBusy] = useState(false);
+  const [sessNotice, setSessNotice] = useState('');
   const user = useUser();
   const coworkers = useMemo(() => coworkersView(), []);
 
@@ -337,6 +343,8 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
     if (candidateBody.ok && 'items' in candidateBody) setCandidates(candidateBody.items);
     const handoffBody = await client.listHandoffs(projectId);
     if (handoffBody.ok && 'items' in handoffBody) setHandoffs(handoffBody.items);
+    const sessionBody = await client.listSessions(projectId);
+    if (sessionBody.ok && 'items' in sessionBody) setSessions(sessionBody.items);
   }, [client, projectId]);
 
   useEffect(() => {
@@ -568,6 +576,101 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
           }}
         >
           交接
+        </Button>
+      </div>
+
+      <SectionLabel>协作</SectionLabel>
+      {sessions.length === 0 ? (
+        <p className={s.drawerEmpty}>还没有协作场次</p>
+      ) : (
+        <ul className={s.connections}>
+          {sessions.map((sess) => (
+            <li key={sess.id} className={s.connection} data-session={sess.id}>
+              <span className={s.connectionLocator}>
+                {sess.participants.a.name}
+                {sess.participants.b ? ` × ${sess.participants.b.name}` : ''} · {sess.summary || '协作一场'}
+              </span>
+              <span
+                className={
+                  sess.state === 'needs_human' ? s['health-broken'] : s.connectionKind
+                }
+              >
+                {sess.state === 'needs_human'
+                  ? '需要你'
+                  : `${sess.state} · 第 ${sess.currentStep} 步`}
+              </span>
+              {sess.state === 'needs_human' ? (
+                <>
+                  <Button size="sm" onClick={async () => {
+                    await client.transitionSession(projectId, sess.id, { verb: 'approve' });
+                    await refresh();
+                  }} data-session-approve>
+                    确认继续
+                  </Button>
+                  <Button size="sm" onClick={async () => {
+                    await client.transitionSession(projectId, sess.id, { verb: 'reject' });
+                    await refresh();
+                  }}>
+                    驳回
+                  </Button>
+                </>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {sessNotice === '' ? null : <p className={s.drawerEmpty} data-sess-notice>{sessNotice}</p>}
+      <div className={s.addLine}>
+        <input
+          className={s.input}
+          placeholder="协作任务（一行）"
+          aria-label="协作任务"
+          value={sessTask}
+          onChange={(e) => setSessTask(e.target.value)}
+          data-sess-task
+        />
+        <Button
+          size="sm"
+          disabled={sessBusy || sessTask.trim() === ''}
+          data-sess-run
+          onClick={async () => {
+            const a = coworkers.find((c) => c.id === handFrom) ?? coworkers[0];
+            const b = coworkers.find((c) => c.id === handTo) ?? coworkers[1] ?? coworkers[0];
+            if (!a || !b || a.id === b.id) {
+              setSessNotice('协作需要两名不同的同事');
+              return;
+            }
+            setSessBusy(true);
+            setSessNotice('协作进行中…');
+            const created = await client.createSession(projectId, {
+              participants: {
+                a: { coworkerId: a.id, name: a.name },
+                b: { coworkerId: b.id, name: b.name },
+              },
+              summary: sessTask.trim().slice(0, 60),
+            });
+            if (!created.ok) {
+              setSessBusy(false);
+              setSessNotice('场次没建成——检查参与者是否还在');
+              return;
+            }
+            const result = await runCollaborationSession({
+              projectId,
+              sessionId: created.item.id,
+              task: sessTask.trim(),
+              rubric: ['产出有来源', '结论一句话'],
+            });
+            setSessBusy(false);
+            setSessNotice(
+              result.state === 'completed'
+                ? `协作完成（${result.usedSteps} 步）——产出已署名落回`
+                : `${result.stoppedReason ?? '协作暂停'}——在场次里点“确认继续”`,
+            );
+            setSessTask('');
+            await refresh();
+          }}
+        >
+          {sessBusy ? '协作中…' : '发起协作'}
         </Button>
       </div>
     </div>

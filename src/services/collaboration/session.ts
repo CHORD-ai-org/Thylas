@@ -107,18 +107,25 @@ export async function runCollaborationSession(
     note: `派给 ${a.name}`,
   });
 
-  /* Phase A — the loop journals its own rounds and lands a signed candidate. */
-  const phaseA = await runGenerationLoop({
-    coworkerId: a.coworkerId,
-    coworkerName: a.name,
-    projectId: options.projectId,
-    task: options.task,
-    rubric: options.rubric,
-    maxRounds: Math.max(1, Math.min(PHASE_ROUNDS, budget.maxSteps - usedSteps)),
-    askFn: options.askFn,
-    projects,
-    coworkers,
-  });
+  /* Phase A — the loop journals its own rounds and lands a signed candidate.
+     A throwing askFn (断网) must not kill the session: it flips to
+     needs_human and stays recoverable. */
+  let phaseA;
+  try {
+    phaseA = await runGenerationLoop({
+      coworkerId: a.coworkerId,
+      coworkerName: a.name,
+      projectId: options.projectId,
+      task: options.task,
+      rubric: options.rubric,
+      maxRounds: Math.max(1, Math.min(PHASE_ROUNDS, budget.maxSteps - usedSteps)),
+      askFn: options.askFn,
+      projects,
+      coworkers,
+    });
+  } catch {
+    return toHuman('生成中断——AI 不可达，场次停在原地可恢复', 0, 0);
+  }
   usedSteps += phaseA.rounds.length;
   const roundsA = phaseA.rounds.length;
   if (overBudget()) return toHuman('预算触顶，产出停在 A', roundsA, 0);
@@ -149,17 +156,22 @@ export async function runCollaborationSession(
   });
 
   /* Phase B */
-  const phaseB = await runGenerationLoop({
-    coworkerId: b.coworkerId,
-    coworkerName: b.name,
-    projectId: options.projectId,
-    task: `${options.task}\n接手说明：${handoff.item.task}；A 的产出引用：${handoff.item.inputs.join('、') || '无'}`,
-    rubric: options.rubric,
-    maxRounds: Math.max(1, Math.min(PHASE_ROUNDS, budget.maxSteps - usedSteps)),
-    askFn: options.askFn,
-    projects,
-    coworkers,
-  });
+  let phaseB;
+  try {
+    phaseB = await runGenerationLoop({
+      coworkerId: b.coworkerId,
+      coworkerName: b.name,
+      projectId: options.projectId,
+      task: `${options.task}\n接手说明：${handoff.item.task}；A 的产出引用：${handoff.item.inputs.join('、') || '无'}`,
+      rubric: options.rubric,
+      maxRounds: Math.max(1, Math.min(PHASE_ROUNDS, budget.maxSteps - usedSteps)),
+      askFn: options.askFn,
+      projects,
+      coworkers,
+    });
+  } catch {
+    return toHuman('生成中断——AI 不可达，场次停在交接后可恢复', roundsA, 0);
+  }
   usedSteps += phaseB.rounds.length;
   const roundsB = phaseB.rounds.length;
   if (overBudget()) return toHuman('预算触顶，产出停在 B', roundsA, roundsB);
