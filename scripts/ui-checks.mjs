@@ -3500,6 +3500,23 @@ async function main() {
   check('skills: the menu lands in the workspace materials', await js(`return location.pathname;`),
     (v) => /^\/w\/[^/]+\/files$/.test(v));
 
+  // ---- Project detail (08 P0): route + honest no-database state ----
+  await goto('/w/ws-research/p/p-none');
+  await js('await new Promise(r => setTimeout(r, 700)); return 1;');
+  check('project-detail: the route answers honestly without a database', await js(`
+    return {
+      found: document.body.innerText.includes('Project not found'),
+      reason: document.body.innerText.includes('DATABASE_URL'),
+    };
+  `), { found: true, reason: true });
+  const pdTsx = readFileSync(new URL('../src/pages/ProjectDetail.tsx', import.meta.url), 'utf8');
+  check('project-detail: the shell hooks exist (detail/ask/rail/worktree)',
+    ['data-project-detail', 'data-project-ask-input', 'data-project-rail', 'data-project-worktree', 'data-project-blocks'].every((k) => pdTsx.includes(k)),
+    true);
+  check('projects: the card has a wired 打开 action',
+    /data-project-open/.test(readFileSync(new URL('../src/pages/Projects.tsx', import.meta.url), 'utf8')),
+    true);
+
   await goto('/overview');
 
   } catch (err) {
