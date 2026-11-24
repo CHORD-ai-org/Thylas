@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { routes } from '../lib/routes';
 import { PlainLayout } from '../shell/layouts';
 import { Button, EmptyState, SectionLabel } from '../components/ui';
 import { IconLink, IconPlus, IconTrash } from '../components/icons';
@@ -37,6 +38,7 @@ const KIND_LABEL: Record<ConnectionKind, string> = {
 
 export function ProjectsPage() {
   const { wsId = '' } = useParams();
+  const navigate = useNavigate();
   const [client] = useState<ProjectsClient>(() => createProjectsClient());
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [notice, setNotice] = useState('');
@@ -182,6 +184,9 @@ export function ProjectsPage() {
                   <span className={s.cardMeta}>活跃于 {relativeTime(Date.parse(project.updatedAt))}</span>
                 </button>
                 <div className={s.cardActions}>
+                  <Button size="sm" variant="primary" onClick={() => navigate(routes.projectDetail(wsId, project.id))} data-project-open>
+                    打开
+                  </Button>
                   <Button size="sm" onClick={() => archive(project)} data-project-archive>
                     {project.state === 'archived' ? '恢复' : '归档'}
                   </Button>
@@ -221,7 +226,7 @@ export function ProjectsPage() {
   );
 }
 
-function ConnectionDrawer({
+export function ConnectionDrawer({
   connections,
   onAdd,
   onCheck,
@@ -272,6 +277,11 @@ function ConnectionDrawer({
               {KIND_LABEL[k]}
             </option>
           ))}
+          {/* Honest limiter: named in the design, not wired — disabled with the
+              reason visible before any click. */}
+          <option value="cloudflare" disabled>
+            cloudflare — 连接器未接入
+          </option>
         </select>
         <input
           className={s.input}
