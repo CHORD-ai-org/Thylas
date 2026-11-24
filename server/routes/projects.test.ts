@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { PGlite } from '@electric-sql/pglite';
-import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +11,7 @@ import {
   PROJECTS_PATH,
   type ConnectionBody,
   type ConnectionListBody,
+  type EntriesBody,
   type ProjectBody,
   type ProjectErr,
   type ProjectListBody,
@@ -231,5 +232,47 @@ describe('P0 projects API over real HTTP', () => {
     });
     expect(relative.status).toBe(201);
     expect((await json<ConnectionBody>(relative)).item.health).toBe('broken');
+  });
+
+  it('P0-3: lists one level of a connected folder and refuses escapes', async () => {
+    const wt = join(root, 'worktree');
+    await mkdir(join(wt, 'docs'), { recursive: true });
+    await writeFile(join(wt, 'README.md'), '# wt');
+    await writeFile(join(wt, 'docs', 'a.md'), 'a');
+
+    const created = await call('POST', PROJECTS_PATH, { workspaceId: 'ws-1', name: 'Worktree' });
+    const pid = (await json<ProjectBody>(created)).item.id;
+    const connected = await call('POST', `${PROJECTS_PATH}/${pid}/connections`, {
+      kind: 'local-folder',
+      locator: wt,
+      label: 'worktree',
+    });
+    const cid = (await json<ConnectionBody>(connected)).item.id;
+
+    const top = await json<EntriesBody>(
+      await call('GET', `${PROJECTS_PATH}/${pid}/connections/${cid}/entries`),
+    );
+    expect(top.entries.map((e) => `${e.kind}:${e.name}`)).toEqual(['dir:docs', 'file:README.md']);
+
+    const nested = await json<EntriesBody>(
+      await call('GET', `${PROJECTS_PATH}/${pid}/connections/${cid}/entries?path=docs`),
+    );
+    expect(nested.entries).toEqual([{ name: 'a.md', kind: 'file' }]);
+
+    const escape = await call('GET', `${PROJECTS_PATH}/${pid}/connections/${cid}/entries?path=${encodeURIComponent('../')}`);
+    expect(escape.status).toBe(400);
+  });
+
+  it('P0-3: a kind without a listing connector answers not_configured', async () => {
+    const created = await call('POST', PROJECTS_PATH, { workspaceId: 'ws-1', name: 'Remote' });
+    const pid = (await json<ProjectBody>(created)).item.id;
+    const connected = await call('POST', `${PROJECTS_PATH}/${pid}/connections`, {
+      kind: 'github-repo',
+      locator: 'owner/repo',
+      label: 'repo',
+    });
+    const cid = (await json<ConnectionBody>(connected)).item.id;
+    const res = await call('GET', `${PROJECTS_PATH}/${pid}/connections/${cid}/entries`);
+    expect(res.status).toBe(503);
   });
 });
