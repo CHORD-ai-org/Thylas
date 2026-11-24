@@ -45,3 +45,9 @@
 | CoworkOS 动词 | 映射 A2A 状态机（见 PDF Part VII §20）；不押注 ACP（已收敛） |
 | 模型分层 | 判断（采纳/驳回/裁决）= 强模型；执行/抽取 = 小模型 |
 | 红线 | 禁开放式 agent 聊天、按职位拆、共享自由文本记忆、盲聚合；协调消息不产出用户价值的删 |
+
+## 4. 第三轮：技术路径文献（2026-11-24）
+
+- 记忆架构四分层（CoALA/MemGPT）：working/episodic/semantic/procedural；分层蒸馏（episode→semantic consolidation）防 context rot（堆上下文=退化+延迟+成本三杀）；遗忘分级。
+- LangGraph 模型：typed state + 节点 + 条件边 + 每步 checkpoint = 持久执行/可中断（interrupt=人工兜底）/可回放；三拓扑（supervisor/swarm/hierarchical）；预算用 loop_count 强制 END。踩坑：checkpoint 须全量状态、非确定性节点须捕获、条件边勿滥用。
+- 取舍：借语义不借依赖（自研轻量状态机 TS）；Methodology=程序性记忆（声明式工作流 JSONB），Method Run=状态机实例。
