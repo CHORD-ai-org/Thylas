@@ -212,7 +212,9 @@
   padding: 0 var(--s4);
   border-bottom: 1px solid var(--line);
   color: var(--ink-2);
-  font: var(--t-ui);
+  /* Table ramp frozen at 13/20 (SP-04a: rows 32px budget) — the roomier
+     reading scale stays on cards and prose (visual-refresh T1). */
+  font: var(--t-ui-table);
   text-align: left;
 }
 
@@ -242,7 +244,7 @@
 }
 
 .fileName {
-  font: var(--t-ui-strong);
+  font: var(--t-ui-table-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -522,9 +524,12 @@
   gap: 8px;
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--line);
+  /* Soft-surface recipe (visual-refresh T2): no permanent hairline — the
+     shadow and the fill carry the card; the edge appears on hover. */
+  border: 1px solid transparent;
   border-radius: var(--r-md);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
   text-align: left;
 }
 
