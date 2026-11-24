@@ -16,9 +16,10 @@
 | V 身份与视觉 | 长什么样、叫什么 |
 | VI 边界与持久化 | 什么不是它的、存在哪 |
 | VII 技术底座 | 效果与性能怎么保障 |
-| VIII 规划 | MVP 怎么切、按什么顺序 |
-| IX 执行保证 | 怎么保证 plan 百分百执行 |
-| X 决策总表 | 定了什么、还欠什么 |
+| VIII 技术路径 | 用什么造、分几层 |
+| IX 规划 | MVP 怎么切、按什么顺序 |
+| X 执行保证 | 怎么保证 plan 百分百执行 |
+| XI 决策总表 | 定了什么、还欠什么 |
 
 ---
 
@@ -111,7 +112,7 @@ Request · Delegate · Respond · Challenge · Negotiate · Handoff · Request H
 
 ## 9. 创建 = Commissioning【提案】
 
-建立一段工作关系，不是填配置表。六阶段（叙事层）：Intention（自然语言描述意图）→ Identity → Responsibilities → Mind & Method → Environment（授权）→ First Encounter（第一次实测）。
+建立一段工作关系，不是填配置表。六阶段（叙事层）：Intention（自然语言描述意图）→ Identity → Responsibilities → Mind & Method → Environment（授权）→ First Encounter（第一次实测）。**实施规划见 §28。**
 
 **Q-C【开放】**：六阶段是覆盖在现有一页六区（`CoworkerNew`）上的**叙事**，还是替换 IA？向导改造计划见 `CREATION-WIZARD.md`（仅文档）。
 
@@ -129,9 +130,10 @@ Request · Delegate · Respond · Challenge · Negotiate · Handoff · Request H
 
 手绘剪影：黑白底随调色板，描边任意色；无生成管线。生成肖像与上传 **Deferred**（Q-B 已关闭）。
 
-## 12. 命名【事实】
+## 12. 命名【已裁 2026-11-24】
 
-北欧神话命名惯例（Mira、Archer…）——见 `TEAM-NAMING-CONVENTION.md`。
+**用户自定义**——Coworker 叫什么由用户定。北欧神话惯例降级为**默认建议**（生成器默认名种子；`TEAM-NAMING-CONVENTION.md` 存档为建议集），不再是约束。
+云架构下命名不承担寻址职责（id 才是）——重名允许、改名安全。
 
 ---
 
@@ -195,9 +197,76 @@ CoworkOS 动词 ↔ A2A 状态机映射：delegate = Task 创建；Request Human
 
 ---
 
-# Part VIII · 规划
+# Part VIII · 技术路径
 
-## 20. MVP 切分【提案】
+> 2026-11-24 文献脑暴（记忆架构四分层 / LangGraph 持久状态机模型）：用什么造、分几层、什么不引。
+
+## 20. 三层形态【提案】
+
+一个 Coworker = 三层：
+
+| 层 | 内容 | 载体 |
+|---|---|---|
+| **配置面** | Identity / Responsibilities / Mind / Methodologies / Toolsets | PG 表 + JSONB（`coworkers`） |
+| **运行面** | Method Run = 状态机执行实例；协作原语 = 状态迁移 | 自研轻量运行时（§23），跑现有 `/api/ai` 管线 + SSE 流回 |
+| **记忆面** | Working / Episodic / Semantic 三分（§22） | 交接包 + `coworker_events` + Context 分区 |
+
+数据流：Thylas UI（React）→ `/api/coworkers | projects | events`（Drizzle/PG）→ 协调器（状态机）→ `/api/ai` 管线 → SSE 流回桌面。
+文献锚：agent = policy + memory + tools + control loop；记忆四分层（CoALA）。
+
+## 21. Mind 与 Methodology 的技术表示【提案，Q-D 落点】
+
+- **Methodology = 程序性记忆**（procedural）：声明式工作流——steps + 条件分支 + 工具需求 + 输出 schema，存 JSONB。**Method Run = 状态机实例**：typed state + 节点函数 + 条件边 + **每步 checkpoint**（LangGraph 的模型：持久执行、可中断、可回放）。
+- **Mind = 装配配置**：拆解偏好 / 证据标准 / 求助条件 / 方法选择策略 → prompt 装配 + 决策字段。配**差异化验证**：同一任务两个 Mind 盲测，行为差异可观察才算数。
+- **渐进加载**：Methodology 文本按需装入 working memory（常用方法常驻），控制上下文预算——对应文献的"技能式程序记忆 + 蒸馏"。
+- **取舍**：不引 LangGraph 框架——我们的状态机是固定小集合、deps 纪律优先；**借语义不借依赖**（typed state / checkpoint / interrupt 自研 ~轻量实现，LangGraph.js 作参照）。
+
+## 22. 记忆与上下文三分【提案】
+
+| 记忆层 | 我们的载体 | 要点 |
+|---|---|---|
+| **Working** | 交接包 + 结构化 scratchpad（objective / verified_facts / blockers） | 只装当前任务；大对象存引用不存内容 |
+| **Episodic** | `coworker_events`（append-only）+ 事后蒸馏的 Episode 摘要 | 时间衰减检索；重放与审计的来源 |
+| **Semantic** | Context 分区（决策 / 偏好 / 领域事实） | 长期；由 episodic 蒸馏而来 |
+
+- **蒸馏步**：episodic → semantic 定期 consolidation——防 context rot（文献：堆上下文 = 退化 + 延迟 + 成本三杀）。
+- **遗忘分级**：决策/署名类长留；调试噪音类限期裁剪（如 30 天）。
+- **边界不变**：协议不存记忆（CoworkOS 只搬消息）；语义记忆归 Context 分区——与 GSC 愿景同一层。
+
+## 23. 技术选型【提案】
+
+| 关注点 | 选择 | 理由 |
+|---|---|---|
+| 状态机运行时 | 自研轻量 TS（typed state + 节点 + 条件边 + journal checkpoint） | 固定小集合；参照 LangGraph 语义，不引依赖 |
+| 持久化 | PG/Drizzle：coworkers（JSONB）· events · run checkpoints | 已有栈 |
+| 流式 | SSE（复用 chat stream 模式） | 已有 |
+| 结构化输出 | schema 校验 + 重试 ≤2 | 实证锚点 |
+| 模型路由 | 判断=强模型、执行=小模型（配置化） | Part VII |
+| 评测 | golden journeys + rubric 裁判 + Mind 差异盲测 | §31 |
+
+风险注记（文献踩坑清单）：checkpoint 必须存**全量**状态（只存对话会丢工具态）；非确定性节点（随机/时钟/外部 API）必须在 checkpoint 捕获；条件边不要滥用（每边都条件 = 无法推理的状态机）。
+
+## 24. 云架构前瞻（本阶段不做，现在留缝）【提案】
+
+原则：本阶段全部本地实现；但每个持久实体满足**可迁云端四条**——稳定 id、无本机绝对状态、可序列化导出、多租户键位预留。
+
+| 今天（本地） | 云端时变化 | 现在留的缝 |
+|---|---|---|
+| PG 单库 | 多租户隔离 | `workspace_id` 维度已在所有表 |
+| `/api/ai` 本地管线 | 云端模型服务 / 远程 runtime | 协调器与 runtime 解耦（状态机无本地状态、节点纯函数） |
+| local-folder 连接器（绝对路径） | 存储键 / 对象存储引用 | kind + locator 抽象已通用（P0-3） |
+| 单用户 session | 账号 / 成员 / 组织 | workspaces scope=personal\|org 已在 |
+| SSE | 云端流式通道（WS/轮询） | 流式是传输层，不进状态机 |
+| 事件 trace 本地库 | 同步 / 归档 | append-only 事件天然可同步 |
+
+- **Q-E 更新**：云前瞻下"表"默认更强（文件方案云端难迁移）。
+- **不做**：多租户实现、云部署、计费——只留缝。
+
+---
+
+# Part IX · 规划
+
+## 25. MVP 切分【提案】
 
 | 阶段 | 内容 | 门禁 |
 |---|---|---|
@@ -209,17 +278,64 @@ CoworkOS 动词 ↔ A2A 状态机映射：delegate = Task 创建；Request Human
 
 **本阶段无 WAM 依赖（2026-11-24）**：C0–C4 全部本地推进，C4 不等 WAM。
 
-## 21. 与 Project 计划的会师
+## 26. 与 Project 计划的会师
 
 Project P4-0（最小实体）并入 C0；P4-1/P4-2 = C2；P4-3 = C3。Home-interaction 的 MutationIntent 治理复用于署名落回。
 
+## 27. 分步执行计划【提案】
+
+单元级拆解：每单元 = 代码 + 测试 + 相关旅程脚本；门禁优先自动化断言。串行 C0→C4（C3-1 与 C2-3 可并行）。K = 随手修。
+
+**C0 持久化垫层**
+- **C0-1** Coworker 服务端实体（按 Q-E 默认走表）：`coworkers` 表 + migration + `/api/coworkers` CRUD（镜像 projects 模式）｜门禁：建一个 Coworker 跨会话存活
+- **C0-2** 既有原型对齐：`state/coworkers.ts` 本地 envelope 迁服务端（双轨读过渡）｜门禁：现有 5 个页面无回归
+- **C0-3** **trace 表先行**：`coworker_events`（append-only）——先建 trace 再建第二个 Coworker｜门禁：事件可回放
+
+**C1 入职**
+- **C1-1** Workspace 名册 + 工具授权（入职层 API + 管理面）｜门禁：三层交集授权断言（自身 ∩ Workspace ∩ Project）
+- **C1-2** 创建向导（按 Q-C 裁决）｜门禁：旅程脚本"新用户 3 分钟雇到 Coworker"
+- **C1-3** First Encounter 实测步｜门禁：黑盒走查——身份 = 工作身份，不是外貌
+
+**C2 参工**
+- **C2-1** 派工：`project_members` API + 桌面"参与者"区｜门禁：授权子集生效、越权 403
+- **C2-2** 署名落回（复用 artifactCandidates + MutationIntent 治理）｜门禁：产出带署名落回新卡组、用户排布零改动
+- **C2-3** 生成-校验回路（rubric + ≤2–3 轮上限）｜门禁：轮次上限断言
+
+**C3 交接**
+- **C3-1** 交接包 v0（结构化 JSON：task / inputs / output_schema / max_steps + 双方署名；复制+留痕）｜门禁：原子性断言——失败 = 交接未发生
+- **C3-2** INPUT_REQUIRED 兜底态｜门禁：卡住必浮出给用户
+
+**C4 协作**
+- **C4-1** 协作原语状态机（delegate / respond / challenge / handoff / complete…）｜门禁：状态机无空洞态
+- **C4-2** 本地协调器（hub-and-spoke；步数 / token / 秒预算强制）｜门禁：双 Coworker 可追溯协作一场
+- **C4-3** 对抗性旅程（断网 / 半交接 / 越权 / 断链 / 连点）｜门禁：错误路径一行字反馈全过
+
+**K 类**：文案预算走查、13.4 检查表、旅程偏差修正（改设计或改实现，不留"已知问题"）。
+
 ---
 
-# Part IX · 执行保证：交互与落地
+# Part X · 执行保证：交互与落地
 
 > "百分百执行"不是靠盯，是靠机制。两层保证：设计→实现不走样，运行时交互不丢不错。
 
-## 22. 设计 → 实现：不走样【提案】
+## 28. 创建 Coworker 的分步规划【提案】
+
+创建 = Commissioning 走查：有仪式感的入职面谈，不是 SaaS 配置表。向导六步（叙事层），每步可退出保留草稿：
+
+| 步 | 用户做什么 | 系统产出 | 跳过策略 |
+|---|---|---|---|
+| 1 意图 Intention | 自然语言描述"我要一个什么样的同事" | **Blueprint 草案**（角色 / 职责候选 / 方法候选，结构化） | 不可跳（草图可后改） |
+| 2 身份 Identity | 名字（**自定义**）、头像（手绘剪影）、描述 | Identity 配置 | 名字必填；头像默认 |
+| 3 职责 Responsibilities | 确认 / 编辑责任范围与排除项 | Responsibilities | 由 Blueprint 预填 |
+| 4 Mind & Method | 看 Mind 四维（拆解 / 证据 / 求助 / 方法选择），勾方法库 | Mind 配置 + Methodology 集 | 全部可后补（渐进演化） |
+| 5 环境 Environment | 授权：Workspace / 工具 / 资源子集 | 授权集（三层交集） | 最小授权默认（安全侧） |
+| 6 First Encounter | 给一个小活实测 | 首次 Method Run + working identity 验证 | 可跳，但标记"未实测" |
+
+- **Blueprint 生成**：第 1 步自然语言 → 结构化草案（LLM 生成、任何字段可改）——生成是辅助不是替代。
+- **红线**：不戏剧化；不逼一次配齐（缺的字段走 §10 渐进演化）；单页"快速创建"保留为次要入口（Q-C 的最终取舍待裁）。
+- **门禁挂接**：并入 §27 的 C1-2（3 分钟雇到，旅程脚本）与 C1-3（First Encounter 后身份 = 工作身份）。
+
+## 29. 设计 → 实现：不走样【提案】
 
 | 机制 | 做法 |
 |---|---|
@@ -230,7 +346,7 @@ Project P4-0（最小实体）并入 C0；P4-1/P4-2 = C2；P4-3 = C3。Home-inte
 | **范围冻结** | 新需求进修订记录不进当期；防 scope creep 吃掉执行 |
 | **走查清单** | 文案预算 + UI 检查表（13.4 式）上线前逐条过 |
 
-## 23. 运行时交互：不丢不错【提案】
+## 30. 运行时交互：不丢不错【提案】
 
 | 机制 | 做法 |
 |---|---|
@@ -240,7 +356,7 @@ Project P4-0（最小实体）并入 C0；P4-1/P4-2 = C2；P4-3 = C3。Home-inte
 | **人工兜底** | 任何环节卡住 → 浮出 INPUT_REQUIRED 状态给用户（A2A 状态机借鉴）——永远有人可介入 |
 | **可回放** | 每步输入输出入 trace——"是否按设计执行"事后可审计，不靠回忆 |
 
-## 24. 验证环节：模拟用户交互【提案】
+## 31. 验证环节：模拟用户交互【提案】
 
 自动化断言可能"全绿但体验是错的"。每单元过三道模拟：
 
@@ -254,24 +370,26 @@ Project P4-0（最小实体）并入 C0；P4-1/P4-2 = C2；P4-3 = C3。Home-inte
 - **节奏**：每单元门禁后跑相关旅程；发布前全量。
 - **产出物**：`journeys.md`（旅程清单）+ 偏差记录——发现偏差二选一（改设计或改实现），**不留"已知问题"**。
 
-## 25. 100% 执行的定义【提案】
+## 32. 100% 执行的定义【提案】
 
 同时满足四条：①C0–C4 验收脚本全绿；②运行时可靠性断言全过（状态机无空洞态、交接原子、重试有上限）；③决策表无"待裁"悬空（已裁或已触发默认）；④模拟用户旅程矩阵全绿、偏差清零。
 检查节奏：每单元一次，发布前全量。
 
 ---
 
-# Part X · 决策与未决总表
+# Part XI · 决策与未决总表
 
 | # | 事项 | 状态 |
 |---|---|---|
 | Q-A | 协作机制 | ✅ 已裁（11-24）：本地闭环（轻量状态机），WAM 降为未来兼容层 |
 | Q-B | 头像：手绘剪影 v2.0 | ✅ 已裁 |
-| Q-C | 创建：六阶段叙事 vs 单页 IA | 有方向，阶段设计待定 |
+| Q-C | 创建：六阶段叙事 vs 单页 IA | 有方向；阶段设计【提案】见 §28，最终取舍待裁 |
 | Q-D | Methodology 可执行语义 | **待裁** |
 | Q-E | 持久化：表 vs 文件 | **待裁**（倾向表） |
 | S1 | 交接 = 复制+留痕 | 默认，可翻 |
 | — | 署名闭环（显示名先行）；CoworkOS 与 WAM A2A 关系 | 默认显示名；未定 |
+| 命名 | 用户自定义，北欧惯例=默认建议 | ✅ 已裁（11-24） |
+| 云架构 | 本阶段不做，留缝（可迁四条 + §24 映射表） | ✅ 方向已定（11-24） |
 
 ---
 
