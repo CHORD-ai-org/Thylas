@@ -12,6 +12,7 @@
     "check": "tsc --noEmit",
     "lint": "eslint src server",
     "test": "vitest run",
+    "journeys": "node scripts/journeys.mjs",
     "e2e": "node scripts/ui-checks.mjs",
     "onboarding:check": "node scripts/onboarding-checks.mjs",
     "ai": "node scripts/ai-checks.mjs",
