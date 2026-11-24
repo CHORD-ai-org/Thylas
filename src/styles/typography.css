@@ -2,8 +2,10 @@
    Four sizes plus mono, three weights, no serif. Component styles must not
    declare font-size or font-weight directly; they use these tokens.
 
-   Ramp: 11 · 13 · 16 · 20 · 32. The old 24px `page` step is gone — a screen
-   title is either a section (20) or the one display element (32). */
+   Ramp: 11 · 12.5 · 13(table) · 14.5 · 16 · 20 · 32. The old 24px `page` step
+   is gone — a screen title is either a section (20) or the one display element
+   (32). The table ramp is frozen at 13/20 (SP-04a row/header budgets); reading
+   UI carries the roomier 14.5/23 (visual-refresh T1). */
 
 :root {
   /* Inter first, then a symbol face: ⌘, ⌥ and arrows are not in Inter's Latin
@@ -15,8 +17,11 @@
 
   --t-caption: 500 11px/16px var(--ui);
   --t-mono-s: 400 11px/16px var(--mono);
-  --t-ui: 400 13px/20px var(--ui);
-  --t-ui-strong: 500 13px/20px var(--ui);
+  --t-meta: 500 12.5px/18px var(--ui);
+  --t-ui: 400 14.5px/23px var(--ui);
+  --t-ui-strong: 500 14.5px/23px var(--ui);
+  --t-ui-table: 400 13px/20px var(--ui);
+  --t-ui-table-strong: 500 13px/20px var(--ui);
   --t-read: 400 16px/26px var(--ui);
   --t-section: 500 20px/28px var(--ui);
   --t-page: 500 20px/28px var(--ui);
