@@ -27,6 +27,8 @@ import {
   type ConnectionKind,
   type ConnectionListBody,
   type ConnectionBody,
+  type EntriesBody,
+  type FolderEntry,
   type ProjectBody,
   type ProjectConnectionDto,
   type ProjectDeleteBody,
@@ -43,7 +45,13 @@ import {
   type SessionUser,
 } from '../../src/lib/session.ts';
 import { isSafeSegment } from '../../src/lib/files.ts';
-import { createConnectorProbe, normalizeConnectionLocator, type LocatorProbe } from '../connectors.ts';
+import {
+  createConnectorEntries,
+  createConnectorProbe,
+  normalizeConnectionLocator,
+  type ConnectorEntries,
+  type LocatorProbe,
+} from '../connectors.ts';
 import { sendJson } from '../http.ts';
 import {
   projectConnections,
@@ -115,7 +123,11 @@ function toConnectionDto(row: ConnectionRow): ProjectConnectionDto {
   };
 }
 
-function makeHandlers(database: ConversationDatabase, probe: LocatorProbe) {
+function makeHandlers(
+  database: ConversationDatabase,
+  probe: LocatorProbe,
+  entries: ConnectorEntries = createConnectorEntries(),
+) {
   const readProject = async (
     res: ServerResponse,
     id: string,
@@ -421,6 +433,41 @@ function makeHandlers(database: ConversationDatabase, probe: LocatorProbe) {
     result(res, 200, { ok: true, id: connectionId } satisfies ConnectionDeleteBody);
   };
 
+  /* Detail-page worktree browsing (08 P0-3). `subpath` is relative and is
+     validated against the connection root by the connector; a kind without a
+     listing connector answers `not_configured` — no invented entries. */
+  const listEntries = async (
+    res: ServerResponse,
+    projectId: string,
+    connectionId: string,
+    subpath: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const connection = await readConnection(res, projectId, connectionId, session);
+    if (!connection) return;
+    if (cleanText(subpath, 512) === null) {
+      fail(res, 'contract', 'The entries path is not valid.');
+      return;
+    }
+    let listed: FolderEntry[] | null;
+    try {
+      listed = await entries(connection.kind as ConnectionKind, connection.locator, subpath);
+    } catch (err) {
+      fail(res, 'contract', err instanceof Error ? err.message : 'The entries path is not valid.');
+      return;
+    }
+    if (listed === null) {
+      fail(res, 'not_configured', `Browsing "${connection.kind}" connections is not wired in this build.`);
+      return;
+    }
+    result(res, 200, {
+      ok: true,
+      connectionId,
+      path: subpath,
+      entries: listed,
+    } satisfies EntriesBody);
+  };
+
   return {
     list,
     create,
@@ -432,6 +479,7 @@ function makeHandlers(database: ConversationDatabase, probe: LocatorProbe) {
     patchConnection,
     checkConnection,
     removeConnection,
+    listEntries,
   };
 }
 
@@ -451,8 +499,9 @@ export function createProjectsRouter(
   db: ConversationDatabase | null,
   source: SessionSource,
   probe: LocatorProbe = createConnectorProbe(),
+  entries: ConnectorEntries = createConnectorEntries(),
 ): ProjectsRouter {
-  const handlers = db ? makeHandlers(db, probe) : null;
+  const handlers = db ? makeHandlers(db, probe, entries) : null;
 
   return (req, res, path) => {
     const method = (req.method ?? 'GET').toUpperCase();
@@ -517,6 +566,25 @@ export function createProjectsRouter(
           return;
         }
         return handlers.checkConnection(res, id, connectionId, session);
+      } else if (
+        segments.length === 4 &&
+        segments[1] === 'connections' &&
+        segments[3] === 'entries' &&
+        method === 'GET'
+      ) {
+        const id = segments[0] ?? '';
+        const connectionId = segments[2] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(connectionId)) {
+          fail(res, 'contract', 'The project or connection id is not a valid path segment.');
+          return;
+        }
+        let subpath = '';
+        try {
+          subpath = new URL(req.url ?? '', 'http://localhost').searchParams.get('path') ?? '';
+        } catch {
+          subpath = '';
+        }
+        return handlers.listEntries(res, id, connectionId, subpath, session);
       }
       fail(res, 'contract', `${method} is not allowed on this path.`);
     };
