@@ -110,13 +110,19 @@
 }
 
 .card {
-  border: 1px solid var(--line);
+  /* Soft-surface recipe (visual-refresh T2). */
+  border: 1px solid transparent;
   border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   background: var(--bg-surface);
+}
+
+.card:hover {
+  border-color: var(--line-strong);
 }
 
 .cardTop {
