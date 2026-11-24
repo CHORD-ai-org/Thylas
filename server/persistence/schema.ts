@@ -151,3 +151,53 @@ export const projectMembers = pgTable(
   },
   (table) => [primaryKey({ columns: [table.projectId, table.actorId] })],
 );
+
+/**
+ * C0-1 (Coworker plan §27). A Coworker is an independent working identity —
+ * `owner_id` is the tenant key (cloud-readiness §24), not a workspace: the
+ * record survives across workspaces; employment (入职) is a roster relation
+ * that arrives with C1. `deleted_at` is the soft-delete tombstone.
+ */
+export const coworkers = pgTable(
+  'coworkers',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id').notNull(),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    status: text('status').notNull().default('active'),
+    responsibilities: jsonb('responsibilities')
+      .$type<{ forWork: string; notFor: string; output: string }>()
+      .notNull()
+      .default({ forWork: '', notFor: '', output: '' }),
+    memberships: jsonb('memberships').$type<{ wsId: string; role: string }[]>().notNull().default([]),
+    pinnedArtifactIds: jsonb('pinned_artifact_ids').$type<string[]>().notNull().default([]),
+    /** Declared configuration record (D-060), validated on write. */
+    mind: jsonb('mind').$type<unknown>(),
+    /** Client epoch-ms, kept as a number (same as messages.atMs). */
+    createdAt: bigint('created_at_ms', { mode: 'number' }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [index('coworkers_owner_idx').on(table.ownerId)],
+);
+
+/**
+ * C0-3. Append-only collaboration trace ("build the trace before the second
+ * Coworker"). No update path by design: the log is the audit.
+ */
+export const coworkerEvents = pgTable(
+  'coworker_events',
+  {
+    id: text('id').primaryKey(),
+    coworkerId: text('coworker_id')
+      .notNull()
+      .references(() => coworkers.id, { onDelete: 'cascade' }),
+    projectId: text('project_id'),
+    actorKind: text('actor_kind').notNull().default('user'),
+    verb: text('verb').notNull(),
+    payload: jsonb('payload').$type<unknown>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('coworker_events_coworker_idx').on(table.coworkerId, table.createdAt)],
+);

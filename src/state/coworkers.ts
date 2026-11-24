@@ -9,9 +9,74 @@
 import { useSyncExternalStore } from 'react';
 import { COWORKERS, type Coworker, type CoworkerStatus, type Membership, type Responsibilities } from '../data/coworkers';
 import { defaultMindFramework, isMindFramework, mindFrameworkOf } from '../lib/coworkers';
+import { createCoworkersClient } from '../services/coworkers/client';
 
 const KEY = 'thylas:coworkers:v1';
 const MAX_COWORKERS = 60;
+
+/* C0-2 dual track: the server is the durable record (cross-session survival),
+   the local envelope keeps the UI instant and works offline. Writes go both
+   ways; the server call is fire-and-forget and never throws. */
+const client = createCoworkersClient();
+
+function pushToServer(coworker: Coworker): void {
+  void client
+    .create({
+      id: coworker.id,
+      name: coworker.name,
+      description: coworker.description,
+      responsibilities: coworker.responsibilities,
+      memberships: coworker.memberships,
+      mindFramework: mindFrameworkOf(coworker.mindFramework),
+    })
+    .then((body) => {
+      if (body.ok) void client.createEvent(coworker.id, { verb: 'created' });
+    })
+    .catch(() => undefined);
+}
+
+function pushEvent(coworkerId: string, verb: string): void {
+  void client.createEvent(coworkerId, { verb }).catch(() => undefined);
+}
+
+function pushPatch(
+  coworkerId: string,
+  body: Parameters<ReturnType<typeof createCoworkersClient>['patch']>[1],
+  verb: string,
+): void {
+  void client
+    .patch(coworkerId, body)
+    .then((result) => {
+      if (result.ok) pushEvent(coworkerId, verb);
+    })
+    .catch(() => undefined);
+}
+
+/** Pull server-side records into the local view. Safe to call any time. */
+export async function syncFromServer(): Promise<void> {
+  const body = await client.list().catch(() => undefined);
+  if (!body || !body.ok || !('items' in body)) return;
+  const known = new Set([...COWORKERS.map((c) => c.id), ...snapshot.added.map((c) => c.id)]);
+  const merged = body.items
+    .filter((item) => !known.has(item.id) && item.deletedAt === null)
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      status: item.status,
+      createdAt: item.createdAt,
+      responsibilities: item.responsibilities,
+      memberships: item.memberships,
+      pinnedArtifactIds: item.pinnedArtifactIds,
+      mindFramework: mindFrameworkOf(item.mindFramework) ?? defaultMindFramework(),
+    }));
+  if (merged.length === 0) return;
+  commit({ ...snapshot, added: [...snapshot.added, ...merged] });
+}
+
+if (typeof window !== 'undefined') {
+  void syncFromServer();
+}
 
 type State = {
   responsibilityOverrides: Record<string, Responsibilities>;
@@ -209,6 +274,7 @@ export function createCoworker(input: {
     added: [...snapshot.added, coworker],
     log: log(`Created ${coworker.name} — active, ${coworker.memberships.length} membership(s).`),
   });
+  pushToServer(coworker);
   return coworker;
 }
 
@@ -220,6 +286,7 @@ export function saveResponsibilities(coworkerId: string, next: Responsibilities)
     responsibilityOverrides: { ...snapshot.responsibilityOverrides, [coworkerId]: next },
     log: log(`Updated ${current.name}'s responsibilities.`),
   });
+  pushPatch(coworkerId, { responsibilities: next }, 'responsibilities_updated');
 }
 
 export function setCoworkerStatus(coworkerId: string, status: CoworkerStatus): void {
@@ -230,6 +297,7 @@ export function setCoworkerStatus(coworkerId: string, status: CoworkerStatus): v
     statusOverrides: { ...snapshot.statusOverrides, [coworkerId]: status },
     log: log(`${current.name} is now ${status}.`),
   });
+  pushPatch(coworkerId, { status }, 'status_changed');
 }
 
 export function addMembership(coworkerId: string, wsId: string, role: string): void {
@@ -241,6 +309,7 @@ export function addMembership(coworkerId: string, wsId: string, role: string): v
     membershipsRemoved: snapshot.membershipsRemoved.filter((m) => !(m.coworkerId === coworkerId && m.wsId === wsId)),
     log: log(`${current.name} joined a workspace.`),
   });
+  pushPatch(coworkerId, { memberships: coworkerById(coworkerId)?.memberships ?? [] }, 'membership_added');
 }
 
 export function removeMembership(coworkerId: string, wsId: string): void {
@@ -252,6 +321,7 @@ export function removeMembership(coworkerId: string, wsId: string): void {
     membershipsRemoved: [...snapshot.membershipsRemoved, { coworkerId, wsId, role: '' }],
     log: log(`${current.name} left a workspace — its work record stays.`),
   });
+  pushPatch(coworkerId, { memberships: coworkerById(coworkerId)?.memberships ?? [] }, 'membership_removed');
 }
 
 export function removeCoworker(coworkerId: string): void {
@@ -264,6 +334,8 @@ export function removeCoworker(coworkerId: string): void {
     removed: isAdded ? snapshot.removed : [...snapshot.removed, coworkerId],
     log: log(`Deleted ${current.name}.`),
   });
+  pushEvent(coworkerId, 'deleted');
+  void client.remove(coworkerId).catch(() => undefined);
 }
 
 export function resetCoworkers(): void {

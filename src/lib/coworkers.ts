@@ -92,3 +92,152 @@ export function mindFrameworkRows(framework: MindFramework): MindRow[] {
     { label: 'Method selection', value: framework.methodSelection },
   ];
 }
+
+/* --------------------------------------------------------------------------
+ * C0: the coworkers wire contract (server route imports these shapes — D-006).
+ * The record mirrors the prototype's `Coworker`; `ownerId` is the tenant key
+ * (cloud-readiness), events are the append-only trace.
+ * -------------------------------------------------------------------------- */
+
+export const COWORKERS_PATH = '/api/coworkers';
+
+export const COWORKER_STATUSES = ['active', 'paused', 'archived'] as const;
+export type CoworkerStatusValue = (typeof COWORKER_STATUSES)[number];
+
+export type CoworkerResponsibilities = { forWork: string; notFor: string; output: string };
+export type CoworkerMembership = { wsId: string; role: string };
+
+export type CoworkerDto = {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  status: CoworkerStatusValue;
+  responsibilities: CoworkerResponsibilities;
+  memberships: CoworkerMembership[];
+  pinnedArtifactIds: string[];
+  mindFramework: MindFramework | null;
+  createdAt: number;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+export type CoworkerEventDto = {
+  id: string;
+  coworkerId: string;
+  projectId: string | null;
+  actorKind: string;
+  verb: string;
+  payload: unknown;
+  createdAt: string;
+};
+
+export type CoworkerErrorKind = 'contract' | 'conflict' | 'not_found' | 'not_configured' | 'upstream';
+
+export type CoworkerErr = {
+  ok: false;
+  kind: CoworkerErrorKind;
+  message: string;
+  retryable: boolean;
+};
+
+export type CoworkerListBody = { ok: true; items: CoworkerDto[] };
+export type CoworkerBody = { ok: true; item: CoworkerDto };
+export type CoworkerDeleteBody = { ok: true; id: string };
+export type CoworkerEventListBody = { ok: true; items: CoworkerEventDto[] };
+export type CoworkerEventBody = { ok: true; item: CoworkerEventDto };
+export type CoworkerResultBody =
+  | CoworkerListBody
+  | CoworkerBody
+  | CoworkerDeleteBody
+  | CoworkerEventListBody
+  | CoworkerEventBody
+  | CoworkerErr;
+
+export type CreateCoworkerBody = {
+  id?: string;
+  name: string;
+  description?: string;
+  responsibilities?: CoworkerResponsibilities;
+  memberships?: CoworkerMembership[];
+  mindFramework?: MindFramework;
+};
+export type PatchCoworkerBody = {
+  name?: string;
+  description?: string;
+  status?: CoworkerStatusValue;
+  responsibilities?: CoworkerResponsibilities;
+  memberships?: CoworkerMembership[];
+  pinnedArtifactIds?: string[];
+  mindFramework?: MindFramework;
+};
+export type CreateEventBody = {
+  verb: string;
+  projectId?: string;
+  actorKind?: string;
+  payload?: unknown;
+};
+
+const RETRYABLE: Record<CoworkerErrorKind, boolean> = {
+  contract: false,
+  conflict: false,
+  not_found: false,
+  not_configured: false,
+  upstream: true,
+};
+
+export function coworkerFailure(
+  kind: CoworkerErrorKind,
+  message: string,
+  retryable = RETRYABLE[kind],
+): CoworkerErr {
+  return { ok: false, kind, message, retryable };
+}
+
+export function statusForCoworker(kind: CoworkerErrorKind): number {
+  switch (kind) {
+    case 'contract':
+      return 400;
+    case 'conflict':
+      return 409;
+    case 'not_found':
+      return 404;
+    case 'not_configured':
+      return 503;
+    default:
+      return 502;
+  }
+}
+
+export const COWORKER_NAME_MAX = 60;
+export const COWORKER_DESCRIPTION_MAX = 200;
+export const COWORKER_EVENT_VERB_MAX = 64;
+
+export function cleanCoworkerName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const name = value.trim();
+  return name.length > 0 && name.length <= COWORKER_NAME_MAX ? name : null;
+}
+
+export function isCoworkerStatusValue(value: unknown): value is CoworkerStatusValue {
+  return typeof value === 'string' && (COWORKER_STATUSES as readonly string[]).includes(value);
+}
+
+export function isResponsibilitiesShape(value: unknown): value is CoworkerResponsibilities {
+  if (typeof value !== 'object' || value === null) return false;
+  const r = value as Partial<CoworkerResponsibilities>;
+  return typeof r.forWork === 'string' && typeof r.notFor === 'string' && typeof r.output === 'string';
+}
+
+export function isMembershipList(value: unknown): value is CoworkerMembership[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (m) =>
+        typeof m === 'object' &&
+        m !== null &&
+        typeof (m as CoworkerMembership).wsId === 'string' &&
+        typeof (m as CoworkerMembership).role === 'string',
+    )
+  );
+}

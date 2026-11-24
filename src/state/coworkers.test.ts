@@ -196,3 +196,60 @@ describe('tombstones', () => {
     expect(store.__readForTest().removed).toEqual(['cw-reviewer']);
   });
 });
+
+describe('C0-2 dual track (server first, local fallback)', () => {
+  it('server path: syncFromServer merges remote records into the view', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              ok: true,
+              items: [
+                {
+                  id: 'cw-remote',
+                  ownerId: 'u-1',
+                  name: 'Remote',
+                  description: '',
+                  status: 'active',
+                  responsibilities: { forWork: '', notFor: '', output: '' },
+                  memberships: [],
+                  pinnedArtifactIds: [],
+                  mindFramework: null,
+                  createdAt: 1,
+                  updatedAt: '2026-11-24T00:00:00.000Z',
+                  deletedAt: null,
+                },
+              ],
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+      ),
+    );
+    const { store } = await fresh();
+    await store.syncFromServer();
+    expect(store.coworkerById('cw-remote')?.name).toBe('Remote');
+    vi.unstubAllGlobals();
+  });
+
+  it('fallback path: unreachable server leaves local writes working', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    const { store } = await fresh();
+    await store.syncFromServer();
+    const created = store.createCoworker({
+      name: 'Solo',
+      description: '',
+      forWork: '',
+      notFor: '',
+      output: '',
+    });
+    expect(store.coworkerById(created.id)?.name).toBe('Solo');
+    vi.unstubAllGlobals();
+  });
+});
