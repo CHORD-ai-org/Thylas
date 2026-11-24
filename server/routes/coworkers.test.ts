@@ -6,6 +6,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   COWORKERS_PATH,
+  effectiveGrants,
   type CoworkerBody,
   type CoworkerErr,
   type CoworkerEventListBody,
@@ -160,5 +161,43 @@ describe('C0 coworkers API over real HTTP', () => {
     const badVerb = await call('POST', `${COWORKERS_PATH}/cw-other/events`, { verb: '' });
     expect([400, 403]).toContain(badVerb.status);
     if (badVerb.status === 400) expect((await json<CoworkerErr>(badVerb)).kind).toBe('contract');
+  });
+});
+
+describe('C1-1 employment and grant intersection', () => {
+  it('upserts employment grants and removes them', async () => {
+    const created = await call('POST', COWORKERS_PATH, { id: 'cw-emp', name: 'Archer' });
+    expect(created.status).toBe(201);
+
+    const put = await call('PUT', `${COWORKERS_PATH}/cw-emp/employments/ws-1`, {
+      role: 'researcher',
+      grants: ['search', 'files', 'board'],
+    });
+    expect(put.status).toBe(200);
+
+    const again = await call('PUT', `${COWORKERS_PATH}/cw-emp/employments/ws-1`, {
+      grants: ['search'],
+    });
+    expect((await json<{ item: { grants: string[] } }>(again)).item.grants).toEqual(['search']);
+
+    const list = await call('GET', `${COWORKERS_PATH}/cw-emp/employments`);
+    const items = (await json<{ items: { wsId: string; role: string }[] }>(list)).items;
+    expect(items).toHaveLength(1);
+    expect(items[0]?.wsId).toBe('ws-1');
+    expect(items[0]?.role).toBe('researcher');
+
+    const removed = await call('DELETE', `${COWORKERS_PATH}/cw-emp/employments/ws-1`);
+    expect(removed.status).toBe(200);
+    const empty = await call('GET', `${COWORKERS_PATH}/cw-emp/employments`);
+    expect((await json<{ items: unknown[] }>(empty)).items).toHaveLength(0);
+  });
+
+  it('three-layer red line: effective grants = self ∩ workspace ∩ project', () => {
+    const self = ['search', 'files', 'board', 'draw'];
+    const ws = ['search', 'files', 'chat'];
+    expect(effectiveGrants(self, ws)).toEqual(['search', 'files']);
+    expect(effectiveGrants(self, ws, ['search', 'board'])).toEqual(['search']);
+    expect(effectiveGrants(self, ws, ['chat'])).toEqual([]);
+    expect(effectiveGrants([], ws)).toEqual([]);
   });
 });

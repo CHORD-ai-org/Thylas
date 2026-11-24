@@ -172,6 +172,9 @@ export const coworkers = pgTable(
       .default({ forWork: '', notFor: '', output: '' }),
     memberships: jsonb('memberships').$type<{ wsId: string; role: string }[]>().notNull().default([]),
     pinnedArtifactIds: jsonb('pinned_artifact_ids').$type<string[]>().notNull().default([]),
+    /** C1-1: the Coworker's own tool configuration (layer 1 of the three-way
+        grant intersection — 自身 ∩ Workspace ∩ Project). */
+    toolsets: jsonb('toolsets').$type<string[]>().notNull().default([]),
     /** Declared configuration record (D-060), validated on write. */
     mind: jsonb('mind').$type<unknown>(),
     /** Client epoch-ms, kept as a number (same as messages.atMs). */
@@ -200,4 +203,23 @@ export const coworkerEvents = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('coworker_events_coworker_idx').on(table.coworkerId, table.createdAt)],
+);
+
+/**
+ * C1-1 (入职层): employment is a roster relation between a Coworker and a
+ * Workspace, carrying the workspace-granted tool subset (layer 2). The
+ * Coworker record itself stays workspace-independent (V3).
+ */
+export const coworkerEmployments = pgTable(
+  'coworker_employments',
+  {
+    coworkerId: text('coworker_id')
+      .notNull()
+      .references(() => coworkers.id, { onDelete: 'cascade' }),
+    wsId: text('ws_id').notNull(),
+    role: text('role').notNull().default(''),
+    grants: jsonb('grants').$type<string[]>().notNull().default([]),
+    employedAt: timestamp('employed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.coworkerId, table.wsId] })],
 );

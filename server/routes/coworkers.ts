@@ -31,7 +31,11 @@ import {
   type CoworkerResultBody,
   type CreateCoworkerBody,
   type CreateEventBody,
+  type EmploymentBody,
+  type EmploymentDeleteBody,
+  type EmploymentListBody,
   type PatchCoworkerBody,
+  type UpsertEmploymentBody,
 } from '../../src/lib/coworkers.ts';
 import { isSafeSegment } from '../../src/lib/files.ts';
 import {
@@ -41,7 +45,7 @@ import {
   type SessionUser,
 } from '../../src/lib/session.ts';
 import { sendJson } from '../http.ts';
-import { coworkerEvents, coworkers as table } from '../persistence/schema.ts';
+import { coworkerEmployments, coworkerEvents, coworkers as table } from '../persistence/schema.ts';
 import type { ConversationDatabase } from '../persistence/client.ts';
 import type { SessionSource } from '../session/source.ts';
 
@@ -327,7 +331,98 @@ function makeHandlers(database: ConversationDatabase) {
     result(res, 201, { ok: true, item: toEventDto(created) } satisfies CoworkerEventBody);
   };
 
-  return { list, create, read, patch, remove, listEvents, appendEvent };
+  const listEmployments = async (
+    res: ServerResponse,
+    id: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readOne(res, id, session);
+    if (!row) return;
+    const rows = await database
+      .select()
+      .from(coworkerEmployments)
+      .where(eq(coworkerEmployments.coworkerId, id));
+    result(
+      res,
+      200,
+      {
+        ok: true,
+        items: rows.map((e) => ({
+          coworkerId: e.coworkerId,
+          wsId: e.wsId,
+          role: e.role,
+          grants: e.grants,
+          employedAt: e.employedAt.toISOString(),
+        })),
+      } satisfies EmploymentListBody,
+    );
+  };
+
+  const upsertEmployment = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    id: string,
+    wsId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readOne(res, id, session);
+    if (!row) return;
+    const body = (await readJson(req)) as UpsertEmploymentBody;
+    const [existing] = await database
+      .select()
+      .from(coworkerEmployments)
+      .where(and(eq(coworkerEmployments.coworkerId, id), eq(coworkerEmployments.wsId, wsId)));
+    const role = typeof body.role === 'string' ? body.role.trim().slice(0, 120) : (existing?.role ?? '');
+    const grants = body.grants ?? existing?.grants ?? [];
+    if (!Array.isArray(grants) || !grants.every((g) => typeof g === 'string')) {
+      fail(res, 'contract', 'grants must be a list of tool ids.');
+      return;
+    }
+    const [employment] = await database
+      .insert(coworkerEmployments)
+      .values({ coworkerId: id, wsId, role, grants })
+      .onConflictDoUpdate({
+        target: [coworkerEmployments.coworkerId, coworkerEmployments.wsId],
+        set: { role, grants },
+      })
+      .returning();
+    if (!employment) {
+      fail(res, 'upstream', 'The employment was not saved.');
+      return;
+    }
+    result(
+      res,
+      200,
+      {
+        ok: true,
+        item: {
+          coworkerId: employment.coworkerId,
+          wsId: employment.wsId,
+          role: employment.role,
+          grants: employment.grants,
+          employedAt: employment.employedAt.toISOString(),
+        },
+      } satisfies EmploymentBody,
+    );
+  };
+
+  const removeEmployment = async (
+    res: ServerResponse,
+    id: string,
+    wsId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readOne(res, id, session);
+    if (!row) return;
+    await database
+      .delete(coworkerEmployments)
+      .where(
+        and(eq(coworkerEmployments.coworkerId, id), eq(coworkerEmployments.wsId, wsId)),
+      );
+    result(res, 200, { ok: true, wsId } satisfies EmploymentDeleteBody);
+  };
+
+  return { list, create, read, patch, remove, listEvents, appendEvent, listEmployments, upsertEmployment, removeEmployment };
 }
 
 export function createCoworkersRouter(
@@ -377,6 +472,22 @@ export function createCoworkersRouter(
         }
         if (method === 'GET') return handlers.listEvents(res, id, session);
         if (method === 'POST') return handlers.appendEvent(req, res, id, session);
+      } else if (segments.length === 2 && segments[1] === 'employments') {
+        const id = segments[0] ?? '';
+        if (!isSafeSegment(id)) {
+          fail(res, 'contract', 'The coworker id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.listEmployments(res, id, session);
+      } else if (segments.length === 3 && segments[1] === 'employments') {
+        const id = segments[0] ?? '';
+        const wsId = segments[2] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(wsId)) {
+          fail(res, 'contract', 'The coworker or workspace id is not a valid path segment.');
+          return;
+        }
+        if (method === 'PUT') return handlers.upsertEmployment(req, res, id, wsId, session);
+        if (method === 'DELETE') return handlers.removeEmployment(res, id, wsId, session);
       }
       fail(res, 'contract', `${method} is not allowed on this path.`);
     };

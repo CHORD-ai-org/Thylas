@@ -43,6 +43,13 @@
       "when": 1795501916981,
       "tag": "0005_illegal_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795504367509,
+      "tag": "0006_short_phalanx",
+      "breakpoints": true
     }
   ]
 }

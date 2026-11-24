@@ -146,13 +146,6 @@ export type CoworkerBody = { ok: true; item: CoworkerDto };
 export type CoworkerDeleteBody = { ok: true; id: string };
 export type CoworkerEventListBody = { ok: true; items: CoworkerEventDto[] };
 export type CoworkerEventBody = { ok: true; item: CoworkerEventDto };
-export type CoworkerResultBody =
-  | CoworkerListBody
-  | CoworkerBody
-  | CoworkerDeleteBody
-  | CoworkerEventListBody
-  | CoworkerEventBody
-  | CoworkerErr;
 
 export type CreateCoworkerBody = {
   id?: string;
@@ -177,6 +170,39 @@ export type CreateEventBody = {
   actorKind?: string;
   payload?: unknown;
 };
+
+export type CoworkerEmploymentDto = {
+  coworkerId: string;
+  wsId: string;
+  role: string;
+  grants: string[];
+  employedAt: string;
+};
+export type EmploymentListBody = { ok: true; items: CoworkerEmploymentDto[] };
+export type EmploymentBody = { ok: true; item: CoworkerEmploymentDto };
+export type EmploymentDeleteBody = { ok: true; wsId: string };
+export type UpsertEmploymentBody = { role?: string; grants?: string[] };
+
+export type CoworkerResultBody =
+  | CoworkerListBody
+  | CoworkerBody
+  | CoworkerDeleteBody
+  | CoworkerEventListBody
+  | CoworkerEventBody
+  | EmploymentListBody
+  | EmploymentBody
+  | EmploymentDeleteBody
+  | CoworkerErr;
+
+/** 三层交集红线：有效授权 = 自身配置 ∩ Workspace 给予 ∩ Project 子集。 */
+export function effectiveGrants(
+  selfToolsets: string[],
+  workspaceGrants: string[],
+  projectSubset?: string[],
+): string[] {
+  const base = selfToolsets.filter((t) => workspaceGrants.includes(t));
+  return projectSubset === undefined ? base : base.filter((t) => projectSubset.includes(t));
+}
 
 const RETRYABLE: Record<CoworkerErrorKind, boolean> = {
   contract: false,

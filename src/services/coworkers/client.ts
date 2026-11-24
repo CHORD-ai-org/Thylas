@@ -15,7 +15,11 @@ import {
   type CoworkerResultBody,
   type CreateCoworkerBody,
   type CreateEventBody,
+  type EmploymentBody,
+  type EmploymentDeleteBody,
+  type EmploymentListBody,
   type PatchCoworkerBody,
+  type UpsertEmploymentBody,
 } from '../../lib/coworkers';
 
 type Fetcher = typeof fetch;
@@ -28,6 +32,13 @@ export type CoworkersClient = {
   remove: (id: string) => Promise<CoworkerDeleteBody | CoworkerErr>;
   listEvents: (id: string) => Promise<CoworkerEventListBody | CoworkerErr>;
   createEvent: (id: string, body: CreateEventBody) => Promise<CoworkerEventBody | CoworkerErr>;
+  listEmployments: (id: string) => Promise<EmploymentListBody | CoworkerErr>;
+  upsertEmployment: (
+    id: string,
+    wsId: string,
+    body: UpsertEmploymentBody,
+  ) => Promise<EmploymentBody | CoworkerErr>;
+  removeEmployment: (id: string, wsId: string) => Promise<EmploymentDeleteBody | CoworkerErr>;
 };
 
 async function request<T extends CoworkerResultBody>(
@@ -66,5 +77,18 @@ export function createCoworkersClient(fetcher: Fetcher = fetch): CoworkersClient
     listEvents: (id) => request<CoworkerEventListBody>(fetcher, pathFor(id, '/events')),
     createEvent: (id, body) =>
       request<CoworkerEventBody>(fetcher, pathFor(id, '/events'), jsonInit('POST', body)),
+    listEmployments: (id) => request<EmploymentListBody>(fetcher, pathFor(id, '/employments')),
+    upsertEmployment: (id, wsId, body) =>
+      request<EmploymentBody>(
+        fetcher,
+        `${pathFor(id, '/employments')}/${encodeURIComponent(wsId)}`,
+        jsonInit('PUT', body),
+      ),
+    removeEmployment: (id, wsId) =>
+      request<EmploymentDeleteBody>(
+        fetcher,
+        `${pathFor(id, '/employments')}/${encodeURIComponent(wsId)}`,
+        jsonInit('DELETE'),
+      ),
   };
 }
