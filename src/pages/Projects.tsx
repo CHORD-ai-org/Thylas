@@ -10,6 +10,7 @@ import {
   CONNECTION_KINDS,
   type ConnectionHealth,
   type ConnectionKind,
+  type HandoffDto,
   type ProjectCandidateDto,
   type ProjectConnectionDto,
   type ProjectDto,
@@ -322,6 +323,10 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
   const [genRubric, setGenRubric] = useState('');
   const [genBusy, setGenBusy] = useState(false);
   const [genNotice, setGenNotice] = useState('');
+  const [handoffs, setHandoffs] = useState<HandoffDto[]>([]);
+  const [handFrom, setHandFrom] = useState('');
+  const [handTo, setHandTo] = useState('');
+  const [handTask, setHandTask] = useState('');
   const user = useUser();
   const coworkers = useMemo(() => coworkersView(), []);
 
@@ -330,6 +335,8 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
     if (memberBody.ok && 'items' in memberBody) setMembers(memberBody.items);
     const candidateBody = await client.listCandidates(projectId);
     if (candidateBody.ok && 'items' in candidateBody) setCandidates(candidateBody.items);
+    const handoffBody = await client.listHandoffs(projectId);
+    if (handoffBody.ok && 'items' in handoffBody) setHandoffs(handoffBody.items);
   }, [client, projectId]);
 
   useEffect(() => {
@@ -476,6 +483,93 @@ function ParticipationPanel({ projectId }: { projectId: string }) {
           ))}
         </ul>
       )}
+
+      <SectionLabel>交接</SectionLabel>
+      {handoffs.length === 0 ? (
+        <p className={s.drawerEmpty}>还没有交接</p>
+      ) : (
+        <ul className={s.connections}>
+          {handoffs.map((handoff) => (
+            <li key={handoff.id} className={s.connection} data-handoff={handoff.id}>
+              <span className={s.connectionLocator}>
+                {handoff.fromName} → {handoff.toName}：{handoff.task}
+              </span>
+              <span className={handoff.status === 'needs_human' ? s['health-broken'] : s.connectionKind}>
+                {handoff.status === 'needs_human' ? `需要你 · ${handoff.stuckNote}` : '进行中'}
+              </span>
+              {handoff.status === 'needs_human' ? (
+                <Button size="sm" onClick={async () => {
+                  await client.resumeHandoff(projectId, handoff.id);
+                  await refresh();
+                }} data-handoff-resume>
+                  继续
+                </Button>
+              ) : (
+                <Button size="sm" onClick={async () => {
+                  await client.setHandoffStuck(projectId, handoff.id);
+                  await refresh();
+                }} data-handoff-stuck>
+                  卡住了
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className={s.addLine}>
+        <select
+          className={s.select}
+          aria-label="交出方"
+          value={handFrom || coworkers[0]?.id || ''}
+          onChange={(e) => setHandFrom(e.target.value)}
+        >
+          {coworkers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className={s.select}
+          aria-label="接手方"
+          value={handTo || coworkers[1]?.id || ''}
+          onChange={(e) => setHandTo(e.target.value)}
+        >
+          {coworkers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <input
+          className={s.input}
+          placeholder="交接的任务（一行）"
+          aria-label="交接任务"
+          value={handTask}
+          onChange={(e) => setHandTask(e.target.value)}
+          data-handoff-task
+        />
+        <Button
+          size="sm"
+          data-handoff-add
+          onClick={async () => {
+            const from = coworkers.find((c) => c.id === handFrom) ?? coworkers[0];
+            const to = coworkers.find((c) => c.id === handTo) ?? coworkers[1];
+            if (!from || !to || from.id === to.id || handTask.trim() === '') return;
+            await client.createHandoff(projectId, {
+              fromCoworkerId: from.id,
+              fromName: from.name,
+              toCoworkerId: to.id,
+              toName: to.name,
+              task: handTask.trim(),
+            });
+            setHandTask('');
+            await refresh();
+          }}
+        >
+          交接
+        </Button>
+      </div>
     </div>
   );
 }

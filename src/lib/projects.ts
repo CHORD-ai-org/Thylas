@@ -125,6 +125,47 @@ export type CreateCandidateBody = {
   proposedByName: string;
 };
 
+/** C3-1 交接包 v0 (Coworker plan §27): one row = the whole transfer —
+    snapshot + both signatures, atomically (S1 复制+留痕). `inputs` are
+    references, never copies of large content. */
+export type HandoffStatus = 'open' | 'needs_human';
+export type HandoffDto = {
+  id: string;
+  projectId: string;
+  fromCoworkerId: string;
+  fromName: string;
+  toCoworkerId: string;
+  toName: string;
+  task: string;
+  inputs: string[];
+  outputSchema: string;
+  maxSteps: number;
+  done: string;
+  openNotes: string;
+  nextStep: string;
+  grants: string[];
+  status: HandoffStatus;
+  stuckNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+export type HandoffListBody = { ok: true; items: HandoffDto[] };
+export type HandoffBody = { ok: true; item: HandoffDto };
+export type CreateHandoffBody = {
+  fromCoworkerId: string;
+  fromName: string;
+  toCoworkerId: string;
+  toName: string;
+  task: string;
+  inputs?: string[];
+  outputSchema?: string;
+  maxSteps?: number;
+  done?: string;
+  openNotes?: string;
+  nextStep?: string;
+  grants?: string[];
+};
+
 export type ProjectResultBody =
   | ProjectListBody
   | ProjectBody
@@ -138,6 +179,8 @@ export type ProjectResultBody =
   | MemberDeleteBody
   | CandidateListBody
   | CandidateBody
+  | HandoffListBody
+  | HandoffBody
   | ProjectErr;
 
 const RETRYABLE: Record<ProjectErrorKind, boolean> = {

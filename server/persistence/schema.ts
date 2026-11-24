@@ -178,6 +178,39 @@ export const projectCandidates = pgTable(
 );
 
 /**
+ * C3-1 交接包 v0: one row IS the whole transfer — snapshot + both signatures
+ * written atomically (S1 复制+留痕; "失败 = 交接未发生"). `inputs` hold
+ * references, not copies. C3-2: `status = needs_human` is the INPUT_REQUIRED
+ * state, surfaced to the user instead of stalling silently.
+ */
+export const handoffPackages = pgTable(
+  'handoff_packages',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    fromCoworkerId: text('from_coworker_id').notNull(),
+    fromName: text('from_name').notNull().default(''),
+    toCoworkerId: text('to_coworker_id').notNull(),
+    toName: text('to_name').notNull().default(''),
+    task: text('task').notNull(),
+    inputs: jsonb('inputs').$type<string[]>().notNull().default([]),
+    outputSchema: text('output_schema').notNull().default(''),
+    maxSteps: bigint('max_steps', { mode: 'number' }).notNull().default(3),
+    done: text('done').notNull().default(''),
+    openNotes: text('open_notes').notNull().default(''),
+    nextStep: text('next_step').notNull().default(''),
+    grants: jsonb('grants').$type<string[]>().notNull().default([]),
+    status: text('status').notNull().default('open'),
+    stuckNote: text('stuck_note').notNull().default(''),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('handoff_packages_project_idx').on(table.projectId, table.createdAt)],
+);
+
+/**
  * C0-1 (Coworker plan §27). A Coworker is an independent working identity —
  * `owner_id` is the tenant key (cloud-readiness §24), not a workspace: the
  * record survives across workspaces; employment (入职) is a roster relation

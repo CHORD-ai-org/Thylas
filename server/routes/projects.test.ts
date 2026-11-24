@@ -340,3 +340,82 @@ describe('C2 参工与署名落回', () => {
     expect(rejectedItem.confirmedBy).toBeNull();
   });
 });
+
+describe('C3 交接包与 INPUT_REQUIRED', () => {
+  let c3Project = '';
+
+  it('C3-1: the package is one atomic transfer — both signatures, failure means nothing happened', async () => {
+    const created = await call('POST', PROJECTS_PATH, { workspaceId: 'ws-1', name: 'Lemma C3' });
+    c3Project = (await json<ProjectBody>(created)).item.id;
+    await client.query(
+      "insert into coworkers (id, owner_id, name, created_at_ms) values ('cw-from', 'u-1', 'Mira', $1)",
+      [Date.now()],
+    );
+    await client.query(
+      "insert into coworkers (id, owner_id, name, created_at_ms) values ('cw-to', 'u-1', 'Archer', $1)",
+      [Date.now()],
+    );
+
+    const beforeCount = (
+      await client.query("select id from coworker_events where coworker_id = 'cw-from'")
+    ).rows.length;
+
+    const bad = await call('POST', `${PROJECTS_PATH}/${c3Project}/handoffs`, {
+      fromCoworkerId: 'cw-from',
+      fromName: 'Mira',
+      toCoworkerId: 'cw-to',
+      toName: 'Archer',
+    });
+    expect(bad.status).toBe(400);
+    const emptyList = await call('GET', `${PROJECTS_PATH}/${c3Project}/handoffs`);
+    expect((await json<{ items: unknown[] }>(emptyList)).items).toHaveLength(0);
+    const afterBad = (
+      await client.query("select id from coworker_events where coworker_id = 'cw-from'")
+    ).rows.length;
+    expect(afterBad).toBe(beforeCount);
+
+    const ok = await call('POST', `${PROJECTS_PATH}/${c3Project}/handoffs`, {
+      fromCoworkerId: 'cw-from',
+      fromName: 'Mira',
+      toCoworkerId: 'cw-to',
+      toName: 'Archer',
+      task: '接手竞品对比表',
+      inputs: ['cand-1'],
+      outputSchema: 'DecisionCards.v1',
+      maxSteps: 4,
+      done: '已做两列',
+      openNotes: '第三列未决',
+      nextStep: '补第三列再校验',
+    });
+    expect(ok.status).toBe(201);
+    const item = (await json<{ item: { fromName: string; toName: string; inputs: string[]; maxSteps: number } }>(ok)).item;
+    expect(item.fromName).toBe('Mira');
+    expect(item.toName).toBe('Archer');
+    expect(item.inputs).toEqual(['cand-1']);
+    expect(item.maxSteps).toBe(4);
+
+    const fromRows = (
+      await client.query<{ verb: string }>("select verb from coworker_events where coworker_id = 'cw-from'")
+    ).rows;
+    expect(fromRows.map((x) => x.verb)).toContain('handoff');
+    const toRows = (
+      await client.query<{ verb: string }>("select verb from coworker_events where coworker_id = 'cw-to'")
+    ).rows;
+    expect(toRows.map((x) => x.verb)).toContain('handoff_received');
+  });
+
+  it('C3-2: stuck hands surface as needs_human and can resume', async () => {
+    const list = await call('GET', `${PROJECTS_PATH}/${c3Project}/handoffs`);
+    const handoffId = (await json<{ items: { id: string }[] }>(list)).items[0]?.id ?? '';
+
+    const stuck = await call('POST', `${PROJECTS_PATH}/${c3Project}/handoffs/${handoffId}/stuck`, {});
+    expect(stuck.status).toBe(200);
+    const stuckItem = (await json<{ item: { status: string; stuckNote: string } }>(stuck)).item;
+    expect(stuckItem.status).toBe('needs_human');
+    expect(stuckItem.stuckNote.length).toBeGreaterThan(0);
+
+    const resumed = await call('POST', `${PROJECTS_PATH}/${c3Project}/handoffs/${handoffId}/resume`, {});
+    const resumedItem = (await json<{ item: { status: string } }>(resumed)).item;
+    expect(resumedItem.status).toBe('open');
+  });
+});

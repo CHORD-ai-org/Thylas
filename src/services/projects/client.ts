@@ -14,8 +14,11 @@ import {
   type ConnectionListBody,
   type CreateCandidateBody,
   type CreateConnectionBody,
+  type CreateHandoffBody,
   type CreateProjectBody,
   type EntriesBody,
+  type HandoffBody,
+  type HandoffListBody,
   type MemberBody,
   type MemberDeleteBody,
   type MemberListBody,
@@ -78,6 +81,10 @@ export type ProjectsClient = {
     candidateId: string,
     accept: boolean,
   ) => Promise<CandidateBody | ProjectErr>;
+  listHandoffs: (projectId: string) => Promise<HandoffListBody | ProjectErr>;
+  createHandoff: (projectId: string, body: CreateHandoffBody) => Promise<HandoffBody | ProjectErr>;
+  setHandoffStuck: (projectId: string, handoffId: string) => Promise<HandoffBody | ProjectErr>;
+  resumeHandoff: (projectId: string, handoffId: string) => Promise<HandoffBody | ProjectErr>;
 };
 
 async function request<T extends ProjectResultBody>(
@@ -172,6 +179,22 @@ export function createProjectsClient(fetcher: Fetcher = fetch): ProjectsClient {
       request<CandidateBody>(
         fetcher,
         `${projectPath(projectId)}/candidates/${encodeURIComponent(candidateId)}/${accept ? 'confirm' : 'reject'}`,
+        jsonInit('POST'),
+      ),
+    listHandoffs: (projectId) =>
+      request<HandoffListBody>(fetcher, `${projectPath(projectId)}/handoffs`),
+    createHandoff: (projectId, body) =>
+      request<HandoffBody>(fetcher, `${projectPath(projectId)}/handoffs`, jsonInit('POST', body)),
+    setHandoffStuck: (projectId, handoffId) =>
+      request<HandoffBody>(
+        fetcher,
+        `${projectPath(projectId)}/handoffs/${encodeURIComponent(handoffId)}/stuck`,
+        jsonInit('POST'),
+      ),
+    resumeHandoff: (projectId, handoffId) =>
+      request<HandoffBody>(
+        fetcher,
+        `${projectPath(projectId)}/handoffs/${encodeURIComponent(handoffId)}/resume`,
         jsonInit('POST'),
       ),
   };

@@ -40,6 +40,10 @@ import {
   type CandidateBody,
   type CandidateListBody,
   type CreateCandidateBody,
+  type CreateHandoffBody,
+  type HandoffBody,
+  type HandoffDto,
+  type HandoffListBody,
   type MemberBody,
   type MemberDeleteBody,
   type MemberListBody,
@@ -63,6 +67,8 @@ import {
 } from '../connectors.ts';
 import { sendJson } from '../http.ts';
 import {
+  coworkerEvents,
+  handoffPackages,
   projectCandidates,
   projectConnections,
   projectMembers,
@@ -158,6 +164,31 @@ function toCandidateDto(row: CandidateRow): ProjectCandidateDto {
     proposedByName: row.proposedByName,
     status: row.status as ProjectCandidateDto['status'],
     confirmedBy: row.confirmedBy,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+type HandoffRow = typeof handoffPackages.$inferSelect;
+
+function toHandoffDto(row: HandoffRow): HandoffDto {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    fromCoworkerId: row.fromCoworkerId,
+    fromName: row.fromName,
+    toCoworkerId: row.toCoworkerId,
+    toName: row.toName,
+    task: row.task,
+    inputs: row.inputs,
+    outputSchema: row.outputSchema,
+    maxSteps: row.maxSteps,
+    done: row.done,
+    openNotes: row.openNotes,
+    nextStep: row.nextStep,
+    grants: row.grants,
+    status: row.status as HandoffDto['status'],
+    stuckNote: row.stuckNote,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -659,6 +690,145 @@ function makeHandlers(
     result(res, 200, { ok: true, item: toCandidateDto(updated) } satisfies CandidateBody);
   };
 
+  /* C3-1/C3-2 交接包 (Coworker plan §27): one row = the whole transfer;
+     creation is transactional — failure means the handoff never happened. */
+  const listHandoffs = async (
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const rows = await database
+      .select()
+      .from(handoffPackages)
+      .where(eq(handoffPackages.projectId, projectId))
+      .orderBy(asc(handoffPackages.createdAt));
+    result(res, 200, { ok: true, items: rows.map(toHandoffDto) } satisfies HandoffListBody);
+  };
+
+  const createHandoff = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    projectId: string,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const body = (await readJson(req)) as CreateHandoffBody;
+    const task = typeof body.task === 'string' ? body.task.trim() : '';
+    const fromCoworkerId = typeof body.fromCoworkerId === 'string' ? body.fromCoworkerId : '';
+    const toCoworkerId = typeof body.toCoworkerId === 'string' ? body.toCoworkerId : '';
+    const fromName = typeof body.fromName === 'string' ? body.fromName.trim().slice(0, 60) : '';
+    const toName = typeof body.toName === 'string' ? body.toName.trim().slice(0, 60) : '';
+    const inputs = body.inputs ?? [];
+    const grants = body.grants ?? [];
+    const maxSteps = typeof body.maxSteps === 'number' && body.maxSteps >= 1 && body.maxSteps <= 100
+      ? Math.floor(body.maxSteps)
+      : 3;
+    if (
+      task.length === 0 ||
+      task.length > 4000 ||
+      !isSafeSegment(fromCoworkerId) ||
+      !isSafeSegment(toCoworkerId) ||
+      !Array.isArray(inputs) ||
+      !inputs.every((x) => typeof x === 'string') ||
+      !Array.isArray(grants) ||
+      !grants.every((x) => typeof x === 'string')
+    ) {
+      fail(
+        res,
+        'contract',
+        'Expected a task (1-4000), safe coworker ids and string lists for inputs/grants.',
+      );
+      return;
+    }
+    const id = randomUUID();
+    try {
+      await database.transaction(async (tx) => {
+        await tx.insert(handoffPackages).values({
+          id,
+          projectId,
+          fromCoworkerId,
+          fromName,
+          toCoworkerId,
+          toName,
+          task,
+          inputs,
+          outputSchema: typeof body.outputSchema === 'string' ? body.outputSchema.slice(0, 4000) : '',
+          maxSteps,
+          done: typeof body.done === 'string' ? body.done.slice(0, 4000) : '',
+          openNotes: typeof body.openNotes === 'string' ? body.openNotes.slice(0, 4000) : '',
+          nextStep: typeof body.nextStep === 'string' ? body.nextStep.slice(0, 4000) : '',
+          grants,
+          status: 'open',
+        });
+        const payload = { handoffId: id, projectId };
+        await tx.insert(coworkerEvents).values({
+          id: randomUUID(),
+          coworkerId: fromCoworkerId,
+          projectId,
+          actorKind: 'coworker',
+          verb: 'handoff',
+          payload,
+        });
+        await tx.insert(coworkerEvents).values({
+          id: randomUUID(),
+          coworkerId: toCoworkerId,
+          projectId,
+          actorKind: 'coworker',
+          verb: 'handoff_received',
+          payload,
+        });
+      });
+    } catch {
+      fail(res, 'upstream', 'The handoff was not saved — nothing was transferred.');
+      return;
+    }
+    const [created] = await database
+      .select()
+      .from(handoffPackages)
+      .where(eq(handoffPackages.id, id));
+    if (!created) {
+      fail(res, 'upstream', 'The handoff was not saved — nothing was transferred.');
+      return;
+    }
+    result(res, 201, { ok: true, item: toHandoffDto(created) } satisfies HandoffBody);
+  };
+
+  const setHandoffStatus = async (
+    res: ServerResponse,
+    projectId: string,
+    handoffId: string,
+    needsHuman: boolean,
+    session: SessionUser,
+  ): Promise<void> => {
+    const row = await readProject(res, projectId, session);
+    if (!row) return;
+    const [handoff] = await database
+      .select()
+      .from(handoffPackages)
+      .where(eq(handoffPackages.id, handoffId));
+    if (!handoff || handoff.projectId !== projectId) {
+      fail(res, 'not_found', `No handoff with id "${handoffId}".`);
+      return;
+    }
+    const [updated] = await database
+      .update(handoffPackages)
+      .set({
+        status: needsHuman ? 'needs_human' : 'open',
+        stuckNote: needsHuman ? (handoff.stuckNote || '交接停在需要人裁决的一步') : '',
+        updatedAt: new Date(),
+      })
+      .where(eq(handoffPackages.id, handoffId))
+      .returning();
+    if (!updated) {
+      fail(res, 'upstream', 'The handoff was not updated.');
+      return;
+    }
+    result(res, 200, { ok: true, item: toHandoffDto(updated) } satisfies HandoffBody);
+  };
+
   return {
     list,
     create,
@@ -677,6 +847,9 @@ function makeHandlers(
     listCandidates,
     createCandidate,
     setCandidateStatus,
+    listHandoffs,
+    createHandoff,
+    setHandoffStatus,
   };
 }
 
@@ -816,6 +989,24 @@ export function createProjectsRouter(
         }
         if (action === 'confirm') return handlers.setCandidateStatus(res, id, candidateId, true, session);
         if (action === 'reject') return handlers.setCandidateStatus(res, id, candidateId, false, session);
+      } else if (segments.length === 2 && segments[1] === 'handoffs') {
+        const id = segments[0] ?? '';
+        if (!isSafeSegment(id)) {
+          fail(res, 'contract', 'The project id is not a valid path segment.');
+          return;
+        }
+        if (method === 'GET') return handlers.listHandoffs(res, id, session);
+        if (method === 'POST') return handlers.createHandoff(req, res, id, session);
+      } else if (segments.length === 4 && segments[1] === 'handoffs' && method === 'POST') {
+        const id = segments[0] ?? '';
+        const handoffId = segments[2] ?? '';
+        const action = segments[3] ?? '';
+        if (!isSafeSegment(id) || !isSafeSegment(handoffId)) {
+          fail(res, 'contract', 'The project or handoff id is not a valid path segment.');
+          return;
+        }
+        if (action === 'stuck') return handlers.setHandoffStatus(res, id, handoffId, true, session);
+        if (action === 'resume') return handlers.setHandoffStatus(res, id, handoffId, false, session);
       }
       fail(res, 'contract', `${method} is not allowed on this path.`);
     };
