@@ -77,13 +77,20 @@
 }
 
 .card {
-  border: 0.5px solid #d3d1c7;
-  border-radius: 10px;
-  background: #ffffff;
+  /* Soft-surface recipe (visual-refresh T2): tokenized off the frozen
+     hardcoded colors it started with. */
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+  background: var(--bg-surface);
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 12px;
   padding: 10px 12px;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
 }
 
 .cardMain {
