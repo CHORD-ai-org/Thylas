@@ -1,0 +1,284 @@
+/* Project detail (08) — Quiet Computationalism. Hairlines and typography;
+   the only surfaces are the brief, the desk, and the worktree rail. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 48px;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-paper);
+  font: var(--t-title);
+  color: var(--ink-2);
+}
+
+.thumb:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.name {
+  margin: 0;
+  font: var(--t-title);
+  color: var(--ink);
+}
+
+.quickLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-height: 18px;
+}
+
+.quickLink {
+  font: var(--t-caption);
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.quickLink:hover {
+  color: var(--ink);
+}
+
+.quiet {
+  font: var(--t-caption);
+  color: var(--ink-3);
+}
+
+.toolbar {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 3px;
+  height: 34px;
+  align-items: center;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  background: transparent;
+  font-size: 13px;
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.tool[aria-pressed='true'] {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.tool:disabled {
+  opacity: 0.45;
+}
+
+.drawer {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+}
+
+.brief {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+.briefText {
+  margin: 0;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.body {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.desk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.askRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.askInput {
+  flex: 1 1 auto;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-surface);
+  font: var(--t-ui);
+  color: var(--ink);
+}
+
+.askInput:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px;
+  min-height: 180px;
+}
+
+.rail {
+  flex: 0 0 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.railInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.railTabs {
+  display: flex;
+  gap: 4px;
+}
+
+.railTab {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font: var(--t-caption);
+  color: var(--ink-2);
+  background: transparent;
+}
+
+.railTabOn {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.treeRow {
+  display: block;
+}
+
+.treeToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 26px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  font: var(--t-ui);
+  color: var(--ink-2);
+  text-align: left;
+}
+
+.treeToggle:hover {
+  background: var(--tint-hover);
+  color: var(--ink);
+}
+
+.treeRoot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeHealth {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
+.treeHealth[data-health='ok'] {
+  color: var(--ink-2);
+}
+
+.treeHealth[data-health='broken'] {
+  color: var(--error);
+}
+
+.treeFile,
+.treeNote {
+  min-height: 24px;
+  padding: 2px 6px;
+  font: var(--t-ui);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeNote {
+  font: var(--t-mono-s);
+  color: var(--ink-3);
+}
