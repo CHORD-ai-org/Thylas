@@ -42,7 +42,7 @@ export function LoginPage() {
      existing profile initialization surface. Both use the same labelled dev
      stand-in the rest of the prototype uses. */
   const finish = useCallback(() => {
-    document.cookie = 'thylas_session=dev:u-local:ws-1; path=/';
+    document.cookie = 'thylas_session=dev:u-local:ws-1,ws-research,ws-onda; path=/';
     navigate(mode === 'create' ? routes.onboarding() : routes.profileInit(), { replace: true });
   }, [navigate, mode]);
 
@@ -87,7 +87,7 @@ export function LoginPage() {
   /* The explicit dev stand-in: the same cookie the e2e suite and the rest of
      the build use. Labelled, never hidden inside the submit path. */
   const enterAsDev = () => {
-    document.cookie = 'thylas_session=dev:u-local:ws-1; path=/';
+    document.cookie = 'thylas_session=dev:u-local:ws-1,ws-research,ws-onda; path=/';
     navigate(routes.overview());
   };
 
